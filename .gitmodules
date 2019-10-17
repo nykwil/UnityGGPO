@@ -1,0 +1,3 @@
+[submodule "Unity/Assets/NativePluginBuilder"]
+	path = Unity/Assets/NativePluginBuilder
+	url = https://github.com/iBicha/NativePluginBuilder.git
