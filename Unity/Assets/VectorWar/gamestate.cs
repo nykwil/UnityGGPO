@@ -100,10 +100,10 @@ public class GameState {
         fire = 0;
     }
 
-    public void ParseShipInputs(int inputs, int i, out float heading, out float thrust, out int fire) {
+    public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
         Ship ship = _ships[i];
 
-        GGPO.ggpo_log(ggpo, $"parsing ship {i} inputs: {inputs}.\n");
+        GGPO.DllLog(ggpo, $"parsing ship {i} inputs: {inputs}.\n");
 
         if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
             heading = (ship.heading + ROTATE_INCREMENT) % 360;
@@ -124,19 +124,19 @@ public class GameState {
         else {
             thrust = 0;
         }
-        fire = inputs & INPUT_FIRE;
+        fire = (int)(inputs & INPUT_FIRE);
     }
 
     public void MoveShip(int index, float heading, float thrust, int fire) {
         Ship ship = _ships[index];
 
-        GGPO.ggpo_log(ggpo, $"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
+        GGPO.DllLog(ggpo, $"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
 
         ship.heading = heading;
 
         if (ship.cooldown == 0) {
             if (fire != 0) {
-                GGPO.ggpo_log(ggpo, "firing bullet.\n");
+                GGPO.DllLog(ggpo, "firing bullet.\n");
                 for (int i = 0; i < MAX_BULLETS; i++) {
                     float dx = Mathf.Cos(degtorad(ship.heading));
                     float dy = Mathf.Sin(degtorad(ship.heading));
@@ -166,11 +166,11 @@ public class GameState {
                 ship.velocity.dy = (ship.velocity.dy * SHIP_MAX_THRUST) / mag;
             }
         }
-        GGPO.ggpo_log(ggpo, $"new ship velocity: (dx:{ship.velocity.dx} dy:{ship.velocity.dy}).\n");
+        GGPO.DllLog(ggpo, $"new ship velocity: (dx:{ship.velocity.dx} dy:{ship.velocity.dy}).\n");
 
         ship.position.x += ship.velocity.dx;
         ship.position.y += ship.velocity.dy;
-        GGPO.ggpo_log(ggpo, $"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).\n");
+        GGPO.DllLog(ggpo, $"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).\n");
 
         if (ship.position.x - ship.radius < _bounds.xMin ||
             ship.position.x + ship.radius > _bounds.xMax) {
@@ -208,7 +208,7 @@ public class GameState {
         }
     }
 
-    public void Update(int[] inputs, int disconnect_flags) {
+    public void Update(ulong[] inputs, int disconnect_flags) {
         _framenumber++;
         for (int i = 0; i < _num_ships; i++) {
             float thrust, heading;

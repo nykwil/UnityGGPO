@@ -39,33 +39,41 @@ public class GGPOPerformance : MonoBehaviour {
         }
 
         for (int j = 0; j < num_players; j++) {
-            GGPO.ggpo_get_network_stats(ggpo, players[j], out var stats);
+            GGPO.DllGetNetworkStats(ggpo, players[j],
+                    out int send_queue_len,
+        out int recv_queue_len,
+        out int ping,
+        out int kbps_sent,
+        out int local_frames_behind,
+        out int remote_frames_behind
+
+                );
 
             /*
              * Random graphs
              */
             if (j == 0) {
-                _remote_queue_graph[i] = stats.recv_queue_len;
-                _send_queue_graph[i] = stats.send_queue_len;
+                _remote_queue_graph[i] = recv_queue_len;
+                _send_queue_graph[i] = send_queue_len;
             }
 
             /*
              * Ping
              */
-            _ping_graph[j, i] = stats.ping;
+            _ping_graph[j, i] = ping;
 
             /*
              * Frame Advantage
              */
-            _local_fairness_graph[j, i] = stats.local_frames_behind;
-            _remote_fairness_graph[j, i] = stats.remote_frames_behind;
-            if (stats.local_frames_behind < 0 && stats.remote_frames_behind < 0) {
+            _local_fairness_graph[j, i] = local_frames_behind;
+            _remote_fairness_graph[j, i] = remote_frames_behind;
+            if (local_frames_behind < 0 && remote_frames_behind < 0) {
                 /*
                  * Both think it's unfair (which, ironically, is fair).  Scale both and subtrace.
                  */
-                _fairness_graph[i] = Mathf.Abs(Mathf.Abs(stats.local_frames_behind) - Mathf.Abs(stats.remote_frames_behind));
+                _fairness_graph[i] = Mathf.Abs(Mathf.Abs(local_frames_behind) - Mathf.Abs(remote_frames_behind));
             }
-            else if (stats.local_frames_behind > 0 && stats.remote_frames_behind > 0) {
+            else if (local_frames_behind > 0 && remote_frames_behind > 0) {
                 /*
                  * Impossible!  Unless the network has negative transmit time.  Odd....
                  */
@@ -75,16 +83,16 @@ public class GGPOPerformance : MonoBehaviour {
                 /*
                  * They disagree.  Add.
                  */
-                _fairness_graph[i] = Mathf.Abs(stats.local_frames_behind) + Mathf.Abs(stats.remote_frames_behind);
+                _fairness_graph[i] = Mathf.Abs(local_frames_behind) + Mathf.Abs(remote_frames_behind);
             }
 
             int now = (int)(Time.time * 1000f);
-            if (stats != null && now > _last_text_update_time + 500) {
-                SetWindowTextA(IDC_NETWORK_LAG, $"{stats.ping} ms");
-                SetWindowTextA(IDC_FRAME_LAG, $"{((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames");
-                SetWindowTextA(IDC_BANDWIDTH, $"{stats.kbps_sent / 8f} kilobytes/sec");
-                SetWindowTextA(IDC_LOCAL_AHEAD, $"{stats.local_frames_behind} frames");
-                SetWindowTextA(IDC_REMOTE_AHEAD, $"{stats.remote_frames_behind} frames");
+            if (now > _last_text_update_time + 500) {
+                SetWindowTextA(IDC_NETWORK_LAG, $"{ping} ms");
+                SetWindowTextA(IDC_FRAME_LAG, $"{((ping != 0) ? ping * 60f / 1000f : 0f)} frames");
+                SetWindowTextA(IDC_BANDWIDTH, $"{kbps_sent / 8f} kilobytes/sec");
+                SetWindowTextA(IDC_LOCAL_AHEAD, $"{local_frames_behind} frames");
+                SetWindowTextA(IDC_REMOTE_AHEAD, $"{remote_frames_behind} frames");
                 _last_text_update_time = now;
             }
         }

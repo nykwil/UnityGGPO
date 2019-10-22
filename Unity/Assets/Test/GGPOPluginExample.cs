@@ -17,8 +17,8 @@ public class GGPOPluginExample : MonoBehaviour {
         session = new GGPOSession();
         session.logDelegate = Log;
         session.loadGameStateCallback = loadGameStateCallback;
-        session.logGameStateCallback = LogGameState;
-        session.saveGameStateDelegate = Callback;
+//        session.logGameStateCallback = LogGameState;
+//        session.saveGameStateDelegate = Callback;
     }
 
     private bool loadGameStateCallback(NativeArray<byte> data) {
@@ -31,16 +31,16 @@ public class GGPOPluginExample : MonoBehaviour {
         }
     }
 
-    unsafe void* Callback(out int length, out int checksum, int frame) {
-        Debug.Log("Callback " + frame);
-        checksum = 2;
-        length = data.Length;
-        return GGPO.ToPtr(data);
-    }
+    //unsafe void* Callback(out int length, out int checksum, int frame) {
+    //    Debug.Log("Callback " + frame);
+    //    checksum = 2;
+    //    length = data.Length;
+    //    return GGPO.ToPtr(data);
+    //}
 
-    unsafe bool LogGameState(void* buffer, int length) {
-        return true;
-    }
+    //unsafe bool LogGameState(void* buffer, int length) {
+    //    return true;
+    //}
 
     public static void Log(string obj) {
         Debug.Log(obj);
