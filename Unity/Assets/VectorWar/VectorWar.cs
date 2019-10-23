@@ -50,7 +50,7 @@ public class VectorWar {
      * so just return true.
      */
 
-    bool vw_begin_game_callback() {
+    bool vw_begin_game_callback(string name) {
         return true;
     }
 
@@ -155,7 +155,7 @@ public class VectorWar {
      * Log the gamestate.  Used by the synctest debugging tool.
      */
 
-    unsafe bool vw_log_game_state(void* buffer, int length) {
+    unsafe bool vw_log_game_state(string text, void* buffer, int length) {
         /*
         FILE* fp = fopen(filename, "w");
         if (fp) {

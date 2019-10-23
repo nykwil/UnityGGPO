@@ -4,9 +4,13 @@
 #include <string>
 #include "ggponet.h"
 #include "Plugin.h"
+#include <memory>
+#include <iostream>
+#include <string>
+#include <cstdio>
 
 typedef void (*LogDelegate)(const char* string);
-typedef bool (*BeginGameDelegate)();
+typedef bool (*BeginGameDelegate)(const char* string);
 typedef bool (*AdvanceFrameDelegate)(int flags);
 typedef bool (*LoadGameStateDelegate)(unsigned char* buffer, int length);
 typedef bool (*LogGameStateDelegate)(char* string, unsigned char* buffer, int length);
@@ -62,9 +66,65 @@ public:
 GGPOInstance inst0;
 LogDelegate logCallback;
 
+void Log(const std::string& text) {
+	logCallback(text.c_str());
+}
+
+void Log(const char* text) {
+	logCallback(text);
+}
+
+template<typename ... Args>
+std::string string_format(const std::string& format, Args ... args) {
+	size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
+	std::unique_ptr<char[]> buf(new char[size]);
+	snprintf(buf.get(), size, format.c_str(), args ...);
+	return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+}
+
+template<typename ... Args>
+void LogV(const char* format, Args ... args) {
+	size_t size = snprintf(nullptr, 0, format, args ...) + 1; // Extra space for '\0'
+	std::unique_ptr<char[]> buf(new char[size]);
+	snprintf(buf.get(), size, format, args ...);
+	Log(buf.get());
+}
+
+void TestSession0() {
+	unsigned char* data;
+	int length;
+	int checksum;
+
+	inst0.cb.advance_frame(1);
+	inst0.cb.begin_game("Test");
+
+	inst0.cb.save_game_state(&data, &length, &checksum, 1);
+	inst0.cb.load_game_state(data, length);
+	inst0.cb.log_game_state("", data, length);
+	inst0.cb.free_buffer(data, length);
+
+	GGPOEvent event;
+	event.code = GGPO_EVENTCODE_CONNECTED_TO_PEER;
+	inst0.cb.on_event(&event);
+	event.code = GGPO_EVENTCODE_SYNCHRONIZING_WITH_PEER;
+	inst0.cb.on_event(&event);
+	event.code = GGPO_EVENTCODE_SYNCHRONIZED_WITH_PEER;
+	inst0.cb.on_event(&event);
+	event.code = GGPO_EVENTCODE_RUNNING;
+	inst0.cb.on_event(&event);
+	event.code = GGPO_EVENTCODE_CONNECTION_INTERRUPTED;
+	inst0.cb.on_event(&event);
+	event.code = GGPO_EVENTCODE_CONNECTION_RESUMED;
+	inst0.cb.on_event(&event);
+	event.code = GGPO_EVENTCODE_DISCONNECTED_FROM_PEER;
+	inst0.cb.on_event(&event);
+	event.code = GGPO_EVENTCODE_TIMESYNC;
+	inst0.cb.on_event(&event);
+}
+
 bool __cdecl vw_begin_game_callback0(const char* name)
 {
-	return inst0.beginGameCb();
+	return inst0.beginGameCb(name);
 }
 
 bool __cdecl vw_on_event_callback0(GGPOEvent* info)
@@ -114,10 +174,6 @@ GGPOPlayer* GGPOInstance::CreatePlayer(int player_size,
 void GGPOInstance::AddPlayer(int handle, GGPOPlayer* player) {
 }
 
-void Log(const std::string& text) {
-	logCallback(text.c_str());
-}
-
 extern "C" const char UNITY_INTERFACE_EXPORT * UNITY_INTERFACE_API GetPluginVersion() {
 	//This is defined in CMAKE and passed to the source.
 	return PLUGIN_VERSION;
@@ -127,7 +183,7 @@ extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetPluginBuildNumber()
 	return PLUGIN_BUILD_NUMBER;
 }
 
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetLogDelegate(LogDelegate callback) {
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllSetLogDelegate(LogDelegate callback) {
 	logCallback = callback;
 }
 
@@ -185,15 +241,7 @@ extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSession(
 	OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
 	OnEventTimesyncDelegate onEventEventcodeTimesyncDelegate,
 	const char* game, int num_players, int input_size, int localport) {
-	std::string str;
-	str = game;
-	str += " ";
-	str += num_players;
-	str += " ";
-	str += input_size;
-	str += " ";
-	str += localport;
-	Log("DllStartSession " + str);
+	LogV("DllStartSession - %s %i %i %i", game, num_players, input_size, localport);
 
 	inst0.cb.advance_frame = advanceFrame;
 	inst0.cb.load_game_state = loadGameState;
@@ -221,37 +269,24 @@ extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSession(
 	return -1;
 }
 
-void TestSession0()
-{
-	unsigned char* data;
-	int length;
-	int checksum;
-
-	inst0.cb.advance_frame(1);
-	inst0.cb.begin_game("Test");
-
-	inst0.cb.save_game_state(&data, &length, &checksum, 1);
-	inst0.cb.load_game_state(data, length);
-	inst0.cb.log_game_state("", data, length);
-	inst0.cb.free_buffer(data, length);
-
-	GGPOEvent event;
-	event.code = GGPO_EVENTCODE_CONNECTED_TO_PEER;
-	inst0.cb.on_event(&event);
-	event.code = GGPO_EVENTCODE_SYNCHRONIZING_WITH_PEER;
-	inst0.cb.on_event(&event);
-	event.code = GGPO_EVENTCODE_SYNCHRONIZED_WITH_PEER;
-	inst0.cb.on_event(&event);
-	event.code = GGPO_EVENTCODE_RUNNING;
-	inst0.cb.on_event(&event);
-	event.code = GGPO_EVENTCODE_CONNECTION_INTERRUPTED;
-	inst0.cb.on_event(&event);
-	event.code = GGPO_EVENTCODE_CONNECTION_RESUMED;
-	inst0.cb.on_event(&event);
-	event.code = GGPO_EVENTCODE_DISCONNECTED_FROM_PEER;
-	inst0.cb.on_event(&event);
-	event.code = GGPO_EVENTCODE_TIMESYNC;
-	inst0.cb.on_event(&event);
+extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestStart(
+	BeginGameDelegate begin_game,
+	AdvanceFrameDelegate advance_frame,
+	LoadGameStateDelegate load_game_state,
+	//LogGameStateDelegate log_game_state,
+	//SaveGameStateDelegate save_game_state,
+	//FreeBufferDelegate free_buffer,
+	//OnEventConnectedToPeerDelegate on_even_connected_to_peer,
+	//OnEventSynchronizingWithPeerDelegate on_event_synchronizing_with_peer,
+	//OnEventSynchronizedWithPeerDelegate on_event_synchronized_withpeer,
+	//OnEventRunningDelegate onEventRunningDelegate,
+	//OnEventConnectionInterruptedDelegate onEventConnectionInterruptedDelegate,
+	//OnEventConnectionResumedDelegate onEventConnectionResumedDelegate,
+	//OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
+	//OnEventTimesyncDelegate onEventEventcodeTimesyncDelegate,
+	const char* game, int num_players, int input_size, int localport) {
+	LogV("DllTestStart - %s %i %i %i %i", game, num_players, input_size, localport);
+	return -1;
 }
 
 extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSpectating(BeginGameDelegate begin_game,
@@ -269,19 +304,7 @@ extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSpectating(Beg
 	OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
 	OnEventTimesyncDelegate onEventEventcodeTimesyncDelegate,
 	const char* game, int num_players, int input_size, int localport, const char* host_ip, int host_port) {
-	std::string str;
-	str = game;
-	str += " ";
-	str += num_players;
-	str += " ";
-	str += input_size;
-	str += " ";
-	str += localport;
-	str += " ";
-	str += host_ip;
-	str += " ";
-	str += host_port;
-	Log("DllStartSpectating " + str);
+	LogV("DllStartSpectating - %s %i %i %i %i %s %i", game, num_players, input_size, localport, host_ip, host_port);
 	return -1;
 }
 
