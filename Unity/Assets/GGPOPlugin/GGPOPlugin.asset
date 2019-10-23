@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: GGPOPlugin
   Version: 1.0.0.0
-  BuildNumber: 3
+  BuildNumber: 4
   includePluginAPI: 1
   buildOptions:
   - Architecture: 5

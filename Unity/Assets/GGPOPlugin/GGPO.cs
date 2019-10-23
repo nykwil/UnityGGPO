@@ -66,11 +66,11 @@ public enum GGPOPlayerType {
 }
 
 public class GGPOSession {
-    public int handle;
+    int handle;
 
-    public GGPO.SafeLoadGameStateDelegate loadGameStateCallback;
-    public GGPO.SafeLogGameStateDelegate logGameStateCallback;
-    public GGPO.SafeSaveGameStateDelegate saveGameStateCallback;
+    GGPO.SafeLoadGameStateDelegate loadGameStateCallback;
+    GGPO.SafeLogGameStateDelegate logGameStateCallback;
+    GGPO.SafeSaveGameStateDelegate saveGameStateCallback;
     public Action<string> logDelegate;
 
     GGPO.LoadGameStateDelegate _loadGameStateCallback;
@@ -87,12 +87,12 @@ public class GGPOSession {
             GGPO.OnEventConnectedToPeerDelegate onEventConnectedToPeer,
             GGPO.OnEventSynchronizingWithPeerDelegate onEventSynchronizingWithPeer,
             GGPO.OnEventSynchronizedWithPeerDelegate onEventSynchronizedWithPeer,
-            GGPO.OnEventRunningDelegate on_event_running,
-            GGPO.OnEventConnectionInterruptedDelegate on_event_connection_interrupted,
+            GGPO.OnEventRunningDelegate onEventRunning,
+            GGPO.OnEventConnectionInterruptedDelegate onEventConnectionInterrupted,
             GGPO.OnEventConnectionResumedDelegate onEventConnectionResumedDelegate,
             GGPO.OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
             GGPO.OnEventEventcodeTimesyncDelegate onEventTimesyncDelegate,
-            string game, int num_players, int input_size, int localport
+            string gameName, int numPlayers, int inputSize, int localport
         ) {
         loadGameStateCallback = loadGameState;
         logGameStateCallback = logGameState;
@@ -104,7 +104,7 @@ public class GGPOSession {
             _saveGameStateCallback = SaveGameState;
             _freeBufferCallback = FreeBuffer;
         }
-        GGPO.DllStartSession(beginGame,
+        handle = GGPO.DllStartSession(beginGame,
             advanceFrame,
             _loadGameStateCallback,
             _logGameStateCallback,
@@ -113,12 +113,12 @@ public class GGPOSession {
             onEventConnectedToPeer,
             onEventSynchronizingWithPeer,
             onEventSynchronizedWithPeer,
-            on_event_running,
-            on_event_connection_interrupted,
+            onEventRunning,
+            onEventConnectionInterrupted,
             onEventConnectionResumedDelegate,
             onEventDisconnectedFromPeerDelegate,
             onEventTimesyncDelegate,
-            game, num_players, input_size, localport);
+            gameName, numPlayers, inputSize, localport);
     }
 
     public void GetNetworkStats(int p, out GGPONetworkStats stats) {
@@ -159,12 +159,12 @@ public class GGPOSession {
 
     public int ggpo_add_player(int ggpo, GGPOPlayer player, out int handle) {
         return GGPO.DllAddPlayer(this.handle,
-                player.size,
-        (int)player.type,
-    player.player_num,
-        player.ip_address,
-        player.port,
-out handle);
+            player.size,
+            (int)player.type,
+            player.player_num,
+            player.ip_address,
+            player.port,
+            out handle);
     }
 
     public int DisconnectPlayer(int ggpo, int phandle) {
@@ -183,17 +183,17 @@ out handle);
         GGPO.DllLog(handle, v);
     }
 
-    private unsafe void FreeBuffer(void* buffer, int length) {
+    unsafe void FreeBuffer(void* buffer, int length) {
         GGPO.ToArray(buffer, length).Dispose();
     }
 
-    private unsafe void* SaveGameState(out int length, out int checksum, int frame) {
+    unsafe void* SaveGameState(out int length, out int checksum, int frame) {
         var data = saveGameStateCallback(out checksum, frame);
         length = data.Length;
         return GGPO.ToPtr(data);
     }
 
-    private unsafe bool LogGameState(void* buffer, int length) {
+    unsafe bool LogGameState(void* buffer, int length) {
         return logGameStateCallback(GGPO.ToArray(buffer, length));
     }
 
@@ -220,7 +220,7 @@ public class GGPONetworkStats {
     public int remote_frames_behind;
 }
 
-public class GGPO {
+public static class GGPO {
     public const int GGPO_OK = 0;
     public const int GGPO_INVALID_HANDLE = -1;
 
@@ -247,9 +247,9 @@ public class GGPO {
     public const int GGPO_EVENTCODE_CONNECTION_INTERRUPTED = 1006;
     public const int GGPO_EVENTCODE_CONNECTION_RESUMED = 1007;
 
-    private const string libraryName = "GGPOPlugin";
+    const string libraryName = "GGPOPlugin";
 
-    private static string version;
+    static string version;
 
     public delegate void LogDelegate(string text);
 
@@ -324,10 +324,10 @@ public class GGPO {
     }
 
     [DllImport(libraryName, CharSet = CharSet.Ansi)]
-    private static extern IntPtr GetPluginVersion();
+    static extern IntPtr GetPluginVersion();
 
     [DllImport(libraryName)]
-    private static extern int GetPluginBuildNumber();
+    static extern int GetPluginBuildNumber();
 
     [DllImport(libraryName)]
     public static extern void TestSaveGameStateDelegate(SaveGameStateDelegate callback);
@@ -409,7 +409,7 @@ public class GGPO {
     [DllImport(libraryName)]
     public static extern int DllAdvanceFrame(int ggpo);
 
-    [DllImport(libraryName)]
+    [DllImport(libraryName, CharSet = CharSet.Ansi)]
     public static extern void DllLog(int ggpo, string v);
 
     [DllImport(libraryName)]
@@ -422,7 +422,6 @@ public class GGPO {
         out int remote_frames_behind
     );
 }
-
 
 /*extern "C" const char UNITY_INTERFACE_EXPORT * UNITY_INTERFACE_API GetPluginVersion();
 extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetPluginBuildNumber();
