@@ -6,6 +6,9 @@ using Unity.Collections;
 using UnityEngine;
 
 public class GGPOPluginExample : MonoBehaviour {
+    public int testId;
+    public bool runTest;
+
     static StringBuilder console = new StringBuilder();
     Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
     GGPOSession session;
@@ -18,14 +21,15 @@ public class GGPOPluginExample : MonoBehaviour {
     void Start() {
         Log(string.Format("Plugin Version: {0} build {1}", GGPO.Version, GGPO.BuildNumber));
         GGPO.DllSetLogDelegate(Log);
+        runTest = true;
+        session = new GGPOSession();
+    }
 
-        unsafe {
-            // GGPO.DllTestStart(BeginGame, AdvanceFrame, LoadGameState, "GAME", 1, 1, 1);
-            GGPO.DllStartSession(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, FreeBuffer, OnEv1, OnEv2, OnEv3, OnEv4, OnEv5, OnEv6, OnEv7, OnEv8, "Game", 2, sizeof(ulong), 9000);
+    void Update() {
+        if (runTest) {
+            runTest = false;
+            Tests();
         }
-        //session = new GGPOSession();
-        //session.logDelegate = Log;
-        //session.StartSession(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, OnEv1, OnEv2, OnEv3, OnEv4, OnEv5, OnEv6, OnEv7, OnEv8, "Game", 2, sizeof(ulong), 9000);
     }
 
     bool BeginGame(string name) {
@@ -71,43 +75,43 @@ public class GGPOPluginExample : MonoBehaviour {
         }
     }
 
-    bool OnEv8(int timesync_frames_ahead) {
-        Debug.Log($"OnEv8({timesync_frames_ahead})");
+    bool OnEventEventcodeTimesync(int timesync_frames_ahead) {
+        Debug.Log($"OnEventEventcodeTimesync({timesync_frames_ahead})");
         return true;
     }
 
-    bool OnEv7(int disconnected_player) {
-        Debug.Log($"OnEv7({disconnected_player})");
+    bool OnEventDisconnectedFromPeer(int disconnected_player) {
+        Debug.Log($"OnEventDisconnectedFromPeer({disconnected_player})");
         return true;
     }
 
-    bool OnEv6(int connection_resumed_player) {
-        Debug.Log($"OnEv6({connection_resumed_player})");
+    bool OnEventConnectionResumed(int connection_resumed_player) {
+        Debug.Log($"OnEventConnectionResumed({connection_resumed_player})");
         return true;
     }
 
-    bool OnEv5(int connection_interrupted_player, int connection_interrupted_disconnect_timeout) {
-        Debug.Log($"OnEv5({connection_interrupted_player},{connection_interrupted_disconnect_timeout})");
+    bool OnEventConnectionInterrupted(int connection_interrupted_player, int connection_interrupted_disconnect_timeout) {
+        Debug.Log($"OnEventConnectionInterrupted({connection_interrupted_player},{connection_interrupted_disconnect_timeout})");
         return true;
     }
 
-    bool OnEv4() {
-        Debug.Log($"OnEv4()");
+    bool OnEventRunning() {
+        Debug.Log($"OnEventRunning()");
         return true;
     }
 
-    bool OnEv3(int synchronizing_player) {
-        Debug.Log($"OnEv3({synchronizing_player})");
+    bool OnEventSynchronizedWithPeer(int synchronizing_player) {
+        Debug.Log($"OnEventSynchronizedWithPeer({synchronizing_player})");
         return true;
     }
 
-    bool OnEv2(int synchronizing_player, int synchronizing_count, int synchronizing_total) {
-        Debug.Log($"OnEv2({synchronizing_player}, {synchronizing_count}, {synchronizing_total})");
+    bool OnEventSynchronizingWithPeer(int synchronizing_player, int synchronizing_count, int synchronizing_total) {
+        Debug.Log($"OnEventSynchronizingWithPeer({synchronizing_player}, {synchronizing_count}, {synchronizing_total})");
         return true;
     }
 
-    bool OnEv1(int connected_player) {
-        Debug.Log($"OnEv1({connected_player})");
+    bool OnEventConnectedToPeer(int connected_player) {
+        Debug.Log($"OnEventConnectedToPeer({connected_player})");
         return true;
     }
 
@@ -142,12 +146,9 @@ public class GGPOPluginExample : MonoBehaviour {
         GUI.Label(new Rect(0, 0, Screen.width, Screen.height), console.ToString());
     }
 
-    void Tests() {
-        GGPO.DllSetLogDelegate(Log);
+    int MAX_PLAYERS = 2;
 
-        unsafe {
-            // GGPO.DllTestGameStateDelegates(SaveGameState, LogGameState, LoadGameState, FreeBuffer);
-        }
+    void Tests() {
         int result;
         int ggpo = 0;
         int timeout = 1;
@@ -160,43 +161,75 @@ public class GGPOPluginExample : MonoBehaviour {
         int local_player_handle = 0;
         ulong input = 0;
         int time = 0;
+        int phandle = 0;
         int frame_delay = 10;
         string logText = "";
 
-        result = GGPO.DllSetDisconnectNotifyStart(ggpo, timeout);
+        switch (testId) {
+            case 1:
+                result = GGPO.DllSetDisconnectNotifyStart(ggpo, timeout);
+                break;
 
-        result = GGPO.DllSetDisconnectTimeout(ggpo, timeout);
+            case 2:
+                result = GGPO.DllSetDisconnectTimeout(ggpo, timeout);
+                break;
 
-        result = GGPO.DllSynchronizeInput(ggpo, inputs, out int disconnect_flags);
+            case 3:
+                result = GGPO.DllSynchronizeInput(ggpo, inputs, sizeof(ulong) * MAX_PLAYERS, out int disconnect_flags);
+                Debug.Log($"DllSynchronizeInput{disconnect_flags} {inputs[0]} {inputs[1]}");
+                break;
 
-        result = GGPO.DllAddLocalInput(ggpo, local_player_handle, input);
+            case 4:
+                result = GGPO.DllAddLocalInput(ggpo, local_player_handle, input);
+                break;
 
-        result = GGPO.DllCloseSession(ggpo);
+            case 5:
+                result = GGPO.DllCloseSession(ggpo);
+                break;
 
-        result = GGPO.DllIdle(ggpo, time);
+            case 6:
+                result = GGPO.DllIdle(ggpo, time);
+                break;
 
-        result = GGPO.DllAddPlayer(ggpo,
-            player_size,
-            player_type,
-            player_num,
-            player_ip_address,
-            player_port,
-            out int phandle);
+            case 7:
+                result = GGPO.DllAddPlayer(ggpo, player_size, player_type, player_num, player_ip_address, player_port, out phandle);
+                break;
 
-        result = GGPO.DllDisconnectPlayer(ggpo, phandle);
+            case 8:
+                result = GGPO.DllDisconnectPlayer(ggpo, phandle);
+                break;
 
-        result = GGPO.DllSetFrameDelay(ggpo, phandle, frame_delay);
-        result = GGPO.DllAdvanceFrame(ggpo);
+            case 9:
+                result = GGPO.DllSetFrameDelay(ggpo, phandle, frame_delay);
+                break;
 
-        GGPO.DllLog(ggpo, logText);
+            case 10:
+                result = GGPO.DllAdvanceFrame(ggpo);
+                break;
 
-        result = GGPO.DllGetNetworkStats(ggpo, phandle,
-            out int send_queue_len,
-            out int recv_queue_len,
-            out int ping,
-            out int kbps_sent,
-            out int local_frames_behind,
-            out int remote_frames_behind
-        );
+            case 11:
+                result = GGPO.DllGetNetworkStats(ggpo, phandle, out int send_queue_len, out int recv_queue_len, out int ping, out int kbps_sent, out int local_frames_behind, out int remote_frames_behind);
+                Debug.Log($"DllSynchronizeInput{send_queue_len}, {recv_queue_len}, {ping}, {kbps_sent}, " +
+                    $"{ local_frames_behind}, {remote_frames_behind}");
+                break;
+
+            case 12:
+                unsafe {
+                    GGPO.DllTestGameStateDelegates(SaveGameState, LogGameState, LoadGameState, FreeBuffer);
+                }
+                break;
+
+            case 13:
+                unsafe {
+                    result = GGPO.DllTestStartSession(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, FreeBuffer,
+                        OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
+                        OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventEventcodeTimesync, "Game", 2, sizeof(ulong), 9000);
+                }
+                break;
+
+            case 14:
+                GGPO.DllLog(ggpo, logText);
+                break;
+        }
     }
 }

@@ -11,8 +11,17 @@ public class VectorWarRunner : MonoBehaviour {
     private void Awake() {
         vw = new VectorWar(gs, ngs, rend, perf);
         vw.VectorWar_Init(9000, players.Length, players, 0);
+        vw.InitSpectator()
+        vw.AdvanceFrame
+        vw.DisconnectPlayer
+            DrawCurrentFrame
+            AdvanceFrame
+            RunFrame
+            Idle
+            Exit
     }
 
     void Update() {
+        Ve
     }
 }

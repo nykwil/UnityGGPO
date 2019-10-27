@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using static Constants;
 
@@ -117,8 +118,8 @@ public class VectorWar {
     bool vw_advance_frame_callback(int flags) {
         // Make sure we fetch new inputs from GGPO and use those to update the game state instead of
         // reading from the keyboard.
-        ulong[] inputs = new ulong[4];
-        GGPO.DllSynchronizeInput(ggpo, inputs, out var disconnect_flags);
+        ulong[] inputs = new ulong[MAX_SHIPS];
+        GGPO.DllSynchronizeInput(ggpo, inputs, sizeof(ulong) * MAX_SHIPS, out var disconnect_flags);
 
         VectorWar_AdvanceFrame(inputs, disconnect_flags);
         return true;
@@ -146,7 +147,9 @@ public class VectorWar {
         var buffer = GameState.ToBytes(gs);
         checksum = 0;
         length = buffer.Length;
-        return GGPO.ToPtr(buffer);
+        var ptr = GGPO.ToPtr(buffer);
+        cache[(long)ptr] = buffer;
+        return ptr;
     }
 
     /*
@@ -187,8 +190,12 @@ public class VectorWar {
         return true;
     }
 
-    unsafe void vw_free_buffer_callback(void* buffer, int length) {
-        throw new NotImplementedException();
+    Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
+
+    unsafe void vw_free_buffer_callback(void* dataPtr, int length) {
+        if (cache.TryGetValue((long)dataPtr, out var data)) {
+            data.Dispose();
+        }
     }
 
     /*
@@ -429,7 +436,7 @@ public class VectorWar {
         // the input list with the correct inputs to use and return 1.
         if (GGPO.GGPO_SUCCEEDED(result)) {
             ulong[] inputs = new ulong[MAX_SHIPS];
-            result = GGPO.DllSynchronizeInput(ggpo, inputs, out var disconnect_flags);
+            result = GGPO.DllSynchronizeInput(ggpo, inputs, sizeof(ulong) * MAX_SHIPS, out var disconnect_flags);
             if (GGPO.GGPO_SUCCEEDED(result)) {
                 // inputs[0] and inputs[1] contain the inputs for p1 and p2. Advance the game by 1
                 // frame using those inputs.

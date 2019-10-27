@@ -2,7 +2,6 @@ using System;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 
 public enum GGPOPlayerType {
     GGPO_PLAYERTYPE_LOCAL,
@@ -65,12 +64,16 @@ public static class GGPO {
 
     public delegate bool AdvanceFrameDelegate(int flags);
 
-    unsafe public delegate bool LoadGameStateDelegate([MarshalAs(UnmanagedType.LPArray)] void* buffer, int length);
+    // unsafe public delegate bool LoadGameStateDelegate( void* buffer, int length);
+    unsafe public delegate bool LoadGameStateDelegate(void* buffer, int length);
 
-    unsafe public delegate bool LogGameStateDelegate(string text, [MarshalAs(UnmanagedType.LPArray)] void* buffer, int length);
+    // unsafe public delegate bool LogGameStateDelegate(string text,
+    // [MarshalAs(UnmanagedType.LPArray)] void* buffer, int length);
 
-    [return: MarshalAs(UnmanagedType.LPArray)]
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    unsafe public delegate bool LogGameStateDelegate(string text, void* buffer, int length);
+
+    //[return: MarshalAs(UnmanagedType.LPArray)]
+    //[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public unsafe delegate void* SaveGameStateDelegate(out int length, out int checksum, int frame);
 
     unsafe public delegate void FreeBufferDelegate(void* buffer, int length);
@@ -90,14 +93,6 @@ public static class GGPO {
     public delegate bool OnEventDisconnectedFromPeerDelegate(int disconnected_player);
 
     public delegate bool OnEventEventcodeTimesyncDelegate(int timesync_frames_ahead);
-
-
-    public delegate bool SafeLoadGameStateDelegate(NativeArray<byte> data);
-
-    public delegate bool SafeLogGameStateDelegate(NativeArray<byte> data);
-
-    public delegate NativeArray<byte> SafeSaveGameStateDelegate(out int checksum, int frame);
-
 
     unsafe public static void* ToPtr(NativeArray<byte> data) {
         unsafe {
@@ -143,18 +138,43 @@ public static class GGPO {
     public static extern void DllSetLogDelegate(LogDelegate callback);
 
     [DllImport(libraryName)]
+    public static extern void DllTestGameStateDelegates(
+        SaveGameStateDelegate saveGameState,
+        LogGameStateDelegate logGameState,
+        LoadGameStateDelegate loadGameState,
+        FreeBufferDelegate freeBuffer);
+
+    [DllImport(libraryName)]
+    public static extern int DllTestStartSession(
+        BeginGameDelegate beginGame,
+        AdvanceFrameDelegate advanceFrame,
+        LoadGameStateDelegate loadGameState,
+        LogGameStateDelegate logGameState,
+        SaveGameStateDelegate saveGameState,
+        FreeBufferDelegate freeBuffer,
+        OnEventConnectedToPeerDelegate onEventConnectedToPeer,
+        OnEventSynchronizingWithPeerDelegate onEventSynchronizingWithPeer,
+        OnEventSynchronizedWithPeerDelegate onEventSynchronizedWithPeer,
+        OnEventRunningDelegate onEventRunning,
+        OnEventConnectionInterruptedDelegate onEventConnectionInterrupted,
+        OnEventConnectionResumedDelegate onEventConnectionResumedDelegate,
+        OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
+        OnEventEventcodeTimesyncDelegate onEventTimesyncDelegate,
+        string game, int num_players, int input_size, int localport);
+
+    [DllImport(libraryName)]
     public static extern int DllStartSession(
-            BeginGameDelegate begin_game,
-            AdvanceFrameDelegate advance_frame,
-            LoadGameStateDelegate load_game_state,
-            LogGameStateDelegate log_game_state,
-            SaveGameStateDelegate save_game_state,
-            FreeBufferDelegate free_buffer,
-            OnEventConnectedToPeerDelegate on_even_connected_to_peer,
-            OnEventSynchronizingWithPeerDelegate on_event_synchronizing_with_peer,
-            OnEventSynchronizedWithPeerDelegate on_event_synchronized_with_peer,
-            OnEventRunningDelegate on_event_running,
-            OnEventConnectionInterruptedDelegate on_event_connection_interrupted,
+            BeginGameDelegate beginGame,
+            AdvanceFrameDelegate advanceFrame,
+            LoadGameStateDelegate loadGameState,
+            LogGameStateDelegate logGameState,
+            SaveGameStateDelegate saveGameState,
+            FreeBufferDelegate freeBuffer,
+            OnEventConnectedToPeerDelegate onEventConnectedToPeer,
+            OnEventSynchronizingWithPeerDelegate onEventSynchronizingWithPeer,
+            OnEventSynchronizedWithPeerDelegate onEventSynchronizedWithPeer,
+            OnEventRunningDelegate onEventRunning,
+            OnEventConnectionInterruptedDelegate onEventConnectionInterrupted,
             OnEventConnectionResumedDelegate onEventConnectionResumedDelegate,
             OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
             OnEventEventcodeTimesyncDelegate onEventTimesyncDelegate,
@@ -184,7 +204,7 @@ public static class GGPO {
     public static extern int DllSetDisconnectTimeout(int ggpo, int timeout);
 
     [DllImport(libraryName)]
-    public static extern int DllSynchronizeInput(int ggpo, ulong[] inputs, out int disconnect_flags);
+    public static extern int DllSynchronizeInput(int ggpo, ulong[] inputs, int length, out int disconnect_flags);
 
     [DllImport(libraryName)]
     public static extern int DllAddLocalInput(int ggpo, int local_player_handle, ulong inputs);
@@ -226,4 +246,3 @@ public static class GGPO {
         out int remote_frames_behind
     );
 }
-

@@ -1,3 +1,4 @@
+using Sirenix.Serialization;
 using System;
 using Unity.Collections;
 using UnityEngine;
@@ -44,11 +45,12 @@ public class GameState {
     public int ggpo;
 
     public static NativeArray<byte> ToBytes(GameState gs) {
-        return new NativeArray<byte>(100, Allocator.Persistent);
+        var bytes = SerializationUtility.SerializeValue(gs, DataFormat.Binary);
+        return new NativeArray<byte>(bytes, Allocator.Persistent);
     }
 
-    public static GameState FromBytes(NativeArray<byte> data) {
-        return null;
+    public static GameState FromBytes(NativeArray<byte> bytes) {
+        return SerializationUtility.DeserializeValue<GameState>(bytes.ToArray(), DataFormat.Binary);
     }
 
     static float degtorad(float deg) {
@@ -145,7 +147,7 @@ public class GameState {
                         ship.bullets[i].position.x = ship.position.x + (ship.radius * dx);
                         ship.bullets[i].position.y = ship.position.y + (ship.radius * dy);
                         ship.bullets[i].velocity.dx = ship.velocity.dx + (BULLET_SPEED * dx);
-                        ship.bullets[i].velocity.dy = ship.velocity.dx + (BULLET_SPEED * dy);
+                        ship.bullets[i].velocity.dy = ship.velocity.dy + (BULLET_SPEED * dy);
                         ship.cooldown = BULLET_COOLDOWN;
                         break;
                     }

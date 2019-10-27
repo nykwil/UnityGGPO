@@ -12,7 +12,7 @@ public class GGPOSession {
 
     public delegate void SafeFreeBufferDelegate(NativeArray<byte> data);
 
-    int handle;
+    int ghandle;
     Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
 
     SafeLoadGameStateDelegate loadGameStateCallback;
@@ -55,7 +55,7 @@ public class GGPOSession {
             _saveGameStateCallback = SaveGameState;
             _freeBufferCallback = FreeBuffer;
         }
-        handle = GGPO.DllStartSession(beginGame,
+        ghandle = GGPO.DllStartSession(beginGame,
             advanceFrame,
             _loadGameStateCallback,
             _logGameStateCallback,
@@ -74,7 +74,7 @@ public class GGPOSession {
 
     public void GetNetworkStats(int p, out GGPONetworkStats stats) {
         stats = new GGPONetworkStats();
-        GGPO.DllGetNetworkStats(handle, p,
+        GGPO.DllGetNetworkStats(ghandle, p,
             out stats.send_queue_len,
             out stats.recv_queue_len,
             out stats.ping,
@@ -85,53 +85,53 @@ public class GGPOSession {
     }
 
     public void SetDisconnectNotifyStart(int timeout) {
-        GGPO.DllSetDisconnectNotifyStart(handle, timeout);
+        GGPO.DllSetDisconnectNotifyStart(ghandle, timeout);
     }
 
     public void SetDisconnectTimeout(int timeout) {
-        GGPO.DllSetDisconnectTimeout(handle, timeout);
+        GGPO.DllSetDisconnectTimeout(ghandle, timeout);
     }
 
-    public int SynchronizeInput(ulong[] inputs, out int disconnect_flags) {
-        return GGPO.DllSynchronizeInput(handle, inputs, out disconnect_flags);
+    public int SynchronizeInput(ulong[] inputs, int length, out int disconnect_flags) {
+        return GGPO.DllSynchronizeInput(ghandle, inputs, length, out disconnect_flags);
     }
 
     public int AddLocalInput(int local_player_handle, ulong inputs) {
-        return GGPO.DllAddLocalInput(handle, local_player_handle, inputs);
+        return GGPO.DllAddLocalInput(ghandle, local_player_handle, inputs);
     }
 
-    public void ggpo_close_session() {
-        GGPO.DllCloseSession(handle);
+    public void CloseSession() {
+        GGPO.DllCloseSession(ghandle);
     }
 
-    public void ggpo_idle(int time) {
-        GGPO.DllIdle(handle, time);
+    public void Idle(int time) {
+        GGPO.DllIdle(ghandle, time);
     }
 
-    public int ggpo_add_player(int ggpo, GGPOPlayer player, out int handle) {
-        return GGPO.DllAddPlayer(this.handle,
+    public int AddPlayer(int ggpo, GGPOPlayer player, out int phandle) {
+        return GGPO.DllAddPlayer(ghandle,
             player.size,
             (int)player.type,
             player.player_num,
             player.ip_address,
             player.port,
-            out handle);
+            out phandle);
     }
 
     public int DisconnectPlayer(int ggpo, int phandle) {
-        return GGPO.DllDisconnectPlayer(this.handle, phandle);
+        return GGPO.DllDisconnectPlayer(ghandle, phandle);
     }
 
-    public void ggpo_set_frame_delay(int ggpo, int phandle, int frame_delay) {
-        GGPO.DllSetFrameDelay(this.handle, handle, frame_delay);
+    public void SetFrameDelay(int ggpo, int phandle, int frame_delay) {
+        GGPO.DllSetFrameDelay(ghandle, phandle, frame_delay);
     }
 
     public void AdvanceFrame(int ggpo) {
-        GGPO.DllAdvanceFrame(handle);
+        GGPO.DllAdvanceFrame(ghandle);
     }
 
     public void Log(int ggpo, string v) {
-        GGPO.DllLog(handle, v);
+        GGPO.DllLog(ghandle, v);
     }
 
     unsafe void FreeBuffer(void* dataPtr, int length) {
@@ -156,54 +156,3 @@ public class GGPOSession {
         return loadGameStateCallback(GGPO.ToArray(buffer, length));
     }
 }
-
-/*extern "C" const char UNITY_INTERFACE_EXPORT * UNITY_INTERFACE_API GetPluginVersion();
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetPluginBuildNumber();
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetLogDelegate(LogDelegate callback);
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestLogGameStateDelegate(LogGameStateDelegate callback);
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestFreeGameStateDelegate(LogGameStateDelegate callback);
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestSaveGameStateDelegate(SaveGameStateDelegate callback);
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSession(
-    BeginGameDelegate beginGame,
-    AdvanceFrameDelegate advanceFrame,
-    LoadGameStateDelegate loadGameState,
-    LogGameStateDelegate logGameState,
-    SaveGameStateDelegate saveGameState,
-    FreeBufferDelegate freeBuffer,
-    OnEventConnectedToPeerDelegate onEventConnectedToPeer,
-    OnEventSynchronizingWithPeerDelegate on_event_synchronizing_with_peer,
-    OnEventSynchronizedWithPeerDelegate on_event_synchronized_with_peer,
-    OnEventRunningDelegate on_event_running,
-    OnEventConnectionInterruptedDelegate on_event_connection_interrupted,
-    OnEventConnectionResumedDelegate onEventConnectionResumedDelegate,
-    OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
-    OnEventTimesyncDelegate onEventEventcodeTimesyncDelegate,
-	const char* game, int num_players, int input_size, int localport);
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSpectating(BeginGameDelegate begin_game,
-    AdvanceFrameDelegate advance_frame,
-    LoadGameStateDelegate load_game_state,
-    LogGameStateDelegate log_game_state,
-    SaveGameStateDelegate save_game_state,
-    FreeBufferDelegate free_buffer,
-    OnEventConnectedToPeerDelegate on_even_connected_to_peer,
-    OnEventSynchronizingWithPeerDelegate on_event_synchronizing_with_peer,
-    OnEventSynchronizedWithPeerDelegate on_event_synchronized_withpeer,
-    OnEventRunningDelegate onEventRunningDelegate,
-    OnEventConnectionInterruptedDelegate onEventConnectionInterruptedDelegate,
-    OnEventConnectionResumedDelegate onEventConnectionResumedDelegate,
-    OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
-    OnEventTimesyncDelegate onEventEventcodeTimesyncDelegate,
-	const char* game, int num_players, int input_size, int localport, const char* host_ip, int host_port);
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllSetDisconnectNotifyStart(int ggpo, int timeout) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllSetDisconnectTimeout(int ggpo, int timeout) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllSynchronizeInput(int ggpo, unsigned long long* inputs, int length, int& disconnect_flags) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllAddLocalInput(int ggpo, int local_player_handle, unsigned long long input, int length) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllCloseSession(int ggpo) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllIdle(int ggpo, int timeout) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllAddPlayer(int ggpo,
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllDisconnectPlayer(int ggpo, int phandle) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllSetFrameDelay(int ggpo, int phandle, int frame_delay) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllAdvanceFrame(int ggpo) {
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllLog(int ggpo, const char* v) {
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllGetNetworkStats(int ggpo, int phandle,
-*/
