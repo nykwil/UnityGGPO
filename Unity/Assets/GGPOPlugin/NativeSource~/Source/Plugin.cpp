@@ -75,14 +75,6 @@ void Log(const char* text) {
 }
 
 template<typename ... Args>
-std::string string_format(const std::string& format, Args ... args) {
-	size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
-	std::unique_ptr<char[]> buf(new char[size]);
-	snprintf(buf.get(), size, format.c_str(), args ...);
-	return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
-}
-
-template<typename ... Args>
 void LogV(const char* format, Args ... args) {
 	size_t size = snprintf(nullptr, 0, format, args ...) + 1; // Extra space for '\0'
 	std::unique_ptr<char[]> buf(new char[size]);
@@ -174,55 +166,17 @@ GGPOPlayer* GGPOInstance::CreatePlayer(int player_size,
 void GGPOInstance::AddPlayer(int handle, GGPOPlayer* player) {
 }
 
-extern "C" const char UNITY_INTERFACE_EXPORT * UNITY_INTERFACE_API GetPluginVersion() {
+extern "C" const char UNITY_INTERFACE_EXPORT * UNITY_INTERFACE_API DllPluginVersion() {
 	//This is defined in CMAKE and passed to the source.
 	return PLUGIN_VERSION;
 }
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetPluginBuildNumber() {
+extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllPluginBuildNumber() {
 	//This is defined in CMAKE and passed to the source.
 	return PLUGIN_BUILD_NUMBER;
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllSetLogDelegate(LogDelegate callback) {
 	logCallback = callback;
-}
-
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestLogGameStateDelegate(LogGameStateDelegate callback) {
-	unsigned char* buffer = new unsigned char[5];
-	buffer[0] = 1;
-	buffer[1] = 2;
-	buffer[2] = 3;
-	buffer[3] = 4;
-	buffer[4] = 5;
-	callback("sdfsa", buffer, 5);
-	Log("Callback complete");
-	delete[] buffer;
-}
-
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestFreeGameStateDelegate(LogGameStateDelegate callback) {
-	unsigned char* buffer = new unsigned char[5];
-	buffer[0] = 1;
-	buffer[1] = 2;
-	buffer[2] = 3;
-	buffer[3] = 4;
-	buffer[4] = 5;
-	callback("sdfsadf", buffer, 5);
-	Log("Callback complete");
-	delete[] buffer;
-}
-
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestSaveGameStateDelegate(SaveGameStateDelegate callback) {
-	int length;
-	int checksum;
-	unsigned char* buffer = (unsigned char*)callback(length, checksum, 1);
-	std::string str;
-	str += length;
-	str += " ";
-	for (int i = 0; i < length; ++i) {
-		str += buffer[i];
-		str += " ";
-	}
-	Log("TestSaveGameStateDelegate " + str);
 }
 
 extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSession(
@@ -266,26 +220,6 @@ extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllStartSession(
 
 	//	ggpo_start_session(&session1.session, &session1.cb, game, num_players, input_size, localport);
 
-	return -1;
-}
-
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DllTestStart(
-	BeginGameDelegate begin_game,
-	AdvanceFrameDelegate advance_frame,
-	LoadGameStateDelegate load_game_state,
-	//LogGameStateDelegate log_game_state,
-	//SaveGameStateDelegate save_game_state,
-	//FreeBufferDelegate free_buffer,
-	//OnEventConnectedToPeerDelegate on_even_connected_to_peer,
-	//OnEventSynchronizingWithPeerDelegate on_event_synchronizing_with_peer,
-	//OnEventSynchronizedWithPeerDelegate on_event_synchronized_withpeer,
-	//OnEventRunningDelegate onEventRunningDelegate,
-	//OnEventConnectionInterruptedDelegate onEventConnectionInterruptedDelegate,
-	//OnEventConnectionResumedDelegate onEventConnectionResumedDelegate,
-	//OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeerDelegate,
-	//OnEventTimesyncDelegate onEventEventcodeTimesyncDelegate,
-	const char* game, int num_players, int input_size, int localport) {
-	LogV("DllTestStart - %s %i %i %i %i", game, num_players, input_size, localport);
 	return -1;
 }
 

@@ -146,7 +146,7 @@ public class GGPOPluginExample : MonoBehaviour {
         GGPO.DllSetLogDelegate(Log);
 
         unsafe {
-            GGPO.DllTestGameStateDelegates(SaveGameState, LogGameState, LoadGameState, FreeBuffer);
+            // GGPO.DllTestGameStateDelegates(SaveGameState, LogGameState, LoadGameState, FreeBuffer);
         }
         int result;
         int ggpo = 0;

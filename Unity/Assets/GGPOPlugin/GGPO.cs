@@ -59,63 +59,54 @@ public static class GGPO {
 
     static string version;
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void LogDelegate(string text);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate bool BeginGameDelegate(string name);
+    public delegate bool BeginGameDelegate(string text);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool AdvanceFrameDelegate(int flags);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     unsafe public delegate bool LoadGameStateDelegate([MarshalAs(UnmanagedType.LPArray)] void* buffer, int length);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     unsafe public delegate bool LogGameStateDelegate(string text, [MarshalAs(UnmanagedType.LPArray)] void* buffer, int length);
 
     [return: MarshalAs(UnmanagedType.LPArray)]
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public unsafe delegate void* SaveGameStateDelegate(out int length, out int checksum, int frame);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    unsafe public delegate void FreeBufferDelegate([MarshalAs(UnmanagedType.LPArray)] void* buffer, int length);
+    unsafe public delegate void FreeBufferDelegate(void* buffer, int length);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventConnectedToPeerDelegate(int connected_player);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventSynchronizingWithPeerDelegate(int synchronizing_player, int synchronizing_count, int synchronizing_total);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventSynchronizedWithPeerDelegate(int synchronizing_player);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventRunningDelegate();
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventConnectionInterruptedDelegate(int connection_interrupted_player, int connection_interrupted_disconnect_timeout);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventConnectionResumedDelegate(int connection_resumed_player);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventDisconnectedFromPeerDelegate(int disconnected_player);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate bool OnEventEventcodeTimesyncDelegate(int timesync_frames_ahead);
+
+
+    public delegate bool SafeLoadGameStateDelegate(NativeArray<byte> data);
+
+    public delegate bool SafeLogGameStateDelegate(NativeArray<byte> data);
+
+    public delegate NativeArray<byte> SafeSaveGameStateDelegate(out int checksum, int frame);
+
 
     unsafe public static void* ToPtr(NativeArray<byte> data) {
         unsafe {
-            var dataPointer = NativeArrayUnsafeUtility.GetUnsafePtr(data);
-            Debug.Log($"ToPtr={(long)dataPointer}");
-            return dataPointer;
+            return NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(data);
         }
     }
 
     unsafe public static NativeArray<byte> ToArray(void* dataPointer, int length) {
         unsafe {
-            Debug.Log($"ToArray={(long)dataPointer}");
             return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPointer, length, Allocator.Persistent);
         }
     }
@@ -142,7 +133,7 @@ public static class GGPO {
         return result == GGPO_OK;
     }
 
-    [DllImport(libraryName, CharSet = CharSet.Unicode)]
+    [DllImport(libraryName, CharSet = CharSet.Ansi)]
     static extern IntPtr DllPluginVersion();
 
     [DllImport(libraryName)]
@@ -152,9 +143,6 @@ public static class GGPO {
     public static extern void DllSetLogDelegate(LogDelegate callback);
 
     [DllImport(libraryName)]
-    public static extern void DllTestGameStateDelegates(SaveGameStateDelegate saveCb, LogGameStateDelegate logCb, LoadGameStateDelegate loadCb, FreeBufferDelegate freeCb);
-
-    [DllImport(libraryName, CharSet = CharSet.Unicode)]
     public static extern int DllStartSession(
             BeginGameDelegate begin_game,
             AdvanceFrameDelegate advance_frame,
@@ -172,7 +160,7 @@ public static class GGPO {
             OnEventEventcodeTimesyncDelegate onEventTimesyncDelegate,
             string game, int num_players, int input_size, int localport);
 
-    [DllImport(libraryName, CharSet = CharSet.Unicode)]
+    [DllImport(libraryName)]
     public static extern int DllStartSpectating(BeginGameDelegate begin_game,
             AdvanceFrameDelegate advance_frame,
             LoadGameStateDelegate load_game_state,
@@ -207,14 +195,14 @@ public static class GGPO {
     [DllImport(libraryName)]
     public static extern int DllIdle(int ggpo, int time);
 
-    [DllImport(libraryName, CharSet = CharSet.Unicode)]
+    [DllImport(libraryName)]
     public static extern int DllAddPlayer(int ggpo,
             int player_size,
             int player_type,
             int player_num,
             string player_ip_address,
             short player_port,
-            out int phandle);
+            out int handle);
 
     [DllImport(libraryName)]
     public static extern int DllDisconnectPlayer(int ggpo, int phandle);
@@ -225,7 +213,7 @@ public static class GGPO {
     [DllImport(libraryName)]
     public static extern int DllAdvanceFrame(int ggpo);
 
-    [DllImport(libraryName, CharSet = CharSet.Unicode)]
+    [DllImport(libraryName, CharSet = CharSet.Ansi)]
     public static extern void DllLog(int ggpo, string v);
 
     [DllImport(libraryName)]

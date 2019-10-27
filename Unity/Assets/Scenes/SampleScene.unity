@@ -307,6 +307,7 @@ GameObject:
   - component: {fileID: 1600365318}
   - component: {fileID: 1600365317}
   - component: {fileID: 1600365319}
+  - component: {fileID: 1600365320}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -352,3 +353,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad72639213d7d0f4fb715264399cd2ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1600365320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1600365316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9da62a64d4d4ea42b5b5ddf6aae71d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Options:
+    dllPathPattern: Assets/GGPOPlugin/Plugins/Windows/x86_64/GGPOPlugin.dll
+    assemblyPaths: []
+    loadingMode: 0
+    unixDlopenFlags: 1
+    threadSafe: 0
+    enableCrashLogs: 0
+    crashLogsDir: '{assets}/'
+    crashLogsStackTrace: 0
+    mockAllNativeFunctions: 1
+    onlyInEditor: 1
