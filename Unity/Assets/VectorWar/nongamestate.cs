@@ -1,7 +1,7 @@
 using System;
-using static Constants;
+using static VWConstants;
 
-public static class Constants {
+public static class VWConstants {
     public const int MAX_SHIPS = 4;
     public const int MAX_PLAYERS = 64;
     public const int VK_UP = 0;
@@ -105,9 +105,5 @@ public class NonGameState {
                 break;
             }
         }
-    }
-
-    internal void SetConnectState(int handle, object connecting) {
-        throw new NotImplementedException();
     }
 };

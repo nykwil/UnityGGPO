@@ -2,12 +2,9 @@
 using UnityEngine;
 
 public class VectorWarRenderer : MonoBehaviour {
+    public VectorWarRunner vwr;
 
-    internal void SetStatusText(string logbuf) {
-        throw new NotImplementedException();
-    }
-
-    internal void Draw(GameState gs, NonGameState ngs) {
-        throw new NotImplementedException();
+    void Update() {
+//        Draw(vwr.gs, vwr.ngs);
     }
 }

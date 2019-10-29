@@ -2,7 +2,7 @@ using Sirenix.Serialization;
 using System;
 using Unity.Collections;
 using UnityEngine;
-using static Constants;
+using static VWConstants;
 
 [Serializable]
 public struct Position {
@@ -39,10 +39,10 @@ public class Ship {
 [Serializable]
 public class GameState {
     public int _framenumber;
-    public Rect _bounds;
-    public int _num_ships;
-    public Ship[] _ships = new Ship[MAX_SHIPS];
-    public int ggpo;
+    public Ship[] _ships;
+
+    int ggpo;
+    readonly Rect _bounds = new Rect(0, 0, 640, 480);
 
     public static NativeArray<byte> ToBytes(GameState gs) {
         var bytes = SerializationUtility.SerializeValue(gs, DataFormat.Binary);
@@ -75,8 +75,9 @@ public class GameState {
         var r = h / 4;
 
         _framenumber = 0;
-        _num_ships = num_players;
-        for (int i = 0; i < _num_ships; i++) {
+        _ships = new Ship[num_players];
+        for (int i = 0; i < _ships.Length; i++) {
+            _ships[i] = new Ship();
             int heading = i * 360 / num_players;
             float cost, sint, theta;
 
@@ -196,7 +197,7 @@ public class GameState {
                     bullet.active = false;
                 }
                 else {
-                    for (int j = 0; j < _num_ships; j++) {
+                    for (int j = 0; j < _ships.Length; j++) {
                         Ship other = _ships[j];
                         if (distance(bullet.position, other.position) < other.radius) {
                             ship.score++;
@@ -212,7 +213,7 @@ public class GameState {
 
     public void Update(ulong[] inputs, int disconnect_flags) {
         _framenumber++;
-        for (int i = 0; i < _num_ships; i++) {
+        for (int i = 0; i < _ships.Length; i++) {
             float thrust, heading;
             int fire;
 

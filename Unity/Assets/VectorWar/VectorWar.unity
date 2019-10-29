@@ -121,6 +121,49 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &612037925
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 612037927}
+  - component: {fileID: 612037926}
+  m_Layer: 0
+  m_Name: GGPOPerf
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &612037926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612037925}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd19b423fc9a79439325310c448634d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &612037927
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612037925}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &995625978
 GameObject:
   m_ObjectHideFlags: 0
@@ -132,7 +175,6 @@ GameObject:
   - component: {fileID: 995625982}
   - component: {fileID: 995625981}
   - component: {fileID: 995625980}
-  - component: {fileID: 995625979}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -140,18 +182,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &995625979
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 995625978}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e46f2cbe2b220848a6d0278a1ef8279, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &995625980
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,6 +194,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17b568810b7a25d40a3628f716bd81ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  vwr: {fileID: 995625981}
 --- !u!114 &995625981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,20 +202,20 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 995625978}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 61a2fd24bf6bbd3479c0a5553f004d8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  connections:
+  - port: 7000
+    ip: 127.0.0.1
+    spectator: 0
+  - port: 7001
+    ip: 127.0.0.1
+    spectator: 0
   gs:
     _framenumber: 0
-    _bounds:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-    _num_ships: 0
     _ships:
     - position:
         x: 0
@@ -1078,23 +1109,11 @@ MonoBehaviour:
           dx: 0
           dy: 0
       score: 0
-    ggpo: 0
   ngs:
     local_player_handle: 0
     num_players: 0
-  rend: {fileID: 995625980}
-  perf: {fileID: 995625979}
-  players:
-  - size: 0
-    type: 0
-    player_num: 0
-    ip_address: 
-    port: 0
-  - size: 0
-    type: 0
-    player_num: 0
-    ip_address: 
-    port: 0
+  perf: {fileID: 612037926}
+  player_index: 0
 --- !u!4 &995625982
 Transform:
   m_ObjectHideFlags: 0
