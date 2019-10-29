@@ -1,7 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 
 public enum GGPOPlayerType {
     GGPO_PLAYERTYPE_LOCAL,
@@ -27,6 +25,7 @@ public class GGPONetworkStats {
 }
 
 public static class GGPOC {
+
     public static bool GGPO_SUCCEEDED(int result) {
         return result == GGPO_OK;
     }
@@ -63,7 +62,6 @@ public static class GGPOC {
 }
 
 public static class GGPO {
-
     const string libraryName = "UnityGGPO";
 
     static string version;
@@ -102,27 +100,9 @@ public static class GGPO {
 
     public delegate bool RealOnEventDelegate(IntPtr info);
 
-    unsafe public static void* ToPtr(NativeArray<byte> data) {
-        unsafe {
-            return NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(data);
-        }
-    }
-
-    unsafe public static NativeArray<byte> ToArray(void* dataPointer, int length) {
-        unsafe {
-            return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPointer, length, Allocator.Persistent);
-        }
-    }
-
     public static string Version {
         get {
-            if (version == null) {
-                var ptr = DllPluginVersion();
-                if (ptr != IntPtr.Zero) {
-                    version = Marshal.PtrToStringAnsi(ptr);
-                }
-            }
-            return version;
+            return Helper.GetString(DllPluginVersion());
         }
     }
 

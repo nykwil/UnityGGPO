@@ -6,7 +6,7 @@ using System.Text;
 using Unity.Collections;
 using UnityEngine;
 
-public class GGPOPluginExample : MonoBehaviour {
+public class DllTests : MonoBehaviour {
     public int testId;
     public bool runTest;
 
@@ -14,10 +14,6 @@ public class GGPOPluginExample : MonoBehaviour {
 
     readonly static StringBuilder console = new StringBuilder();
     readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
-
-    public static string GetString(IntPtr ptrStr) {
-        return ptrStr != IntPtr.Zero ? Marshal.PtrToStringAnsi(ptrStr) : "";
-    }
 
     [Button]
     public void TestRealOnEventDelegate() {
@@ -33,19 +29,19 @@ public class GGPOPluginExample : MonoBehaviour {
         }
     }
 
-    private bool RealOnEventCallback(IntPtr info) {
+    bool RealOnEventCallback(IntPtr info) {
         /*
-connected.player = data[1];
-synchronizing.player = data[1];
-synchronizing.count = data[2];
-synchronizing.total = data[3];
-synchronized.player = data[1];
-disconnected.player = data[1]
-timesync.frames_ahead = data[1];
-connection_interrupted.player = data[1];
-connection_interrupted.disconnect_timeout = data[2];
-connection_resumed.player = data[1];
-*/
+        connected.player = data[1];
+        synchronizing.player = data[1];
+        synchronizing.count = data[2];
+        synchronizing.total = data[3];
+        synchronized.player = data[1];
+        disconnected.player = data[1]
+        timesync.frames_ahead = data[1];
+        connection_interrupted.player = data[1];
+        connection_interrupted.disconnect_timeout = data[2];
+        connection_resumed.player = data[1];
+        */
 
         int[] data = new int[4];
         Marshal.Copy(info, data, 0, 4);
@@ -77,12 +73,12 @@ connection_resumed.player = data[1];
         return false;
     }
 
-    private unsafe bool RealCallback(void** buffer, int* len, int* checksum, int frame) {
+    unsafe bool RealCallback(void** buffer, int* len, int* checksum, int frame) {
         var data = new NativeArray<byte>(12, Allocator.Persistent);
         for (int i = 0; i < data.Length; ++i) {
             data[i] = (byte)i;
         }
-        var ptr = GGPO.ToPtr(data);
+        var ptr = Helper.ToPtr(data);
         Debug.Log($"RealCallback({frame}, {(long)ptr})");
         cache[(long)ptr] = data;
 
@@ -120,7 +116,7 @@ connection_resumed.player = data[1];
         for (int i = 0; i < data.Length; ++i) {
             data[i] = (byte)i;
         }
-        var ptr = GGPO.ToPtr(data);
+        var ptr = Helper.ToPtr(data);
         Debug.Log($"SaveGameState({frame}, {(long)ptr})");
 
         cache[(long)ptr] = data;
@@ -188,34 +184,6 @@ connection_resumed.player = data[1];
         return true;
     }
 
-    NativeArray<byte> SafeSaveGameState(out int checksum, int frame) {
-        var data = new NativeArray<byte>(12, Allocator.Persistent);
-        for (int i = 0; i < data.Length; ++i) {
-            data[i] = (byte)i;
-        }
-        checksum = 99;
-        Debug.Log($"SafeSaveGameState({frame})");
-        return data;
-    }
-
-    bool SafeLogGameState(NativeArray<byte> data) {
-        // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"SafeLogGameState({data.Length})");
-        return true;
-    }
-
-    bool SafeLoadGameState(NativeArray<byte> data) {
-        // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"SafeLoadGameState({data.Length})");
-        return true;
-    }
-
-    void SafeFreeBuffer(NativeArray<byte> data) {
-        // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"SafeFreeBuffer({data.Length})");
-        data.Dispose();
-    }
-
     public static void Log(string obj) {
         Debug.Log(obj);
         console.Append(obj + "\n");
@@ -224,7 +192,6 @@ connection_resumed.player = data[1];
     void OnGUI() {
         GUI.Label(new Rect(0, 0, Screen.width, Screen.height), console.ToString());
     }
-
 
     void Tests() {
         int result = -1;

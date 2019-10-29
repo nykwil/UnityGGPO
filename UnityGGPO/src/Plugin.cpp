@@ -9,7 +9,7 @@
 #include <cstdio>
 
 constexpr auto PLUGIN_VERSION = "1.0.0.0";
-constexpr auto PLUGIN_BUILD_NUMBER = 101;
+constexpr auto PLUGIN_BUILD_NUMBER = 102;
 
 GGPOInstance inst1;
 LogDelegate logCallback = nullptr;

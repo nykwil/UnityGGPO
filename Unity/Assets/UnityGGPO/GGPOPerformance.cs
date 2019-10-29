@@ -25,7 +25,7 @@ public class GGPOPerformance : MonoBehaviour {
         
     }
 
-    public void ggpoutil_perfmon_update(int ggpo, int[] players, int num_players) {
+    public void ggpoutil_perfmon_update(IntPtr ggpo, int[] players, int num_players) {
         int i;
 
         _num_players = num_players;
@@ -39,15 +39,13 @@ public class GGPOPerformance : MonoBehaviour {
         }
 
         for (int j = 0; j < num_players; j++) {
-            GGPO.DllGetNetworkStats(ggpo, players[j],
-                    out int send_queue_len,
-        out int recv_queue_len,
-        out int ping,
-        out int kbps_sent,
-        out int local_frames_behind,
-        out int remote_frames_behind
-
-                );
+            UGGPO.UggGetNetworkStats(ggpo, players[j],
+                out int send_queue_len,
+                out int recv_queue_len,
+                out int ping,
+                out int kbps_sent,
+                out int local_frames_behind,
+                out int remote_frames_behind);
 
             /*
              * Random graphs

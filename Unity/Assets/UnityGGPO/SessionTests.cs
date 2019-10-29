@@ -2,12 +2,25 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 public static class Helper {
 
     public static string GetString(IntPtr ptrStr) {
         return ptrStr != IntPtr.Zero ? Marshal.PtrToStringAnsi(ptrStr) : "";
+    }
+
+    unsafe public static void* ToPtr(NativeArray<byte> data) {
+        unsafe {
+            return NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(data);
+        }
+    }
+
+    unsafe public static NativeArray<byte> ToArray(void* dataPointer, int length) {
+        unsafe {
+            return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPointer, length, Allocator.Persistent);
+        }
     }
 }
 
@@ -25,8 +38,8 @@ public class SessionTests : MonoBehaviour {
     public int numPlayers = 2;
 
     void Start() {
-        Log(string.Format("Plugin Version: {0} build {1}", Helper.GetString(UGGPO.UggPluginVersion()), UGGPO.UggPluginBuildNumber()));
-        GGPO.DllSetLogDelegate(Log);
+        Log(string.Format("Plugin Version: {0} build {1}", UGGPO.Version, UGGPO.BuildNumber));
+        UGGPO.UggSetLogDelegate(Log);
         session = new GGPOSession();
         session.StartSession(
             BeginGame,
@@ -155,9 +168,20 @@ public class SessionTests : MonoBehaviour {
         player.ip_address = "127.0.0.1";
         player.port = 9000;
 
+        int hostPort = 7000;
+        string hostIp = "127.0.0.1";
+
         switch (testId) {
+            case 0:
+                session.StartSession(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, FreeBuffer,
+                    OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
+                    OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventTimesync, "Game", numPlayers, localPort);
+                break;
+
             case 1:
-                session.SetDisconnectNotifyStart(timeout);
+                session.StartSpectating(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, FreeBuffer,
+                    OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
+                    OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventTimesync, "Game", numPlayers, localPort, hostIp, hostPort);
                 break;
 
             case 2:
@@ -204,12 +228,10 @@ public class SessionTests : MonoBehaviour {
                 break;
 
             case 12:
-                session.StartSession(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, FreeBuffer,
-                    OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
-                    OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventTimesync, "Game", numPlayers, localPort);
+                session.SetDisconnectNotifyStart(timeout);
                 break;
 
-            case 14:
+            case 13:
                 session.Log(logText);
                 break;
         }

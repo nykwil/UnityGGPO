@@ -4,6 +4,19 @@ using System.Runtime.InteropServices;
 using Unity.Collections;
 
 public class UGGPO {
+
+    public static string Version {
+        get {
+            return Helper.GetString(UggPluginVersion());
+        }
+    }
+
+    public static int BuildNumber {
+        get {
+            return UggPluginBuildNumber();
+        }
+    }
+
     const string libraryName = "GGPOPlugin";
 
     public delegate void LogDelegate(string text);
@@ -23,10 +36,10 @@ public class UGGPO {
     public delegate bool OnEventDelegate(IntPtr evt);
 
     [DllImport(libraryName, CharSet = CharSet.Ansi)]
-    public static extern IntPtr UggPluginVersion();
+    static extern IntPtr UggPluginVersion();
 
     [DllImport(libraryName)]
-    public static extern int UggPluginBuildNumber();
+    static extern int UggPluginBuildNumber();
 
     [DllImport(libraryName)]
     public static extern void UggSetLogDelegate(LogDelegate callback);
@@ -194,6 +207,53 @@ public class GGPOSession {
             gameName, numPlayers, localport);
     }
 
+    public void StartSpectating(
+            UGGPO.BeginGameDelegate beginGame,
+            UGGPO.AdvanceFrameDelegate advanceFrame,
+            SafeLoadGameStateDelegate loadGameState,
+            SafeLogGameStateDelegate logGameState,
+            SafeSaveGameStateDelegate saveGameState,
+            SafeFreeBufferDelegate freeBuffer,
+            OnEventConnectedToPeerDelegate onEventConnectedToPeer,
+            OnEventSynchronizingWithPeerDelegate onEventSynchronizingWithPeer,
+            OnEventSynchronizedWithPeerDelegate onEventSynchronizedWithPeer,
+            OnEventRunningDelegate onEventRunning,
+            OnEventConnectionInterruptedDelegate onEventConnectionInterrupted,
+            OnEventConnectionResumedDelegate onEventConnectionResumed,
+            OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeer,
+            OnEventEventcodeTimesyncDelegate onEventTimesync,
+            string gameName, int numPlayers, int localport, string hostIp, int hostPort) {
+        loadGameStateCallback = loadGameState;
+        logGameStateCallback = logGameState;
+        saveGameStateCallback = saveGameState;
+        freeBufferCallback = freeBuffer;
+
+        this.onEventConnectedToPeer = onEventConnectedToPeer;
+        this.onEventSynchronizingWithPeer = onEventSynchronizingWithPeer;
+        this.onEventSynchronizedWithPeer = onEventSynchronizedWithPeer;
+        this.onEventRunning = onEventRunning;
+        this.onEventConnectionInterrupted = onEventConnectionInterrupted;
+        this.onEventConnectionResumed = onEventConnectionResumed;
+        this.onEventDisconnectedFromPeer = onEventDisconnectedFromPeer;
+        this.onEventTimesync = onEventTimesync;
+
+        unsafe {
+            _loadGameStateCallback = LoadGameState;
+            _logGameStateCallback = LogGameState;
+            _saveGameStateCallback = SaveGameState;
+            _freeBufferCallback = FreeBuffer;
+            _onEventCallback = OnEventCallback;
+        }
+        ggpo = UGGPO.UggStartSpectating(beginGame,
+            advanceFrame,
+            _loadGameStateCallback,
+            _logGameStateCallback,
+            _saveGameStateCallback,
+            _freeBufferCallback,
+            _onEventCallback,
+            gameName, numPlayers, localport, hostIp, hostPort);
+    }
+
     bool OnEventCallback(IntPtr evtPtr) {
         /*
 connected.player = data[1];
@@ -307,7 +367,7 @@ connection_resumed.player = data[1];
 
     unsafe bool SaveGameState(void** buffer, int* outLen, int* outChecksum, int frame) {
         var data = saveGameStateCallback(out int checksum, frame);
-        var ptr = GGPO.ToPtr(data);
+        var ptr = Helper.ToPtr(data);
         cache[(long)ptr] = data;
 
         *buffer = ptr;
@@ -317,10 +377,10 @@ connection_resumed.player = data[1];
     }
 
     unsafe bool LogGameState(string text, void* buffer, int length) {
-        return logGameStateCallback(text, GGPO.ToArray(buffer, length));
+        return logGameStateCallback(text, Helper.ToArray(buffer, length));
     }
 
     unsafe public bool LoadGameState(void* buffer, int length) {
-        return loadGameStateCallback(GGPO.ToArray(buffer, length));
+        return loadGameStateCallback(Helper.ToArray(buffer, length));
     }
 }

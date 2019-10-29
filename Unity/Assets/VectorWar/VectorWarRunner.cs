@@ -23,7 +23,7 @@ public class VectorWarRunner : MonoBehaviour {
     float next;
     VectorWar VectorWar;
 
-    GGPO.LogDelegate logDelegate;
+    UGGPO.LogDelegate logDelegate;
 
     bool running = false;
 
@@ -35,8 +35,8 @@ public class VectorWarRunner : MonoBehaviour {
     public void Startup() {
         gs = new GameState();
         ngs = new NonGameState();
-        logDelegate = new GGPO.LogDelegate(LogCallback);
-        GGPO.DllSetLogDelegate(logDelegate);
+        logDelegate = new UGGPO.LogDelegate(LogCallback);
+        UGGPO.UggSetLogDelegate(logDelegate);
         VectorWar = new VectorWar(gs, ngs, perf);
         var host_index = -1;
         var num_spectators = 0;
@@ -89,7 +89,7 @@ public class VectorWarRunner : MonoBehaviour {
     [Button]
     public void Close() {
         if (running) {
-            GGPO.DllSetLogDelegate(null);
+            UGGPO.UggSetLogDelegate(null);
             VectorWar.Exit();
             running = false;
         }
