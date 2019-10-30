@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -21,6 +22,14 @@ public static class Helper {
         unsafe {
             return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPointer, length, Allocator.Persistent);
         }
+    }
+
+    public static int TimeGetTime() {
+        return (int)(UnityEngine.Time.time * 1000);
+    }
+
+    public static void Sleep(int ms) {
+        Thread.Sleep(ms);
     }
 }
 

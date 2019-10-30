@@ -3,109 +3,115 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class VectorWarRunner : MonoBehaviour {
+namespace VectorWar {
 
     [Serializable]
     public class Connections {
         public short port;
         public string ip;
         public bool spectator;
+        public bool local;
     }
 
-    public List<Connections> connections;
+    public class VectorWarRunner : MonoBehaviour {
+        public List<Connections> connections;
 
-    public GameState gs;
-    public NonGameState ngs;
-    public GGPOPerformance perf;
+        public GameState gs;
+        public NonGameState ngs;
+        public GGPOPerformance perf;
 
-    public int player_index;
+        float next;
+        VectorWar VectorWar;
 
-    float next;
-    VectorWar VectorWar;
+        UGGPO.LogDelegate logDelegate;
 
-    UGGPO.LogDelegate logDelegate;
+        public bool Running { get; set; }
 
-    bool running = false;
-
-    public void LogCallback(string text) {
-        Debug.Log("Log: " + text);
-    }
-
-    [Button]
-    public void Startup() {
-        gs = new GameState();
-        ngs = new NonGameState();
-        logDelegate = new UGGPO.LogDelegate(LogCallback);
-        UGGPO.UggSetLogDelegate(logDelegate);
-        VectorWar = new VectorWar(gs, ngs, perf);
-        var host_index = -1;
-        var num_spectators = 0;
-        var num_players = 0;
-        for (int i = 0; i < connections.Count; ++i) {
-            if (host_index == -1 && i != player_index) {
-                host_index = i;
-            }
-            if (connections[i].spectator) {
-                ++num_spectators;
-            }
-            else {
-                ++num_players;
-            }
+        public void LogCallback(string text) {
+            Debug.Log("Log: " + text);
         }
-        if (connections[player_index].spectator) {
-            VectorWar.InitSpectator(connections[player_index].port, num_players, connections[host_index].ip, connections[host_index].port);
-        }
-        else {
-            var players = new List<GGPOPlayer>();
+
+        [Button]
+        public void Startup() {
+            gs = new GameState();
+            ngs = new NonGameState();
+            logDelegate = new UGGPO.LogDelegate(LogCallback);
+            UGGPO.UggSetLogDelegate(logDelegate);
+            VectorWar = new VectorWar(gs, ngs, perf);
+            var remote_index = -1;
+            var num_spectators = 0;
+            var num_players = 0;
+            var player_index = -1;
             for (int i = 0; i < connections.Count; ++i) {
-                var player = new GGPOPlayer {
-                    player_num = players.Count + 1,
-                    ip_address = connections[host_index].ip,
-                    port = connections[host_index].port
-                };
-                if (player_index == i) {
-                    player.type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL;
+                if (connections[i].local) {
+                    player_index = i;
                 }
-                else if (connections[i].spectator) {
-                    player.type = GGPOPlayerType.GGPO_PLAYERTYPE_SPECTATOR;
+                else if (remote_index == -1) {
+                    remote_index = i;
+                }
+
+                if (connections[i].spectator) {
+                    ++num_spectators;
                 }
                 else {
-                    player.type = GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE;
+                    ++num_players;
                 }
-                players.Add(player);
             }
-            VectorWar.Init(connections[player_index].port, num_players, players, num_spectators);
+            if (connections[player_index].spectator) {
+                VectorWar.InitSpectator(connections[player_index].port, num_players, connections[remote_index].ip, connections[remote_index].port);
+            }
+            else {
+                var players = new List<GGPOPlayer>();
+                for (int i = 0; i < connections.Count; ++i) {
+                    var player = new GGPOPlayer {
+                        player_num = players.Count + 1,
+                        ip_address = connections[remote_index].ip,
+                        port = connections[remote_index].port
+                    };
+                    if (player_index == i) {
+                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL;
+                    }
+                    else if (connections[i].spectator) {
+                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_SPECTATOR;
+                    }
+                    else {
+                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE;
+                    }
+                    players.Add(player);
+                }
+                VectorWar.Init(connections[player_index].port, num_players, players, num_spectators);
+            }
+            Running = true;
         }
-        running = true;
-    }
 
-    [Button]
-    public void DisconnectPlayer(int player) {
-        if (running) {
-            VectorWar.DisconnectPlayer(player);
+        [Button]
+        public void DisconnectPlayer(int player) {
+            if (Running) {
+                VectorWar.DisconnectPlayer(player);
+            }
         }
-    }
 
-    [Button]
-    public void Close() {
-        if (running) {
-            UGGPO.UggSetLogDelegate(null);
-            VectorWar.Exit();
-            running = false;
+        [Button]
+        public void Close() {
+            if (Running) {
+                UGGPO.UggSetLogDelegate(null);
+                VectorWar.Exit();
+                Running = false;
+            }
         }
-    }
 
-    private void OnDestroy() {
-    }
+        private void OnDestroy() {
+        }
 
-    void Update() {
-        if (running) {
-            var now = Time.time;
-            VectorWar.Idle(Mathf.Max(0, (int)((next - now) * 1000f) - 1));
+        void Update() {
+            if (Running) {
+                var now = Time.time;
+                VectorWar.Idle(Mathf.Max(0, (int)((next - now) * 1000f) - 1));
 
-            if (now >= next) {
-                VectorWar.RunFrame();
-                next = now + 1f / 60f;
+                if (now >= next) {
+                    VectorWar.RunFrame();
+                    next = now + 1f / 60f;
+                }
             }
         }
     }

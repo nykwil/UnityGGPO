@@ -17,7 +17,7 @@ public class UGGPO {
         }
     }
 
-    const string libraryName = "GGPOPlugin";
+    const string libraryName = "UnityGGPO";
 
     public delegate void LogDelegate(string text);
 
@@ -256,17 +256,18 @@ public class GGPOSession {
 
     bool OnEventCallback(IntPtr evtPtr) {
         /*
-connected.player = data[1];
-synchronizing.player = data[1];
-synchronizing.count = data[2];
-synchronizing.total = data[3];
-synchronized.player = data[1];
-disconnected.player = data[1]
-timesync.frames_ahead = data[1];
-connection_interrupted.player = data[1];
-connection_interrupted.disconnect_timeout = data[2];
-connection_resumed.player = data[1];
-*/
+        code = data[0];
+        connected.player = data[1];
+        synchronizing.player = data[1];
+        synchronizing.count = data[2];
+        synchronizing.total = data[3];
+        synchronized.player = data[1];
+        disconnected.player = data[1]
+        timesync.frames_ahead = data[1];
+        connection_interrupted.player = data[1];
+        connection_interrupted.disconnect_timeout = data[2];
+        connection_resumed.player = data[1];
+        */
 
         int[] data = new int[4];
         Marshal.Copy(evtPtr, data, 0, 4);

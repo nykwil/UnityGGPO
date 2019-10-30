@@ -84,7 +84,7 @@ public class GGPOPerformance : MonoBehaviour {
                 _fairness_graph[i] = Mathf.Abs(local_frames_behind) + Mathf.Abs(remote_frames_behind);
             }
 
-            int now = (int)(Time.time * 1000f);
+            int now = Helper.TimeGetTime();
             if (now > _last_text_update_time + 500) {
                 SetWindowTextA(IDC_NETWORK_LAG, $"{ping} ms");
                 SetWindowTextA(IDC_FRAME_LAG, $"{((ping != 0) ? ping * 60f / 1000f : 0f)} frames");

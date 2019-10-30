@@ -9,7 +9,7 @@
 #include <cstdio>
 
 constexpr auto PLUGIN_VERSION = "1.0.0.0";
-constexpr auto PLUGIN_BUILD_NUMBER = 102;
+constexpr auto PLUGIN_BUILD_NUMBER = 103;
 
 LogDelegate uggLogCallback = nullptr;
 
