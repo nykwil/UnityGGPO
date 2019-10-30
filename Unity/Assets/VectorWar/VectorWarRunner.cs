@@ -20,15 +20,26 @@ namespace VectorWar {
         public NonGameState ngs;
         public GGPOPerformance perf;
 
+        public ShipView shipPrefab;
+        public Transform bulletPrefab;
+
+        ShipView[] shipViews = new ShipView[0];
+        Transform[][] bulletLists;
         float next;
         VectorWar VectorWar;
-
         UGGPO.LogDelegate logDelegate;
+        public bool showLog;
 
         public bool Running { get; set; }
 
+        public static event Action<string> OnStatus = (string s) => { };
+        public static event Action<string> OnPeriodicChecksum = (string s) => { };
+        public static event Action<string> OnNowChecksum = (string s) => { };
+
         public void LogCallback(string text) {
-            Debug.Log("Log: " + text);
+            if (showLog) {
+                Debug.Log("Log: " + text);
+            }
         }
 
         [Button]
@@ -92,15 +103,12 @@ namespace VectorWar {
         }
 
         [Button]
-        public void Close() {
+        public void Shutdown() {
             if (Running) {
                 UGGPO.UggSetLogDelegate(null);
                 VectorWar.Exit();
                 Running = false;
             }
-        }
-
-        private void OnDestroy() {
         }
 
         void Update() {
@@ -112,7 +120,49 @@ namespace VectorWar {
                     VectorWar.RunFrame();
                     next = now + 1f / 60f;
                 }
+
+                UpdateGameView();
             }
+        }
+
+        void Init() {
+            var shipGss = gs._ships;
+            shipViews = new ShipView[shipGss.Length];
+            bulletLists = new Transform[shipGss.Length][];
+
+            for (int i = 0; i < shipGss.Length; ++i) {
+                shipViews[i] = Instantiate(shipPrefab, transform);
+                bulletLists[i] = new Transform[shipGss[i].bullets.Length];
+                for (int j = 0; j < bulletLists[i].Length; ++j) {
+                    bulletLists[i][j] = Instantiate(bulletPrefab, transform);
+                }
+            }
+        }
+
+        void UpdateGameView() {
+            OnStatus(ngs.status);
+            OnPeriodicChecksum(RenderChecksum(ngs.periodic));
+            OnNowChecksum(RenderChecksum(ngs.now));
+
+            var shipsGss = gs._ships;
+            if (shipViews.Length != shipsGss.Length) {
+                Init();
+            }
+            for (int i = 0; i < shipsGss.Length; ++i) {
+                shipViews[i].Populate(shipsGss[i], ngs.players[i]);
+                UpdateBullets(shipsGss[i].bullets, bulletLists[i]);
+            }
+        }
+
+        private void UpdateBullets(Bullet[] bullets, Transform[] bulletList) {
+            for (int j = 0; j < bulletList.Length; ++j) {
+                bulletList[j].position = bullets[j].position;
+                bulletList[j].gameObject.SetActive(bullets[j].active);
+            }
+        }
+
+        string RenderChecksum(NonGameState.ChecksumInfo info) {
+            return string.Format("Frame: {0} Checksum: {1}", info.framenumber, info.checksum); // %04d  %08x
         }
     }
 }

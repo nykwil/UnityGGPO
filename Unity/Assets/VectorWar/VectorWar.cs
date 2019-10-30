@@ -200,7 +200,7 @@ namespace VectorWar {
                     fprintf(fp, "  ship %d speed:     %d.\n", i, ship->speed);
                     fprintf(fp, "  ship %d cooldown:  %d.\n", i, ship->cooldown);
                     fprintf(fp, "  ship %d score:     %d.\n", i, ship->score);
-                    for (int j = 0; j < MAX_BULLETS; j++) {
+                    for (int j = 0; j < ship.bullets.Length; j++) {
                         Bullet* bullet = ship->bullets + j;
                         fprintf(fp, "  ship %d bullet %d: %.2f %.2f -> %.2f %.2f.\n", i, j,
                                 bullet->position.x, bullet->position.y,

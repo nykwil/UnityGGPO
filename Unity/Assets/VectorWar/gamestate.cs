@@ -135,7 +135,7 @@ namespace VectorWar {
             if (ship.cooldown == 0) {
                 if (fire != 0) {
                     UGGPO.UggLog(ggpo, "firing bullet.\n");
-                    for (int i = 0; i < MAX_BULLETS; i++) {
+                    for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(degtorad(ship.heading));
                         float dy = Mathf.Sin(degtorad(ship.heading));
                         if (!ship.bullets[i].active) {
@@ -180,7 +180,7 @@ namespace VectorWar {
                 ship.velocity.y *= -1;
                 ship.position.y += (ship.velocity.y * 2);
             }
-            for (int i = 0; i < MAX_BULLETS; i++) {
+            for (int i = 0; i < ship.bullets.Length; i++) {
                 Bullet bullet = ship.bullets[i];
                 if (bullet.active) {
                     bullet.position.x += bullet.velocity.x;

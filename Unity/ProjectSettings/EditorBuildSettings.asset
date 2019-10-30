@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/VectorWar/VectorWar.unity
+    guid: a48d4cc42ab5f0a4f815b1ccc060c7be
   m_configObjects: {}
