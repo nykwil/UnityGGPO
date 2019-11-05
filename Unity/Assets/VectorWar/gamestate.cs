@@ -37,7 +37,7 @@ namespace VectorWar {
         IntPtr ggpo;
 
         [NonSerialized]
-        readonly Rect _bounds = new Rect(0, 0, 640, 480);
+        public readonly Rect _bounds = new Rect(0, 0, 640, 480);
 
         public static NativeArray<byte> ToBytes(GameState gs) {
             var bytes = SerializationUtility.SerializeValue(gs, DataFormat.Binary);

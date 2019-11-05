@@ -654,11 +654,11 @@ MonoBehaviour:
   - port: 7000
     ip: 127.0.0.1
     spectator: 0
-    local: 1
+    local: 0
   - port: 7001
     ip: 127.0.0.1
     spectator: 0
-    local: 0
+    local: 1
   gs:
     _framenumber: 0
     _ships:
@@ -1063,6 +1063,7 @@ MonoBehaviour:
     type: 3}
   bulletPrefab: {fileID: 655931963869102935, guid: 03dfdbe9603b45c4ebc6d49bc022d313,
     type: 3}
+  showLog: 0
 --- !u!4 &995625982
 Transform:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using UnityEngine;
 
 namespace VectorWar {
     using static VWConstants;
@@ -32,25 +33,16 @@ namespace VectorWar {
          *   http://en.wikipedia.org/wiki/Fletcher%27s_checksum
          */
 
-        int fletcher32_checksum(NativeArray<byte> data, int len) {
-            int sum1 = 0xffff, sum2 = 0xffff;
-            int i = 0;
+        int naive_fletcher32_per_byte(NativeArray<byte> data) {
+            uint sum1 = 0;
+            uint sum2 = 0;
 
-            while (len > 0) {
-                int tlen = len > 360 ? 360 : len;
-                len -= tlen;
-                do {
-                    sum1 += data[i++];
-                    sum2 += sum1;
-                } while (--tlen > 0);
-                sum1 = (sum1 & 0xffff) + (sum1 >> 16);
-                sum2 = (sum2 & 0xffff) + (sum2 >> 16);
+            int index;
+            for (index = 0; index < data.Length; ++index) {
+                sum1 = (sum1 + data[index]) % 0xffff;
+                sum2 = (sum2 + sum1) % 0xffff;
             }
-
-            /* Second reduction step to reduce sums to 16 bits */
-            sum1 = (sum1 & 0xffff) + (sum1 >> 16);
-            sum2 = (sum2 & 0xffff) + (sum2 >> 16);
-            return sum2 << 16 | sum1;
+            return unchecked((int)((sum2 << 16) | sum1));
         }
 
         /*
@@ -61,6 +53,7 @@ namespace VectorWar {
          */
 
         bool vw_begin_game_callback(string name) {
+            Debug.Log($"vw_begin_game_callback");
             return true;
         }
 
@@ -85,6 +78,8 @@ namespace VectorWar {
             int connection_interrupted_player = data[1];
             int connection_interrupted_disconnect_timeout = data[2];
             int connection_resumed_player = data[1];
+
+            Debug.Log($"vw_on_event_callback {data[0]} {data[1]} {data[2]} {data[3]}");
 
             int progress;
             switch (info_code) {
@@ -135,6 +130,8 @@ namespace VectorWar {
          */
 
         bool vw_advance_frame_callback(int flags) {
+            Debug.Log($"vw_begin_game_callback {flags}");
+
             // Make sure we fetch new inputs from GGPO and use those to update the game state instead
             // of reading from the keyboard.
             ulong[] inputs = new ulong[MAX_SHIPS];
@@ -151,6 +148,7 @@ namespace VectorWar {
          */
 
         unsafe bool vw_load_game_state_callback(void* dataPtr, int length) {
+            Debug.Log($"vw_load_game_state_callback {length}");
             gs = GameState.FromBytes(Helper.ToArray(dataPtr, length));
             return true;
         }
@@ -162,17 +160,15 @@ namespace VectorWar {
          * buffer and len parameters.
          */
 
-        private unsafe bool vw_save_game_state_callback(void** buffer, int* len, int* checksum, int frame) {
-            throw new NotImplementedException();
-        }
-
-        unsafe void* vw_save_game_state_callbackOld(out int length, out int checksum, int frame) {
-            var buffer = GameState.ToBytes(gs);
-            checksum = 0;
-            length = buffer.Length;
-            var ptr = Helper.ToPtr(buffer);
-            cache[(long)ptr] = buffer;
-            return ptr;
+        private unsafe bool vw_save_game_state_callback(void** buffer, int* length, int* checksum, int frame) {
+            Debug.Log($"vw_save_game_state_callback {frame}");
+            var bytes = GameState.ToBytes(gs);
+            *checksum = naive_fletcher32_per_byte(bytes);
+            *length = bytes.Length;
+            var ptr = Helper.ToPtr(bytes);
+            *buffer = ptr;
+            cache[(long)ptr] = bytes;
+            return true;
         }
 
         /*
@@ -182,38 +178,41 @@ namespace VectorWar {
          */
 
         unsafe bool vw_log_game_state(string text, void* buffer, int length) {
-            /*
-            FILE* fp = fopen(filename, "w");
-            if (fp) {
-                GameState* gamestate = (GameState*)buffer;
-                fprintf(fp, "GameState object.\n");
-                fprintf(fp, "  bounds: %d,%d x %d,%d.\n", gamestate->_bounds.left, gamestate->_bounds.top,
-                        gamestate->_bounds.right, gamestate->_bounds.bottom);
-                fprintf(fp, "  num_ships: %d.\n", gamestate->_num_ships);
-                for (int i = 0; i < gamestate->_num_ships; i++) {
-                    Ship* ship = gamestate->_ships + i;
-                    fprintf(fp, "  ship %d position:  %.4f, %.4f\n", i, ship->position.x, ship->position.y);
-                    fprintf(fp, "  ship %d velocity:  %.4f, %.4f\n", i, ship->velocity.dx, ship->velocity.dy);
-                    fprintf(fp, "  ship %d radius:    %d.\n", i, ship->radius);
-                    fprintf(fp, "  ship %d heading:   %d.\n", i, ship->heading);
-                    fprintf(fp, "  ship %d health:    %d.\n", i, ship->health);
-                    fprintf(fp, "  ship %d speed:     %d.\n", i, ship->speed);
-                    fprintf(fp, "  ship %d cooldown:  %d.\n", i, ship->cooldown);
-                    fprintf(fp, "  ship %d score:     %d.\n", i, ship->score);
+            Debug.Log($"vw_log_game_state {text}");
+
+            // FILE* fp = fopen(filename, "w"); if (fp)
+            {
+                GameState gamestate = GameState.FromBytes(Helper.ToArray(buffer, length));
+                string fp = "";
+                fp += "GameState object.\n";
+                fp += string.Format("  bounds: {0},{1} x {2},{3}.\n", gamestate._bounds.xMin, gamestate._bounds.yMin,
+                        gamestate._bounds.xMax, gamestate._bounds.yMax);
+                fp += string.Format("  num_ships: {0}.\n", gamestate._ships.Length);
+                for (int i = 0; i < gamestate._ships.Length; i++) {
+                    Ship ship = gamestate._ships[i];
+                    fp += string.Format("  ship {0} position:  %.4f, %.4f\n", i, ship.position.x, ship.position.y);
+                    fp += string.Format("  ship {0} velocity:  %.4f, %.4f\n", i, ship.velocity.x, ship.velocity.y);
+                    fp += string.Format("  ship {0} radius:    %d.\n", i, ship.radius);
+                    fp += string.Format("  ship {0} heading:   %d.\n", i, ship.heading);
+                    fp += string.Format("  ship {0} health:    %d.\n", i, ship.health);
+                    fp += string.Format("  ship {0} speed:     %d.\n", i, ship.speed);
+                    fp += string.Format("  ship {0} cooldown:  %d.\n", i, ship.cooldown);
+                    fp += string.Format("  ship {0} score:     {1}.\n", i, ship.score);
                     for (int j = 0; j < ship.bullets.Length; j++) {
-                        Bullet* bullet = ship->bullets + j;
-                        fprintf(fp, "  ship %d bullet %d: %.2f %.2f -> %.2f %.2f.\n", i, j,
-                                bullet->position.x, bullet->position.y,
-                                bullet->velocity.dx, bullet->velocity.dy);
+                        Bullet bullet = ship.bullets[j];
+                        fp += string.Format("  ship {0} bullet {1}: {2} {3} -> {4} {5}.\n", i, j,
+                                bullet.position.x, bullet.position.y,
+                                bullet.velocity.x, bullet.velocity.y);
                     }
                 }
-                fclose(fp);
+                // fclose(fp);
             }
-            */
             return true;
         }
 
         unsafe void vw_free_buffer_callback(void* dataPtr) {
+            Debug.Log($"vw_free_buffer_callback");
+
             if (cache.TryGetValue((long)dataPtr, out var data)) {
                 data.Dispose();
             }
@@ -346,7 +345,7 @@ namespace VectorWar {
             // update the checksums to display in the top of the window. this helps to detect desyncs.
             ngs.now.framenumber = gs._framenumber;
             var buffer = GameState.ToBytes(gs);
-            ngs.now.checksum = fletcher32_checksum(buffer, buffer.Length / 2);
+            ngs.now.checksum = naive_fletcher32_per_byte(buffer);
             if ((gs._framenumber % 90) == 0) {
                 ngs.periodic = ngs.now;
             }

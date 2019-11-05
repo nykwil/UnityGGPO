@@ -22,13 +22,14 @@ namespace VectorWar {
 
         public ShipView shipPrefab;
         public Transform bulletPrefab;
+        public bool showLog;
 
-        ShipView[] shipViews = new ShipView[0];
+        ShipView[] shipViews = Array.Empty<ShipView>();
         Transform[][] bulletLists;
         float next;
         VectorWar VectorWar;
         UGGPO.LogDelegate logDelegate;
-        public bool showLog;
+        List<string> logs = new List<string>();
 
         public bool Running { get; set; }
 
@@ -37,12 +38,14 @@ namespace VectorWar {
         public static event Action<string> OnNowChecksum = (string s) => { };
 
         public void LogCallback(string text) {
-            if (showLog) {
-                Debug.Log("Log: " + text);
-            }
+            logs.Insert(0, text);
         }
 
-        [Button]
+        private void OnGUI() {
+            var s = String.Join("\n", logs);
+            GUILayout.Label(s);
+        }
+
         public void Startup() {
             gs = new GameState();
             ngs = new NonGameState();
@@ -95,14 +98,12 @@ namespace VectorWar {
             Running = true;
         }
 
-        [Button]
         public void DisconnectPlayer(int player) {
             if (Running) {
                 VectorWar.DisconnectPlayer(player);
             }
         }
 
-        [Button]
         public void Shutdown() {
             if (Running) {
                 UGGPO.UggSetLogDelegate(null);

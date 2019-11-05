@@ -35,3 +35,4 @@ sysinfo.txt
 *.apk
 *.unitypackage
 Unity/Logs/Packages-Update.log
+UnityBuilds/
