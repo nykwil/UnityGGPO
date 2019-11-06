@@ -7,8 +7,7 @@ namespace VectorWar {
     public class VectorWarInterface : MonoBehaviour {
         public int maxLogLines = 20;
         public Text txtStatus;
-        public Text txtPeriodicChecksum;
-        public Text txtNowChecksum;
+        public Text txtChecksum;
         public Text txtLog;
         public Button btnPlayer1;
         public Button btnPlayer2;
@@ -18,11 +17,15 @@ namespace VectorWar {
         public Toggle tglRunnerLog;
         public Toggle tglVectorWarLog;
         public Toggle tglGameStateLog;
+        public InputField[] inpIps;
+        public Toggle[] tglSpectators;
+        public InputField inpPlayerIndex;
+        public GameObject pnlConnections;
+        public GameObject pnlLog;
 
         void Awake() {
             VectorWarRunner.OnStatus += OnStatus;
-            VectorWarRunner.OnPeriodicChecksum += OnPeriodicChecksum;
-            VectorWarRunner.OnNowChecksum += OnNowChecksum;
+            VectorWarRunner.OnChecksum += OnChecksum;
             VectorWarRunner.OnLog += OnLog;
             VectorWar.OnLog += OnLog;
             GameState.OnLog += OnLog;
@@ -38,13 +41,19 @@ namespace VectorWar {
             tglVectorWarLog.onValueChanged.AddListener(OnVectorWarLog);
             tglGameStateLog.onValueChanged.AddListener(OnGameStateLog);
 
+            for (int i = 0; i < runner.connections.Count; ++i) {
+                inpIps[i].text = runner.connections[i].ip + ":" + runner.connections[i].port;
+                tglSpectators[i].isOn = runner.connections[i].spectator;
+            }
+
+            inpPlayerIndex.text = runner.PlayerIndex.ToString();
+
             SetConnectText("Startup");
         }
 
         void OnDestroy() {
             VectorWarRunner.OnStatus -= OnStatus;
-            VectorWarRunner.OnPeriodicChecksum -= OnPeriodicChecksum;
-            VectorWarRunner.OnNowChecksum -= OnNowChecksum;
+            VectorWarRunner.OnChecksum -= OnChecksum;
             VectorWarRunner.OnLog -= OnLog;
             VectorWar.OnLog -= OnLog;
             GameState.OnLog -= OnLog;
@@ -56,25 +65,32 @@ namespace VectorWar {
             tglGameStateLog.onValueChanged.RemoveListener(OnGameStateLog);
         }
 
-        void OnGameStateLog(bool arg0) {
+        void OnGameStateLog(bool value) {
             GameState.OnLog -= OnLog;
-            if (arg0) {
+            if (value) {
                 GameState.OnLog += OnLog;
             }
+            LogPanelVisibility();
         }
 
-        void OnVectorWarLog(bool arg0) {
+        void OnVectorWarLog(bool value) {
             VectorWar.OnLog -= OnLog;
-            if (arg0) {
+            if (value) {
                 VectorWar.OnLog += OnLog;
             }
+            LogPanelVisibility();
         }
 
-        void OnToggleRunnerLog(bool arg0) {
+        void OnToggleRunnerLog(bool value) {
             VectorWarRunner.OnLog -= OnLog;
-            if (arg0) {
+            if (value) {
                 VectorWarRunner.OnLog += OnLog;
             }
+            LogPanelVisibility();
+        }
+
+        void LogPanelVisibility() {
+            pnlLog.SetActive(tglGameStateLog.isOn || tglRunnerLog.isOn || tglVectorWarLog.isOn);
         }
 
         void SetConnectText(string text) {
@@ -99,21 +115,29 @@ namespace VectorWar {
 
         void OnConnect() {
             if (!runner.Running) {
+                pnlConnections.SetActive(false);
                 SetConnectText("Shutdown");
+
+                for (int i = 0; i < runner.connections.Count; ++i) {
+                    var split = inpIps[i].text.Split(':');
+                    runner.connections[i].ip = split[0];
+                    runner.connections[i].port = ushort.Parse(split[1]);
+                    runner.connections[i].spectator = tglSpectators[i].isOn;
+                }
+
+                runner.PlayerIndex = int.Parse(inpPlayerIndex.text);
+
                 runner.Startup();
             }
             else {
+                pnlConnections.SetActive(true);
                 SetConnectText("Startup");
                 runner.Shutdown();
             }
         }
 
-        void OnNowChecksum(string text) {
-            txtNowChecksum.text = text;
-        }
-
-        void OnPeriodicChecksum(string text) {
-            txtPeriodicChecksum.text = text;
+        void OnChecksum(string text) {
+            txtChecksum.text = text;
         }
 
         void OnStatus(string text) {

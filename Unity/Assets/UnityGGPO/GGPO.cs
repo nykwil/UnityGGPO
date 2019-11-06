@@ -126,7 +126,7 @@ public static partial class GGPO {
 
     unsafe public delegate bool LoadGameStateDelegate(void* buffer, int length);
 
-    unsafe public delegate bool LogGameStateDelegate(string text, void* buffer, int length);
+    unsafe public delegate bool LogGameStateDelegate(string filename, void* buffer, int length);
 
     unsafe public delegate bool SaveGameStateDelegate(void** buffer, int* len, int* checksum, int frame);
 
@@ -141,7 +141,7 @@ public static partial class GGPO {
     static extern int UggPluginBuildNumber();
 
     [DllImport(libraryName)]
-    public static extern void UggSetLogDelegate(LogDelegate callback);
+    static extern void UggSetLogDelegate(LogDelegate callback);
 
     [DllImport(libraryName)]
     public static extern int UggTestStartSession(out IntPtr session,
@@ -210,7 +210,7 @@ public static partial class GGPO {
     static extern void UggLog(IntPtr ggpo, string text);
 
     [DllImport(libraryName)]
-    public static extern int UggGetNetworkStats(IntPtr ggpo, int phandle,
+    static extern int UggGetNetworkStats(IntPtr ggpo, int phandle,
         out int send_queue_len,
         out int recv_queue_len,
         out int ping,

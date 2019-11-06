@@ -130,9 +130,9 @@ public class SessionTests : MonoBehaviour {
         return data;
     }
 
-    bool OnLogGameState(string text, NativeArray<byte> data) {
+    bool OnLogGameState(string filename, NativeArray<byte> data) {
         // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"OnLogGameState({data.Length})");
+        Debug.Log($"OnLogGameState({filename},{data.Length})");
         return true;
     }
 

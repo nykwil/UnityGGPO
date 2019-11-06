@@ -19,10 +19,8 @@ namespace VectorWar {
 
         public const float PI = 3.1415926f;
         public const int STARTING_HEALTH = 100;
-        public const int ROTATE_INCREMENT = 3;
-        public const int SHIP_RADIUS = 15;
-        public const int SHIP_WIDTH = 8;
-        public const int SHIP_TUCK = 3;
+        public const float ROTATE_INCREMENT = 3f;
+        public const float SHIP_RADIUS = 15f;
         public const float SHIP_THRUST = 0.06f;
         public const float SHIP_MAX_THRUST = 4.0f;
         public const float SHIP_BREAK_SPEED = 0.6f;

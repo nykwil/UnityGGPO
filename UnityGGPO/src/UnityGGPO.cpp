@@ -175,15 +175,8 @@ PLUGINEX(int) UggStartSpectating(GGPOPtr& sessionRef,
 	cb.on_event = onEvent;
 
 	GGPOSession* ggpo;
-
 	auto ret = ggpo_start_spectating(&ggpo, &cb, game, num_players, sizeof(uint64_t), localport, host_ip, host_port);
-
-	if (GGPO_SUCCEEDED(ret)) {
-		return (GGPOPtr)ggpo;
-	}
-	else {
-		return 0; // nullptr;
-	}
+	return ret;
 }
 
 PLUGINEX(int) UggSetDisconnectNotifyStart(GGPOPtr ggpo, int timeout)

@@ -38,7 +38,7 @@ public class GGPOPerformance : MonoBehaviour {
         }
 
         for (int j = 0; j < num_players; j++) {
-            var result = GGPO.UggGetNetworkStats(ggpo, players[j],
+            var result = GGPO.GetNetworkStats(ggpo, players[j],
                 out int send_queue_len,
                 out int recv_queue_len,
                 out int ping,

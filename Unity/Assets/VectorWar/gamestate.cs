@@ -1,7 +1,8 @@
-using Sirenix.Serialization;
 using System;
+using System.IO;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace VectorWar {
     using static VWConstants;
@@ -11,19 +12,64 @@ namespace VectorWar {
         public bool active;
         public Vector2 position;
         public Vector2 velocity;
+
+        public void Serialize(BinaryWriter bw) {
+            bw.Write(active);
+            bw.Write(position.x);
+            bw.Write(position.y);
+            bw.Write(velocity.x);
+            bw.Write(velocity.y);
+        }
+
+        public void Deserialize(BinaryReader br) {
+            active = br.ReadBoolean();
+            position.x = br.ReadSingle();
+            position.y = br.ReadSingle();
+            velocity.x = br.ReadSingle();
+            velocity.y = br.ReadSingle();
+        }
     };
 
     [Serializable]
     public class Ship {
         public Vector2 position;
         public Vector2 velocity;
-        public int radius;
+        public float radius;
         public float heading;
         public int health;
-        public int speed;
         public int cooldown;
-        public Bullet[] bullets = new Bullet[MAX_BULLETS];
         public int score;
+        public Bullet[] bullets = new Bullet[MAX_BULLETS];
+
+        public void Serialize(BinaryWriter bw) {
+            bw.Write(position.x);
+            bw.Write(position.y);
+            bw.Write(velocity.x);
+            bw.Write(velocity.y);
+            bw.Write(radius);
+            bw.Write(heading);
+            bw.Write(health);
+            bw.Write(cooldown);
+            bw.Write(score);
+            for (int i = 0; i < MAX_BULLETS; ++i) {
+                bullets[i].Serialize(bw);
+            }
+        }
+
+        public void Deserialize(BinaryReader br) {
+            position.x = br.ReadSingle();
+            position.y = br.ReadSingle();
+            velocity.x = br.ReadSingle();
+            velocity.y = br.ReadSingle();
+            radius = br.ReadSingle();
+            heading = br.ReadSingle();
+            health = br.ReadInt32();
+            cooldown = br.ReadInt32();
+            score = br.ReadInt32();
+            for (int i = 0; i < MAX_BULLETS; ++i) {
+                bullets[i].Deserialize(br);
+            }
+        }
     };
 
     [Serializable]
@@ -36,20 +82,48 @@ namespace VectorWar {
         [NonSerialized]
         public readonly Rect _bounds = new Rect(0, 0, 640, 480);
 
+        public void Serialize(BinaryWriter bw) {
+            bw.Write(_framenumber);
+            bw.Write(_ships.Length);
+            for (int i = 0; i < _ships.Length; ++i) {
+                _ships[i].Serialize(bw);
+            }
+        }
+
+        public void Deserialize(BinaryReader br) {
+            _framenumber = br.ReadInt32();
+            int length = br.ReadInt32();
+            if (length != _ships.Length) {
+                _ships = new Ship[length];
+            }
+            for (int i = 0; i < _ships.Length; ++i) {
+                _ships[i].Deserialize(br);
+            }
+        }
+
         public static NativeArray<byte> ToBytes(GameState gs) {
-            var bytes = SerializationUtility.SerializeValue(gs, DataFormat.Binary);
-            return new NativeArray<byte>(bytes, Allocator.Persistent);
+            using (var memoryStream = new MemoryStream()) {
+                using (var writer = new BinaryWriter(memoryStream)) {
+                    gs.Serialize(writer);
+                }
+                return new NativeArray<byte>(memoryStream.ToArray(), Allocator.Persistent);
+            }
         }
 
-        public static GameState FromBytes(NativeArray<byte> bytes) {
-            return SerializationUtility.DeserializeValue<GameState>(bytes.ToArray(), DataFormat.Binary);
+        public static void FromBytes(GameState gs, NativeArray<byte> bytes) {
+            Assert.IsNotNull(gs);
+            using (var memoryStream = new MemoryStream(bytes.ToArray())) {
+                using (var reader = new BinaryReader(memoryStream)) {
+                    gs.Deserialize(reader);
+                }
+            }
         }
 
-        static float degtorad(float deg) {
+        static float DegToRad(float deg) {
             return PI * deg / 180;
         }
 
-        static float distance(Vector2 lhs, Vector2 rhs) {
+        static float Distance(Vector2 lhs, Vector2 rhs) {
             float x = rhs.x - lhs.x;
             float y = rhs.y - lhs.y;
             return Mathf.Sqrt(x * x + y * y);
@@ -65,7 +139,6 @@ namespace VectorWar {
             var w = _bounds.xMax - _bounds.xMin;
             var h = _bounds.yMax - _bounds.yMin;
             var r = h / 4;
-
             _framenumber = 0;
             _ships = new Ship[num_players];
             for (int i = 0; i < _ships.Length; i++) {
@@ -92,7 +165,7 @@ namespace VectorWar {
         }
 
         public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
-            Ship ship = _ships[i];
+            var ship = _ships[i];
 
             OnLog($"parsing ship {i} inputs: {inputs}.\n");
 
@@ -119,7 +192,7 @@ namespace VectorWar {
         }
 
         public void MoveShip(int index, float heading, float thrust, int fire) {
-            Ship ship = _ships[index];
+            var ship = _ships[index];
 
             OnLog($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
 
@@ -129,8 +202,8 @@ namespace VectorWar {
                 if (fire != 0) {
                     OnLog("firing bullet.\n");
                     for (int i = 0; i < ship.bullets.Length; i++) {
-                        float dx = Mathf.Cos(degtorad(ship.heading));
-                        float dy = Mathf.Sin(degtorad(ship.heading));
+                        float dx = Mathf.Cos(DegToRad(ship.heading));
+                        float dy = Mathf.Sin(DegToRad(ship.heading));
                         if (!ship.bullets[i].active) {
                             ship.bullets[i].active = true;
                             ship.bullets[i].position.x = ship.position.x + (ship.radius * dx);
@@ -145,8 +218,8 @@ namespace VectorWar {
             }
 
             if (thrust != 0) {
-                float dx = thrust * Mathf.Cos(degtorad(heading));
-                float dy = thrust * Mathf.Sin(degtorad(heading));
+                float dx = thrust * Mathf.Cos(DegToRad(heading));
+                float dy = thrust * Mathf.Sin(DegToRad(heading));
 
                 ship.velocity.x += dx;
                 ship.velocity.y += dy;
@@ -186,7 +259,7 @@ namespace VectorWar {
                     else {
                         for (int j = 0; j < _ships.Length; j++) {
                             var other = _ships[j];
-                            if (distance(ship.bullets[i].position, other.position) < other.radius) {
+                            if (Distance(ship.bullets[i].position, other.position) < other.radius) {
                                 ship.score++;
                                 other.health -= BULLET_DAMAGE;
                                 ship.bullets[i].active = false;

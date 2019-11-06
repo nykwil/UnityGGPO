@@ -27,7 +27,7 @@ public static partial class GGPO {
 
         public delegate bool SafeLoadGameStateDelegate(NativeArray<byte> data);
 
-        public delegate bool SafeLogGameStateDelegate(string text, NativeArray<byte> data);
+        public delegate bool SafeLogGameStateDelegate(string filename, NativeArray<byte> data);
 
         public delegate NativeArray<byte> SafeSaveGameStateDelegate(out int checksum, int frame);
 
@@ -285,8 +285,8 @@ public static partial class GGPO {
             return true;
         }
 
-        static unsafe bool LogGameState(string text, void* buffer, int length) {
-            return logGameStateCallback(text, Helper.ToArray(buffer, length));
+        static unsafe bool LogGameState(string filename, void* buffer, int length) {
+            return logGameStateCallback(filename, Helper.ToArray(buffer, length));
         }
 
         static unsafe bool LoadGameState(void* buffer, int length) {

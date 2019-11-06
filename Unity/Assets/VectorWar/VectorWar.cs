@@ -1,25 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Collections;
-using UnityEngine;
 
 namespace VectorWar {
     using static VWConstants;
 
     public static class VectorWar {
-
-        //#define SYNC_TEST    // test: turn on synctest
         const int FRAME_DELAY = 2;
 
         public static GameState gs = null;
         public static NonGameState ngs = null;
         public static GGPOPerformance perf = null;
+
         static readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
         static IntPtr ggpo = IntPtr.Zero;
 
         static IntPtr vw_begin_game_callback;
-
         static IntPtr vw_advance_frame_callback;
         static IntPtr vw_load_game_state_callback;
         static IntPtr vw_log_game_state;
@@ -28,6 +27,9 @@ namespace VectorWar {
         static IntPtr vw_on_event_callback;
 
         public static event Action<string> OnLog = (string s) => { };
+
+        public static Stopwatch frameWatch = new Stopwatch();
+        public static Stopwatch idleWatch = new Stopwatch();
 
         /*
          * vw_begin_game_callback --
@@ -134,7 +136,7 @@ namespace VectorWar {
 
         static unsafe bool Vw_load_game_state_callback(void* dataPtr, int length) {
             OnLog($"vw_load_game_state_callback {length}");
-            gs = GameState.FromBytes(Helper.ToArray(dataPtr, length));
+            GameState.FromBytes(gs, Helper.ToArray(dataPtr, length));
             return true;
         }
 
@@ -163,10 +165,11 @@ namespace VectorWar {
          * Log the gamestate.  Used by the synctest debugging tool.
          */
 
-        static unsafe bool Vw_log_game_state(string text, void* buffer, int length) {
-            OnLog($"vw_log_game_state {text}");
+        static unsafe bool Vw_log_game_state(string filename, void* buffer, int length) {
+            OnLog($"vw_log_game_state {filename}");
 
-            var gamestate = GameState.FromBytes(Helper.ToArray(buffer, length));
+            var gamestate = new GameState();
+            GameState.FromBytes(gamestate, Helper.ToArray(buffer, length));
             string fp = "";
             fp += "GameState object.\n";
             fp += string.Format("  bounds: {0},{1} x {2},{3}.\n", gamestate._bounds.xMin, gamestate._bounds.yMin,
@@ -179,7 +182,6 @@ namespace VectorWar {
                 fp += string.Format("  ship {0} radius:    %d.\n", i, ship.radius);
                 fp += string.Format("  ship {0} heading:   %d.\n", i, ship.heading);
                 fp += string.Format("  ship {0} health:    %d.\n", i, ship.health);
-                fp += string.Format("  ship {0} speed:     %d.\n", i, ship.speed);
                 fp += string.Format("  ship {0} cooldown:  %d.\n", i, ship.cooldown);
                 fp += string.Format("  ship {0} score:     {1}.\n", i, ship.score);
                 for (int j = 0; j < ship.bullets.Length; j++) {
@@ -188,6 +190,7 @@ namespace VectorWar {
                             ship.bullets[j].velocity.x, ship.bullets[j].velocity.y);
                 }
             }
+            File.WriteAllText(filename, fp);
             return true;
         }
 
@@ -373,7 +376,7 @@ namespace VectorWar {
          * transparently.
          */
 
-        static public ulong ReadInputs(int id) {
+        public static ulong ReadInputs(int id) {
             ulong input = 0;
 
             if (id == 0) {
@@ -389,15 +392,32 @@ namespace VectorWar {
                 if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightArrow)) {
                     input |= INPUT_ROTATE_RIGHT;
                 }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.D)) {
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightControl)) {
                     input |= INPUT_FIRE;
                 }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.S)) {
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightShift)) {
                     input |= INPUT_BOMB;
                 }
             }
             else if (id == 1) {
-                return INPUT_THRUST | INPUT_ROTATE_LEFT | INPUT_FIRE;
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.W)) {
+                    input |= INPUT_THRUST;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.S)) {
+                    input |= INPUT_BREAK;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.A)) {
+                    input |= INPUT_ROTATE_LEFT;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.D)) {
+                    input |= INPUT_ROTATE_RIGHT;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.F)) {
+                    input |= INPUT_FIRE;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.G)) {
+                    input |= INPUT_BOMB;
+                }
             }
 
             return input;
@@ -419,7 +439,6 @@ namespace VectorWar {
 #if SYNC_TEST
      input = rand(); // test: use random inputs to demonstrate sync testing
 #endif
-
                     result = GGPO.AddLocalInput(ggpo, player.handle, input);
                 }
             }
@@ -427,6 +446,7 @@ namespace VectorWar {
             // synchronize these inputs with ggpo. If we have enough input to proceed ggpo will
             // modify the input list with the correct inputs to use and return 1.
             if (GGPO.SUCCEEDED(result)) {
+                frameWatch.Start();
                 ulong[] inputs = new ulong[MAX_SHIPS];
                 result = GGPO.SynchronizeInput(ggpo, inputs, MAX_SHIPS, out var disconnect_flags);
                 if (GGPO.SUCCEEDED(result)) {
@@ -437,6 +457,7 @@ namespace VectorWar {
                 else {
                     OnLog("Error inputsync");
                 }
+                frameWatch.Stop();
             }
         }
 
@@ -448,7 +469,9 @@ namespace VectorWar {
          */
 
         public static void Idle(int time) {
+            idleWatch.Start();
             ReportFailure(GGPO.Idle(ggpo, time));
+            idleWatch.Stop();
         }
 
         public static void Exit() {
@@ -469,15 +492,15 @@ namespace VectorWar {
             ngs.status = status;
         }
 
-        public static void Init(GameState gs, NonGameState ngs, GGPOPerformance perf) {
-            VectorWar.gs = gs;
-            VectorWar.ngs = ngs;
-            VectorWar.perf = perf;
+        public static void Init(GameState _gs, NonGameState _ngs, GGPOPerformance _perf) {
+            gs = _gs;
+            ngs = _ngs;
+            perf = _perf;
         }
 
         static void ReportFailure(int result) {
             if (!GGPO.SUCCEEDED(result)) {
-                OnLog(GGPO.GetErrorCodeMessage(result));
+                OnLog?.Invoke(GGPO.GetErrorCodeMessage(result));
             }
         }
     }

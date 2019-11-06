@@ -2,3 +2,9 @@
 
 # CA1712: Do not prefix enum values with type name
 dotnet_diagnostic.CA1712.severity = suggestion
+
+# CA2235: Mark all non-serializable fields
+dotnet_diagnostic.CA2235.severity = silent
+
+# IDE0063: Use simple 'using' statement
+csharp_prefer_simple_using_statement = false:suggestion

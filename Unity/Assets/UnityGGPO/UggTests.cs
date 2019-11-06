@@ -86,7 +86,7 @@ public class UggTests : MonoBehaviour {
 
     void Start() {
         Log(string.Format("Plugin Version: {0} build {1}", GGPO.Version, GGPO.BuildNumber));
-        GGPO.UggSetLogDelegate(Log);
+        GGPO.SetLogDelegate(Log);
     }
 
     bool OnBeginGame(string name) {
@@ -114,9 +114,9 @@ public class UggTests : MonoBehaviour {
         return true;
     }
 
-    unsafe bool OnLogGameState(string text, void* dataPtr, int length) {
+    unsafe bool OnLogGameState(string filename, void* dataPtr, int length) {
         // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"OnLogGameState({text})");
+        Debug.Log($"OnLogGameState({filename})");
         return true;
     }
 
