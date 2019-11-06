@@ -1546,7 +1546,7 @@ MonoBehaviour:
     type: 3}
   editorPlayerIndex: 0
   otherPlayerIndex: 1
-  localMode: 1
+  localMode: 0
 --- !u!4 &995625982
 Transform:
   m_ObjectHideFlags: 0
