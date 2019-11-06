@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using UnityEngine;
 
 public enum GGPOPlayerType {
     GGPO_PLAYERTYPE_LOCAL,
@@ -25,7 +24,7 @@ public class GGPONetworkStats {
     public int remote_frames_behind;
 }
 
-public static class GGPO {
+public static partial class GGPO {
 
     public static bool SUCCEEDED(int result) {
         return result == ERRORCODE_SUCCESS;
@@ -73,12 +72,6 @@ public static class GGPO {
                 return "ERRORCODE_INVALID_REQUEST";
         }
         return "INVALID_ERRORCODE";
-    }
-
-    public static void ReportFailure(int result) {
-        if (result != ERRORCODE_SUCCESS) {
-            Debug.LogWarning(GetErrorCodeMessage(result));
-        }
     }
 
     public const int MAX_PLAYERS = 4;
@@ -152,69 +145,69 @@ public static class GGPO {
 
     [DllImport(libraryName)]
     public static extern int UggTestStartSession(out IntPtr session,
-        BeginGameDelegate beginGame,
-        AdvanceFrameDelegate advanceFrame,
-        LoadGameStateDelegate loadGameState,
-        LogGameStateDelegate logGameState,
-        SaveGameStateDelegate saveGameState,
-        FreeBufferDelegate freeBuffer,
-        OnEventDelegate onEvent,
+        IntPtr beginGame,
+        IntPtr advanceFrame,
+        IntPtr loadGameState,
+        IntPtr logGameState,
+        IntPtr saveGameState,
+        IntPtr freeBuffer,
+        IntPtr onEvent,
         string game, int num_players, int localport);
 
     [DllImport(libraryName)]
-    public static extern IntPtr UggStartSession(
-        BeginGameDelegate beginGame,
-        AdvanceFrameDelegate advanceFrame,
-        LoadGameStateDelegate loadGameState,
-        LogGameStateDelegate logGameState,
-        SaveGameStateDelegate saveGameState,
-        FreeBufferDelegate freeBuffer,
-        OnEventDelegate onEvent,
+    static extern int UggStartSession(out IntPtr session,
+        IntPtr beginGame,
+        IntPtr advanceFrame,
+        IntPtr loadGameState,
+        IntPtr logGameState,
+        IntPtr saveGameState,
+        IntPtr freeBuffer,
+        IntPtr onEvent,
         string game, int num_players, int localport);
 
     [DllImport(libraryName)]
-    public static extern IntPtr UggStartSpectating(
-        BeginGameDelegate beginGame,
-        AdvanceFrameDelegate advanceFrame,
-        LoadGameStateDelegate loadGameState,
-        LogGameStateDelegate logGameState,
-        SaveGameStateDelegate saveGameState,
-        FreeBufferDelegate freeBuffer,
-        OnEventDelegate onEvent,
+    static extern int UggStartSpectating(out IntPtr session,
+        IntPtr beginGame,
+        IntPtr advanceFrame,
+        IntPtr loadGameState,
+        IntPtr logGameState,
+        IntPtr saveGameState,
+        IntPtr freeBuffer,
+        IntPtr onEvent,
         string game, int num_players, int localport, string host_ip, int host_port);
 
     [DllImport(libraryName)]
-    public static extern int UggSetDisconnectNotifyStart(IntPtr ggpo, int timeout);
+    static extern int UggSetDisconnectNotifyStart(IntPtr ggpo, int timeout);
 
     [DllImport(libraryName)]
-    public static extern int UggSetDisconnectTimeout(IntPtr ggpo, int timeout);
+    static extern int UggSetDisconnectTimeout(IntPtr ggpo, int timeout);
 
     [DllImport(libraryName)]
-    public static extern int UggSynchronizeInput(IntPtr ggpo, ulong[] inputs, int length, out int disconnect_flags);
+    static extern int UggSynchronizeInput(IntPtr ggpo, ulong[] inputs, int length, out int disconnect_flags);
 
     [DllImport(libraryName)]
-    public static extern int UggAddLocalInput(IntPtr ggpo, int local_player_handle, ulong input);
+    static extern int UggAddLocalInput(IntPtr ggpo, int local_player_handle, ulong input);
 
     [DllImport(libraryName)]
-    public static extern int UggCloseSession(IntPtr ggpo);
+    static extern int UggCloseSession(IntPtr ggpo);
 
     [DllImport(libraryName)]
-    public static extern int UggIdle(IntPtr ggpo, int timeout);
+    static extern int UggIdle(IntPtr ggpo, int timeout);
 
     [DllImport(libraryName)]
-    public static extern int UggAddPlayer(IntPtr ggpo, int player_type, int player_num, string player_ip_address, ushort player_port, out int phandle);
+    static extern int UggAddPlayer(IntPtr ggpo, int player_type, int player_num, string player_ip_address, ushort player_port, out int phandle);
 
     [DllImport(libraryName)]
-    public static extern int UggDisconnectPlayer(IntPtr ggpo, int phandle);
+    static extern int UggDisconnectPlayer(IntPtr ggpo, int phandle);
 
     [DllImport(libraryName)]
-    public static extern int UggSetFrameDelay(IntPtr ggpo, int phandle, int frame_delay);
+    static extern int UggSetFrameDelay(IntPtr ggpo, int phandle, int frame_delay);
 
     [DllImport(libraryName)]
-    public static extern int UggAdvanceFrame(IntPtr ggpo);
+    static extern int UggAdvanceFrame(IntPtr ggpo);
 
     [DllImport(libraryName)]
-    public static extern void UggLog(IntPtr ggpo, string text);
+    static extern void UggLog(IntPtr ggpo, string text);
 
     [DllImport(libraryName)]
     public static extern int UggGetNetworkStats(IntPtr ggpo, int phandle,
@@ -224,4 +217,88 @@ public static class GGPO {
         out int kbps_sent,
         out int local_frames_behind,
         out int remote_frames_behind);
+
+    // Access
+
+    public static void SetLogDelegate(LogDelegate callback) {
+        UggSetLogDelegate(callback);
+    }
+
+    public static int StartSession(out IntPtr session,
+        IntPtr beginGame,
+        IntPtr advanceFrame,
+        IntPtr loadGameState,
+        IntPtr logGameState,
+        IntPtr saveGameState,
+        IntPtr freeBuffer,
+        IntPtr onEvent,
+        string game, int num_players, int localport) {
+        return UggStartSession(out session, beginGame, advanceFrame, loadGameState, logGameState, saveGameState, freeBuffer, onEvent, game, num_players, localport);
+    }
+
+    public static int StartSpectating(out IntPtr session,
+        IntPtr beginGame,
+        IntPtr advanceFrame,
+        IntPtr loadGameState,
+        IntPtr logGameState,
+        IntPtr saveGameState,
+        IntPtr freeBuffer,
+        IntPtr onEvent,
+        string game, int num_players, int localport, string host_ip, int host_port) {
+        return UggStartSpectating(out session, beginGame, advanceFrame, loadGameState, logGameState, saveGameState, freeBuffer, onEvent, game, num_players, localport, host_ip, host_port);
+    }
+
+    public static int SetDisconnectNotifyStart(IntPtr ggpo, int timeout) {
+        return UggSetDisconnectNotifyStart(ggpo, timeout);
+    }
+
+    public static int SetDisconnectTimeout(IntPtr ggpo, int timeout) {
+        return UggSetDisconnectTimeout(ggpo, timeout);
+    }
+
+    public static int SynchronizeInput(IntPtr ggpo, ulong[] inputs, int length, out int disconnect_flags) {
+        return UggSynchronizeInput(ggpo, inputs, length, out disconnect_flags);
+    }
+
+    public static int AddLocalInput(IntPtr ggpo, int local_player_handle, ulong input) {
+        return UggAddLocalInput(ggpo, local_player_handle, input);
+    }
+
+    public static int CloseSession(IntPtr ggpo) {
+        return UggCloseSession(ggpo);
+    }
+
+    public static int Idle(IntPtr ggpo, int timeout) {
+        return UggIdle(ggpo, timeout);
+    }
+
+    public static int AddPlayer(IntPtr ggpo, int player_type, int player_num, string player_ip_address, ushort player_port, out int phandle) {
+        return UggAddPlayer(ggpo, player_type, player_num, player_ip_address, player_port, out phandle);
+    }
+
+    public static int DisconnectPlayer(IntPtr ggpo, int phandle) {
+        return UggDisconnectPlayer(ggpo, phandle);
+    }
+
+    public static int SetFrameDelay(IntPtr ggpo, int phandle, int frame_delay) {
+        return UggSetFrameDelay(ggpo, phandle, frame_delay);
+    }
+
+    public static int AdvanceFrame(IntPtr ggpo) {
+        return UggAdvanceFrame(ggpo);
+    }
+
+    public static void Log(IntPtr ggpo, string text) {
+        UggLog(ggpo, text);
+    }
+
+    public static int GetNetworkStats(IntPtr ggpo, int phandle,
+        out int send_queue_len,
+        out int recv_queue_len,
+        out int ping,
+        out int kbps_sent,
+        out int local_frames_behind,
+        out int remote_frames_behind) {
+        return UggGetNetworkStats(ggpo, phandle, out send_queue_len, out recv_queue_len, out ping, out kbps_sent, out local_frames_behind, out remote_frames_behind);
+    }
 }

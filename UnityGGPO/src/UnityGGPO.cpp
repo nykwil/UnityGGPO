@@ -9,7 +9,7 @@
 #include <cstdio>
 
 constexpr auto PLUGIN_VERSION = "1.0.0.0";
-constexpr auto PLUGIN_BUILD_NUMBER = 10;
+constexpr auto PLUGIN_BUILD_NUMBER = 1;
 
 LogDelegate uggLogCallback = nullptr;
 
@@ -39,9 +39,63 @@ PLUGINEX(int) UggPluginBuildNumber()
 	return PLUGIN_BUILD_NUMBER;
 }
 
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetLogDelegate(LogDelegate callback)
+PLUGINEX(void) UggSetLogDelegate(LogDelegate callback)
 {
 	uggLogCallback = callback;
+}
+
+void TestOnEventDelegate(OnEventDelegate realOnEventCallback)
+{
+	UggCallLogv("UggTestOnEventDelegate");
+
+	GGPOEvent evt;
+	evt.code = GGPO_EVENTCODE_CONNECTED_TO_PEER;
+	evt.u.connected.player = 9;
+	realOnEventCallback(&evt);
+
+	evt.code = GGPO_EVENTCODE_SYNCHRONIZING_WITH_PEER;
+	evt.u.synchronizing.player = 9;
+	evt.u.synchronizing.count = 10;
+	evt.u.synchronizing.total = 11;
+	realOnEventCallback(&evt);
+
+	evt.code = GGPO_EVENTCODE_SYNCHRONIZED_WITH_PEER;
+	evt.u.synchronized.player = 9;
+	realOnEventCallback(&evt);
+
+	evt.code = GGPO_EVENTCODE_RUNNING;
+	realOnEventCallback(&evt);
+
+	evt.code = GGPO_EVENTCODE_CONNECTION_INTERRUPTED;
+	evt.u.connection_interrupted.player = 9;
+	evt.u.connection_interrupted.disconnect_timeout = 10;
+	realOnEventCallback(&evt);
+
+	evt.code = GGPO_EVENTCODE_CONNECTION_RESUMED;
+	evt.u.connection_resumed.player = 9;
+	realOnEventCallback(&evt);
+
+	evt.code = GGPO_EVENTCODE_DISCONNECTED_FROM_PEER;
+	evt.u.disconnected.player = 9;
+	realOnEventCallback(&evt);
+
+	evt.code = GGPO_EVENTCODE_TIMESYNC;
+	evt.u.timesync.frames_ahead = 9;
+	realOnEventCallback(&evt);
+}
+
+void TestAllDelegates(const GGPOSessionCallbacks& cb) {
+	unsigned char* data;
+	int length;
+	int checksum;
+
+	cb.advance_frame(1);
+	cb.begin_game("Test");
+	cb.save_game_state(&data, &length, &checksum, 1);
+	cb.load_game_state(data, length);
+	cb.log_game_state("", data, length);
+	cb.free_buffer(data);
+	TestOnEventDelegate(cb.on_event);
 }
 
 PLUGINEX(int) UggTestStartSession(GGPOPtr& sessionRef,
@@ -65,14 +119,14 @@ PLUGINEX(int) UggTestStartSession(GGPOPtr& sessionRef,
 	cb.free_buffer = freeBuffer;
 	cb.on_event = onEvent;
 
+	TestAllDelegates(cb);
 	GGPOSession* ggpo;
-
 	auto ret = ggpo_start_session(&ggpo, &cb, game, num_players, sizeof(uint64_t), localport);
 	sessionRef = (GGPOPtr)ggpo;
 	return ret;
 }
 
-extern "C" GGPOPtr UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggStartSession(
+PLUGINEX(int) UggStartSession(GGPOPtr& sessionRef,
 	BeginGameDelegate beginGame,
 	AdvanceFrameDelegate advanceFrame,
 	LoadGameStateDelegate loadGameState,
@@ -94,19 +148,12 @@ extern "C" GGPOPtr UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggStartSession(
 	cb.on_event = onEvent;
 
 	GGPOSession* ggpo;
-
-	GGPOErrorCode ret = ggpo_start_session(&ggpo, &cb, game, num_players, sizeof(uint64_t), localport);
-
-	if (GGPO_SUCCEEDED(ret)) {
-		return (GGPOPtr)ggpo;
-	}
-	else {
-		UggCallLogv("UggStartSession - Failed");
-		return 0; // nullptr;
-	}
+	auto ret = ggpo_start_session(&ggpo, &cb, game, num_players, sizeof(uint64_t), localport);
+	sessionRef = (GGPOPtr)ggpo;
+	return ret;
 }
 
-extern "C" GGPOPtr UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggStartSpectating(
+PLUGINEX(int) UggStartSpectating(GGPOPtr& sessionRef,
 	BeginGameDelegate beginGame,
 	AdvanceFrameDelegate advanceFrame,
 	LoadGameStateDelegate loadGameState,
@@ -139,50 +186,43 @@ extern "C" GGPOPtr UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggStartSpectating
 	}
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetDisconnectNotifyStart(GGPOPtr ggpo, int timeout)
+PLUGINEX(int) UggSetDisconnectNotifyStart(GGPOPtr ggpo, int timeout)
 {
 	UggCallLog("UggSetDisconnectNotifyStart");
 	return ggpo_set_disconnect_notify_start((GGPOSession*)ggpo, timeout);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetDisconnectTimeout(GGPOPtr ggpo, int timeout)
+PLUGINEX(int) UggSetDisconnectTimeout(GGPOPtr ggpo, int timeout)
 {
 	UggCallLog("UggSetDisconnectTimeout");
 	return ggpo_set_disconnect_timeout((GGPOSession*)ggpo, timeout);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSynchronizeInput(GGPOPtr ggpo, uint64_t * inputs, int length, int& disconnect_flags)
+PLUGINEX(int) UggSynchronizeInput(GGPOPtr ggpo, uint64_t* inputs, int length, int& disconnect_flags)
 {
 	UggCallLog("UggSynchronizeInput");
 	return ggpo_synchronize_input((GGPOSession*)ggpo, inputs, sizeof(uint64_t) * length, &disconnect_flags);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggAddLocalInput(GGPOPtr ggpo, int local_player_handle, uint64_t input)
+PLUGINEX(int) UggAddLocalInput(GGPOPtr ggpo, int local_player_handle, uint64_t input)
 {
 	//	UggCallLog("UggAddLocalInput");
 	return ggpo_add_local_input((GGPOSession*)ggpo, local_player_handle, &input, sizeof(uint64_t));
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggCloseSession(GGPOPtr ggpo)
+PLUGINEX(int) UggCloseSession(GGPOPtr ggpo)
 {
 	UggCallLog("UggCloseSession");
-	try
-	{
-		return ggpo_close_session((GGPOSession*)ggpo);
-	}
-	catch (const std::exception&)
-	{
-		return GGPO_ERRORCODE_GENERAL_FAILURE;
-	}
+	return ggpo_close_session((GGPOSession*)ggpo);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggIdle(GGPOPtr ggpo, int timeout)
+PLUGINEX(int) UggIdle(GGPOPtr ggpo, int timeout)
 {
 	//	UggCallLog("UggIdle");
 	return ggpo_idle((GGPOSession*)ggpo, timeout);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggAddPlayer(GGPOPtr ggpo,
+PLUGINEX(int) UggAddPlayer(GGPOPtr ggpo,
 	int player_type,
 	int player_num,
 	const char* player_ip_address,
@@ -199,31 +239,31 @@ extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggAddPlayer(GGPOPtr g
 	return ggpo_add_player((GGPOSession*)ggpo, &player, &phandle);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggDisconnectPlayer(GGPOPtr ggpo, int phandle)
+PLUGINEX(int) UggDisconnectPlayer(GGPOPtr ggpo, int phandle)
 {
 	UggCallLog("UggDisconnectPlayer");
 	return ggpo_disconnect_player((GGPOSession*)ggpo, phandle);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetFrameDelay(GGPOPtr ggpo, int phandle, int frame_delay)
+PLUGINEX(int) UggSetFrameDelay(GGPOPtr ggpo, int phandle, int frame_delay)
 {
 	UggCallLog("UggSetFrameDelay");
 	return ggpo_set_frame_delay((GGPOSession*)ggpo, phandle, frame_delay);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggAdvanceFrame(GGPOPtr ggpo)
+PLUGINEX(int) UggAdvanceFrame(GGPOPtr ggpo)
 {
 	UggCallLog("UggAdvanceFrame");
 	return ggpo_advance_frame((GGPOSession*)ggpo);
 }
 
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggLog(GGPOPtr ggpo, const char* v)
+PLUGINEX(void) UggLog(GGPOPtr ggpo, const char* text)
 {
-	UggCallLogv("UggLog %s", v);
-	return ggpo_log((GGPOSession*)ggpo, v);
+	UggCallLogv("UggLog %s", text);
+	ggpo_log((GGPOSession*)ggpo, text);
 }
 
-extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggGetNetworkStats(GGPOPtr ggpo, int phandle,
+PLUGINEX(int) UggGetNetworkStats(GGPOPtr ggpo, int phandle,
 	int& send_queue_len,
 	int& recv_queue_len,
 	int& ping,

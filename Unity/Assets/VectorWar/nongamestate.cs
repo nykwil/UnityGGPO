@@ -26,7 +26,7 @@ namespace VectorWar {
         public const float SHIP_THRUST = 0.06f;
         public const float SHIP_MAX_THRUST = 4.0f;
         public const float SHIP_BREAK_SPEED = 0.6f;
-        public const int BULLET_SPEED = 5;
+        public const float BULLET_SPEED = 5f;
         public const int BULLET_COOLDOWN = 8;
         public const int BULLET_DAMAGE = 10;
     }
@@ -55,12 +55,11 @@ namespace VectorWar {
         public int connect_progress;
         public int disconnect_timeout;
         public int disconnect_start;
+        public int controllerId;
     };
 
     public class NonGameState {
-        public int local_player_handle;
-        public PlayerConnectionInfo[] players = new PlayerConnectionInfo[MAX_PLAYERS];
-        public int num_players;
+        public PlayerConnectionInfo[] players;
         public string status;
 
         public ChecksumInfo now;
@@ -72,7 +71,7 @@ namespace VectorWar {
         };
 
         public void SetConnectState(int handle, PlayerConnectState state) {
-            for (int i = 0; i < num_players; i++) {
+            for (int i = 0; i < players.Length; i++) {
                 if (players[i].handle == handle) {
                     players[i].connect_progress = 0;
                     players[i].state = state;
@@ -82,7 +81,7 @@ namespace VectorWar {
         }
 
         public void SetDisconnectTimeout(int handle, int now, int timeout) {
-            for (int i = 0; i < num_players; i++) {
+            for (int i = 0; i < players.Length; i++) {
                 if (players[i].handle == handle) {
                     players[i].disconnect_start = now;
                     players[i].disconnect_timeout = timeout;
@@ -93,13 +92,13 @@ namespace VectorWar {
         }
 
         public void SetConnectState(PlayerConnectState state) {
-            for (int i = 0; i < num_players; i++) {
+            for (int i = 0; i < players.Length; i++) {
                 players[i].state = state;
             }
         }
 
         public void UpdateConnectProgress(int handle, int progress) {
-            for (int i = 0; i < num_players; i++) {
+            for (int i = 0; i < players.Length; i++) {
                 if (players[i].handle == handle) {
                     players[i].connect_progress = progress;
                     break;

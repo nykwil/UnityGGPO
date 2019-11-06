@@ -9,7 +9,6 @@ namespace VectorWar {
         public ushort port;
         public string ip;
         public bool spectator;
-        public bool local;
     }
 
     public class VectorWarRunner : MonoBehaviour {
@@ -21,13 +20,13 @@ namespace VectorWar {
 
         public ShipView shipPrefab;
         public Transform bulletPrefab;
-        public bool showLog;
+        public int editorPlayerIndex = 0;
+        public int otherPlayerIndex = 1;
+        public bool localMode = true;
 
         ShipView[] shipViews = Array.Empty<ShipView>();
         Transform[][] bulletLists;
         float next;
-        VectorWar vectorWar;
-        GGPO.LogDelegate logDelegate;
 
         public bool Running { get; set; }
 
@@ -36,25 +35,35 @@ namespace VectorWar {
         public static event Action<string> OnNowChecksum = (string s) => { };
         public static event Action<string> OnLog = (string s) => { };
 
-        public void LogCallback(string text) {
+        public static void LogCallback(string text) {
             OnLog(text);
         }
 
         public void Startup() {
             gs = new GameState();
             ngs = new NonGameState();
-            logDelegate = new GGPO.LogDelegate(LogCallback);
-            GGPO.UggSetLogDelegate(logDelegate);
-            vectorWar = new VectorWar(gs, ngs, perf);
+            if (localMode) {
+                InitLocal();
+            }
+            else {
+                InitRemote();
+            }
+
+            Running = true;
+        }
+
+        void InitRemote() {
+            GGPO.UggSetLogDelegate(LogCallback);
+            VectorWar.Init(gs, ngs, perf);
+
             var remote_index = -1;
             var num_spectators = 0;
             var num_players = 0;
-            var player_index = -1;
+
+            var player_index = Application.isEditor ? editorPlayerIndex : otherPlayerIndex;
+            OnLog("Player Index: " + player_index);
             for (int i = 0; i < connections.Count; ++i) {
-                if (connections[i].local) {
-                    player_index = i;
-                }
-                else if (remote_index == -1) {
+                if (i != player_index && remote_index == -1) {
                     remote_index = i;
                 }
 
@@ -66,7 +75,7 @@ namespace VectorWar {
                 }
             }
             if (connections[player_index].spectator) {
-                vectorWar.InitSpectator(connections[player_index].port, num_players, connections[remote_index].ip, connections[remote_index].port);
+                VectorWar.InitSpectator(connections[player_index].port, num_players, connections[remote_index].ip, connections[remote_index].port);
             }
             else {
                 var players = new List<GGPOPlayer>();
@@ -91,40 +100,80 @@ namespace VectorWar {
                     }
                     players.Add(player);
                 }
-                vectorWar.Init(connections[player_index].port, num_players, players, num_spectators);
+                VectorWar.Init(connections[player_index].port, num_players, players, num_spectators);
             }
-            Running = true;
+        }
+
+        void InitLocal() {
+            int handle = 1;
+            int controllerId = 0;
+            ngs.players = new PlayerConnectionInfo[2];
+            ngs.players[0] = new PlayerConnectionInfo {
+                handle = handle,
+                type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
+                connect_progress = 100,
+                controllerId = controllerId
+            };
+            ngs.SetConnectState(handle, PlayerConnectState.Connecting);
+            ++handle;
+            ++controllerId;
+            ngs.players[1] = new PlayerConnectionInfo {
+                handle = handle,
+                type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
+                connect_progress = 100,
+                controllerId = controllerId++
+            };
+            ngs.SetConnectState(handle, PlayerConnectState.Connecting);
+            gs.Init(ngs.players.Length);
         }
 
         public void DisconnectPlayer(int player) {
             if (Running) {
-                vectorWar.DisconnectPlayer(player);
+                if (!localMode) {
+                    VectorWar.DisconnectPlayer(player);
+                }
             }
         }
 
         public void Shutdown() {
             if (Running) {
-                GGPO.UggSetLogDelegate(null);
-                vectorWar.Exit();
+                if (!localMode) {
+                    VectorWar.Exit();
+                    GGPO.UggSetLogDelegate(null);
+                }
                 Running = false;
             }
+        }
+
+        void OnDestroy() {
+            VectorWar.Exit();
         }
 
         void Update() {
             if (Running) {
                 var now = Time.time;
-                vectorWar.Idle(Mathf.Max(0, (int)((next - now) * 1000f) - 1));
-
-                if (now >= next) {
-                    vectorWar.RunFrame();
-                    next = now + 1f / 60f;
+                if (!localMode) {
+                    VectorWar.Idle(Mathf.Max(0, (int)((next - now) * 1000f) - 1));
                 }
 
+                if (now >= next) {
+                    if (localMode) {
+                        var inputs = new ulong[ngs.players.Length];
+                        for (int i = 0; i < inputs.Length; ++i) {
+                            inputs[i] = VectorWar.ReadInputs(ngs.players[i].controllerId);
+                        }
+                        gs.Update(inputs, 0);
+                    }
+                    else {
+                        VectorWar.RunFrame();
+                    }
+                    next = now + 1f / 60f;
+                }
                 UpdateGameView();
             }
         }
 
-        void Init() {
+        void ResetView() {
             var shipGss = gs._ships;
             shipViews = new ShipView[shipGss.Length];
             bulletLists = new Transform[shipGss.Length][];
@@ -145,7 +194,7 @@ namespace VectorWar {
 
             var shipsGss = gs._ships;
             if (shipViews.Length != shipsGss.Length) {
-                Init();
+                ResetView();
             }
             for (int i = 0; i < shipsGss.Length; ++i) {
                 shipViews[i].Populate(shipsGss[i], ngs.players[i]);
@@ -153,7 +202,7 @@ namespace VectorWar {
             }
         }
 
-        private void UpdateBullets(Bullet[] bullets, Transform[] bulletList) {
+        void UpdateBullets(Bullet[] bullets, Transform[] bulletList) {
             for (int j = 0; j < bulletList.Length; ++j) {
                 bulletList[j].position = bullets[j].position;
                 bulletList[j].gameObject.SetActive(bullets[j].active);
@@ -161,7 +210,7 @@ namespace VectorWar {
         }
 
         string RenderChecksum(NonGameState.ChecksumInfo info) {
-            return string.Format("Frame: {0} Checksum: {1}", info.framenumber, info.checksum); // %04d  %08x
+            return string.Format("f:{0} c:{1}", info.framenumber, info.checksum); // %04d  %08x
         }
     }
 }

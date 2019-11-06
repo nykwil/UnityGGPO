@@ -6,10 +6,11 @@ namespace VectorWar {
     public class ShipView : MonoBehaviour {
         public Text txtStatus;
         public Image imgProgress;
+        public Transform model;
 
         public void Populate(Ship shipGs, PlayerConnectionInfo info) {
             transform.position = shipGs.position;
-            transform.rotation = Quaternion.Euler(0, shipGs.heading, 0);
+            model.rotation = Quaternion.Euler(0, 0, shipGs.heading);
             string status = "";
             int progress = -1;
             switch (info.state) {

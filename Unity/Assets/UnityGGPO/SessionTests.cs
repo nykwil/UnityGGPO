@@ -52,7 +52,6 @@ public class SessionTests : MonoBehaviour {
     const int MAX_PLAYERS = 2;
 
     readonly static StringBuilder console = new StringBuilder();
-    GGPOSession session;
 
     public string gameName = "SessionTest";
     public int localPort = 7000;
@@ -60,8 +59,7 @@ public class SessionTests : MonoBehaviour {
 
     void Start() {
         Log(string.Format("Plugin Version: {0} build {1}", GGPO.Version, GGPO.BuildNumber));
-        GGPO.UggSetLogDelegate(Log);
-        session = new GGPOSession();
+        GGPO.Session.Init(Log);
     }
 
     void Update() {
@@ -179,66 +177,66 @@ public class SessionTests : MonoBehaviour {
 
         switch (testId) {
             case 0:
-                session.StartSession(OnBeginGame, OnAdvanceFrame, OnLoadGameState, OnLogGameState, OnSaveGameState, OnFreeBuffer,
+                GGPO.Session.StartSession(OnBeginGame, OnAdvanceFrame, OnLoadGameState, OnLogGameState, OnSaveGameState, OnFreeBuffer,
                     OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
                     OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventTimesync, "Game", numPlayers, localPort);
                 break;
 
             case 1:
-                session.StartSpectating(OnBeginGame, OnAdvanceFrame, OnLoadGameState, OnLogGameState, OnSaveGameState, OnFreeBuffer,
+                GGPO.Session.StartSpectating(OnBeginGame, OnAdvanceFrame, OnLoadGameState, OnLogGameState, OnSaveGameState, OnFreeBuffer,
                     OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
                     OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventTimesync, "Game", numPlayers, localPort, hostIp, hostPort);
                 break;
 
             case 2:
-                session.SetDisconnectTimeout(timeout);
+                GGPO.Session.SetDisconnectTimeout(timeout);
                 break;
 
             case 3:
-                session.SynchronizeInput(inputs, MAX_PLAYERS, out int disconnect_flags);
+                GGPO.Session.SynchronizeInput(inputs, MAX_PLAYERS, out int disconnect_flags);
                 Debug.Log($"DllSynchronizeInput{disconnect_flags} {inputs[0]} {inputs[1]}");
                 break;
 
             case 4:
-                session.AddLocalInput(local_player_handle, input);
+                GGPO.Session.AddLocalInput(local_player_handle, input);
                 break;
 
             case 5:
-                session.CloseSession();
+                GGPO.Session.CloseSession();
                 break;
 
             case 6:
-                session.Idle(time);
+                GGPO.Session.Idle(time);
                 break;
 
             case 7:
-                session.AddPlayer(player, out phandle);
+                GGPO.Session.AddPlayer(player, out phandle);
                 break;
 
             case 8:
-                session.DisconnectPlayer(phandle);
+                GGPO.Session.DisconnectPlayer(phandle);
                 break;
 
             case 9:
-                session.SetFrameDelay(phandle, frame_delay);
+                GGPO.Session.SetFrameDelay(phandle, frame_delay);
                 break;
 
             case 10:
-                session.AdvanceFrame();
+                GGPO.Session.AdvanceFrame();
                 break;
 
             case 11:
-                session.GetNetworkStats(phandle, out var stats);
+                GGPO.Session.GetNetworkStats(phandle, out var stats);
                 Debug.Log($"DllSynchronizeInput{stats.send_queue_len}, {stats.recv_queue_len}, {stats.ping}, {stats.kbps_sent}, " +
                     $"{stats.local_frames_behind}, {stats.remote_frames_behind}");
                 break;
 
             case 12:
-                session.SetDisconnectNotifyStart(timeout);
+                GGPO.Session.SetDisconnectNotifyStart(timeout);
                 break;
 
             case 13:
-                session.Log(logText);
+                GGPO.Session.Log(logText);
                 break;
         }
     }

@@ -30,9 +30,8 @@ namespace VectorWar {
     public class GameState {
         public int _framenumber;
         public Ship[] _ships;
-        public IntPtr ggpo;
 
-        public static Action<string> Log = (string s) => Debug.Log(s);
+        public static event Action<string> OnLog = (string s) => { };
 
         [NonSerialized]
         public readonly Rect _bounds = new Rect(0, 0, 640, 480);
@@ -95,13 +94,13 @@ namespace VectorWar {
         public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
             Ship ship = _ships[i];
 
-            Log($"parsing ship {i} inputs: {inputs}.\n");
+            OnLog($"parsing ship {i} inputs: {inputs}.\n");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
-                heading = (ship.heading + ROTATE_INCREMENT) % 360;
+                heading = (ship.heading - ROTATE_INCREMENT) % 360;
             }
             else if ((inputs & INPUT_ROTATE_LEFT) != 0) {
-                heading = (ship.heading - ROTATE_INCREMENT + 360) % 360;
+                heading = (ship.heading + ROTATE_INCREMENT + 360) % 360;
             }
             else {
                 heading = ship.heading;
@@ -122,13 +121,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             Ship ship = _ships[index];
 
-            Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
+            OnLog($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    Log("firing bullet.\n");
+                    OnLog("firing bullet.\n");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(degtorad(ship.heading));
                         float dy = Mathf.Sin(degtorad(ship.heading));
@@ -158,11 +157,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).\n");
+            OnLog($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).\n");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).\n");
+            OnLog($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).\n");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {
@@ -175,23 +174,22 @@ namespace VectorWar {
                 ship.position.y += (ship.velocity.y * 2);
             }
             for (int i = 0; i < ship.bullets.Length; i++) {
-                Bullet bullet = ship.bullets[i];
-                if (bullet.active) {
-                    bullet.position.x += bullet.velocity.x;
-                    bullet.position.y += bullet.velocity.y;
-                    if (bullet.position.x < _bounds.xMin ||
-                        bullet.position.y < _bounds.yMin ||
-                        bullet.position.x > _bounds.xMax ||
-                        bullet.position.y > _bounds.yMax) {
-                        bullet.active = false;
+                if (ship.bullets[i].active) {
+                    ship.bullets[i].position.x += ship.bullets[i].velocity.x;
+                    ship.bullets[i].position.y += ship.bullets[i].velocity.y;
+                    if (ship.bullets[i].position.x < _bounds.xMin ||
+                        ship.bullets[i].position.y < _bounds.yMin ||
+                        ship.bullets[i].position.x > _bounds.xMax ||
+                        ship.bullets[i].position.y > _bounds.yMax) {
+                        ship.bullets[i].active = false;
                     }
                     else {
                         for (int j = 0; j < _ships.Length; j++) {
-                            Ship other = _ships[j];
-                            if (distance(bullet.position, other.position) < other.radius) {
+                            var other = _ships[j];
+                            if (distance(ship.bullets[i].position, other.position) < other.radius) {
                                 ship.score++;
                                 other.health -= BULLET_DAMAGE;
-                                bullet.active = false;
+                                ship.bullets[i].active = false;
                                 break;
                             }
                         }

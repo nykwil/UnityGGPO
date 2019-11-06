@@ -325,8 +325,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cc4d9c5dee77414081b6d74838b132b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  testId: 0
-  runTest: 0
+  MAX_PLAYERS: 2
+  result: -1
+  timeout: 1
+  player_type: 3
+  player_num: 4
+  player_ip_address: 127.0.0.1
+  player_port: 9000
+  inputs: 03000000000000000400000000000000
+  local_player_handle: 0
+  input: 0
+  time: 0
+  phandle: 0
+  frame_delay: 10
+  logText: 
+  host_ip: 127.0.0.1
+  num_players: 2
+  host_port: 0
+  local_port: 0
 --- !u!4 &380082336
 Transform:
   m_ObjectHideFlags: 0

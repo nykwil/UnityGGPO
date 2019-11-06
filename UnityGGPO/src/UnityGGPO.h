@@ -25,9 +25,8 @@ extern "C" {
 		FreeBufferDelegate freeBuffer,
 		OnEventDelegate onEvent,
 		const char* game, int num_players, int localport);
-
-	void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetLogDelegate(LogDelegate callback);
-	GGPOPtr UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggStartSession(
+	PLUGINEX(void) UggSetLogDelegate(LogDelegate callback);
+	PLUGINEX(int) UggStartSession(GGPOPtr& sessionRef,
 		BeginGameDelegate beginGame,
 		AdvanceFrameDelegate advanceFrame,
 		LoadGameStateDelegate loadGameState,
@@ -36,7 +35,7 @@ extern "C" {
 		FreeBufferDelegate freeBuffer,
 		OnEventDelegate onEvent,
 		const char* game, int num_players, int localport);
-	GGPOPtr UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggStartSpectating(
+	PLUGINEX(int) UggStartSpectating(GGPOPtr& sessionRef,
 		BeginGameDelegate beginGame,
 		AdvanceFrameDelegate advanceFrame,
 		LoadGameStateDelegate loadGameState,
@@ -45,23 +44,23 @@ extern "C" {
 		FreeBufferDelegate freeBuffer,
 		OnEventDelegate onEvent,
 		const char* game, int num_players, int localport, char* host_ip, int host_port);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetDisconnectNotifyStart(GGPOPtr ggpo, int timeout);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetDisconnectTimeout(GGPOPtr ggpo, int timeout);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSynchronizeInput(GGPOPtr ggpo, uint64_t* inputs, int length, int& disconnect_flags);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggAddLocalInput(GGPOPtr ggpo, int local_player_handle, uint64_t input);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggCloseSession(GGPOPtr ggpo);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggIdle(GGPOPtr ggpo, int timeout);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggAddPlayer(GGPOPtr ggpo,
+	PLUGINEX(int) UggSetDisconnectNotifyStart(GGPOPtr ggpo, int timeout);
+	PLUGINEX(int) UggSetDisconnectTimeout(GGPOPtr ggpo, int timeout);
+	PLUGINEX(int) UggSynchronizeInput(GGPOPtr ggpo, uint64_t* inputs, int length, int& disconnect_flags);
+	PLUGINEX(int) UggAddLocalInput(GGPOPtr ggpo, int local_player_handle, uint64_t input);
+	PLUGINEX(int) UggCloseSession(GGPOPtr ggpo);
+	PLUGINEX(int) UggIdle(GGPOPtr ggpo, int timeout);
+	PLUGINEX(int) UggAddPlayer(GGPOPtr ggpo,
 		int player_type,
 		int player_num,
 		const char* player_ip_address,
 		unsigned short player_port,
 		int& phandle);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggDisconnectPlayer(GGPOPtr ggpo, int phandle);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggSetFrameDelay(GGPOPtr ggpo, int phandle, int frame_delay);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggAdvanceFrame(GGPOPtr ggpo);
-	void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggLog(GGPOPtr ggpo, const char* v);
-	int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UggGetNetworkStats(GGPOPtr ggpo, int phandle,
+	PLUGINEX(int) UggDisconnectPlayer(GGPOPtr ggpo, int phandle);
+	PLUGINEX(int) UggSetFrameDelay(GGPOPtr ggpo, int phandle, int frame_delay);
+	PLUGINEX(int) UggAdvanceFrame(GGPOPtr ggpo);
+	PLUGINEX(void) UggLog(GGPOPtr ggpo, const char* text);
+	PLUGINEX(int) UggGetNetworkStats(GGPOPtr ggpo, int phandle,
 		int& send_queue_len,
 		int& recv_queue_len,
 		int& ping,

@@ -15,6 +15,9 @@ namespace VectorWar {
         public Button btnConnect;
         public VectorWarRunner runner;
         readonly List<string> logs = new List<string>();
+        public Toggle tglRunnerLog;
+        public Toggle tglVectorWarLog;
+        public Toggle tglGameStateLog;
 
         void Awake() {
             VectorWarRunner.OnStatus += OnStatus;
@@ -22,9 +25,19 @@ namespace VectorWar {
             VectorWarRunner.OnNowChecksum += OnNowChecksum;
             VectorWarRunner.OnLog += OnLog;
             VectorWar.OnLog += OnLog;
+            GameState.OnLog += OnLog;
             btnConnect.onClick.AddListener(OnConnect);
             btnPlayer1.onClick.AddListener(OnPlayer1);
             btnPlayer2.onClick.AddListener(OnPlayer2);
+
+            tglRunnerLog.isOn = true;
+            tglVectorWarLog.isOn = true;
+            tglGameStateLog.isOn = true;
+
+            tglRunnerLog.onValueChanged.AddListener(OnToggleRunnerLog);
+            tglVectorWarLog.onValueChanged.AddListener(OnVectorWarLog);
+            tglGameStateLog.onValueChanged.AddListener(OnGameStateLog);
+
             SetConnectText("Startup");
         }
 
@@ -34,9 +47,34 @@ namespace VectorWar {
             VectorWarRunner.OnNowChecksum -= OnNowChecksum;
             VectorWarRunner.OnLog -= OnLog;
             VectorWar.OnLog -= OnLog;
+            GameState.OnLog -= OnLog;
             btnConnect.onClick.RemoveListener(OnConnect);
             btnPlayer1.onClick.RemoveListener(OnPlayer1);
             btnPlayer2.onClick.RemoveListener(OnPlayer2);
+            tglRunnerLog.onValueChanged.RemoveListener(OnToggleRunnerLog);
+            tglVectorWarLog.onValueChanged.RemoveListener(OnVectorWarLog);
+            tglGameStateLog.onValueChanged.RemoveListener(OnGameStateLog);
+        }
+
+        void OnGameStateLog(bool arg0) {
+            GameState.OnLog -= OnLog;
+            if (arg0) {
+                GameState.OnLog += OnLog;
+            }
+        }
+
+        void OnVectorWarLog(bool arg0) {
+            VectorWar.OnLog -= OnLog;
+            if (arg0) {
+                VectorWar.OnLog += OnLog;
+            }
+        }
+
+        void OnToggleRunnerLog(bool arg0) {
+            VectorWarRunner.OnLog -= OnLog;
+            if (arg0) {
+                VectorWarRunner.OnLog += OnLog;
+            }
         }
 
         void SetConnectText(string text) {

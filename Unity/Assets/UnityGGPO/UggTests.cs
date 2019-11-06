@@ -29,6 +29,14 @@ public class UggTests : MonoBehaviour {
 
     IntPtr ggpo;
 
+    IntPtr ptrBeginGame;
+    IntPtr ptrAdvanceFrame;
+    IntPtr ptrLoadGameState;
+    IntPtr ptrLogGameState;
+    IntPtr ptrSaveGameState;
+    IntPtr ptrFreeBuffer;
+    IntPtr ptrOnEvent;
+
     readonly static StringBuilder console = new StringBuilder();
     readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
 
@@ -119,9 +127,12 @@ public class UggTests : MonoBehaviour {
     }
 
     unsafe void OnFreeBuffer(void* dataPtr) {
-        Debug.Log($"OnFreeBuffer({(long)dataPtr})");
-        if (cache.TryGetValue((long)dataPtr, out var data)) {
-            data.Dispose();
+        if (dataPtr != null) {
+            Debug.Log($"OnFreeBuffer({(long)dataPtr})");
+            if (cache.TryGetValue((long)dataPtr, out var data)) {
+                data.Dispose();
+                cache.Remove((long)dataPtr);
+            }
         }
     }
 
@@ -176,108 +187,127 @@ public class UggTests : MonoBehaviour {
 
     [Button]
     public void RunTest(int testId) {
+        unsafe {
+            ptrBeginGame = Marshal.GetFunctionPointerForDelegate<GGPO.BeginGameDelegate>(OnBeginGame);
+            ptrAdvanceFrame = Marshal.GetFunctionPointerForDelegate<GGPO.AdvanceFrameDelegate>(OnAdvanceFrame);
+            ptrLoadGameState = Marshal.GetFunctionPointerForDelegate<GGPO.LoadGameStateDelegate>(OnLoadGameState);
+            ptrLogGameState = Marshal.GetFunctionPointerForDelegate<GGPO.LogGameStateDelegate>(OnLogGameState);
+            ptrSaveGameState = Marshal.GetFunctionPointerForDelegate<GGPO.SaveGameStateDelegate>(OnSaveGameState);
+            ptrFreeBuffer = Marshal.GetFunctionPointerForDelegate<GGPO.FreeBufferDelegate>(OnFreeBuffer);
+            ptrOnEvent = Marshal.GetFunctionPointerForDelegate<GGPO.OnEventDelegate>(OnEventCallback);
+        }
+
         switch (testId) {
             case 0:
-                unsafe {
-                    ggpo = GGPO.UggStartSession(OnBeginGame,
-                        OnAdvanceFrame,
-                        OnLoadGameState,
-                        OnLogGameState,
-                        OnSaveGameState,
-                        OnFreeBuffer,
-                        OnEventCallback,
-                        "Tests", num_players, local_port);
+                GGPO.StartSession(out ggpo,
+                    ptrBeginGame,
+                    ptrAdvanceFrame,
+                    ptrLoadGameState,
+                    ptrLogGameState,
+                    ptrSaveGameState,
+                    ptrFreeBuffer,
+                    ptrOnEvent,
+                    "Tests", num_players, local_port);
 
-                    Debug.Assert(ggpo != IntPtr.Zero);
-                }
+                Debug.Assert(ggpo != IntPtr.Zero);
                 break;
 
             case 1:
-                unsafe {
-                    ggpo = GGPO.UggStartSpectating(OnBeginGame,
-                        OnAdvanceFrame,
-                        OnLoadGameState,
-                        OnLogGameState,
-                        OnSaveGameState,
-                        OnFreeBuffer,
-                        OnEventCallback,
-                        "Tests", num_players, local_port, host_ip, host_port);
+                GGPO.StartSpectating(out ggpo,
+                    ptrBeginGame,
+                    ptrAdvanceFrame,
+                    ptrLoadGameState,
+                    ptrLogGameState,
+                    ptrSaveGameState,
+                    ptrFreeBuffer,
+                    ptrOnEvent,
+                    "Tests", num_players, local_port, host_ip, host_port);
 
-                    Debug.Assert(ggpo != IntPtr.Zero);
-                }
+                Debug.Assert(ggpo != IntPtr.Zero);
                 break;
 
             case 2:
-                unsafe {
-                    result = GGPO.UggTestStartSession(out ggpo, OnBeginGame,
-                        OnAdvanceFrame,
-                        OnLoadGameState,
-                        OnLogGameState,
-                        OnSaveGameState,
-                        OnFreeBuffer,
-                        OnEventCallback,
-                        "Tests", num_players, local_port);
+                result = GGPO.UggTestStartSession(out ggpo,
+                    ptrBeginGame,
+                    ptrAdvanceFrame,
+                    ptrLoadGameState,
+                    ptrLogGameState,
+                    ptrSaveGameState,
+                    ptrFreeBuffer,
+                    ptrOnEvent,
+                    "Tests", num_players, local_port);
 
-                    Debug.Assert(ggpo != IntPtr.Zero);
-                }
+                Debug.Assert(ggpo != IntPtr.Zero);
                 break;
 
             case 3:
-                result = GGPO.UggSynchronizeInput(ggpo, inputs, MAX_PLAYERS, out int disconnect_flags);
+                result = GGPO.SynchronizeInput(ggpo, inputs, MAX_PLAYERS, out int disconnect_flags);
                 Debug.Log($"DllSynchronizeInput{disconnect_flags} {inputs[0]} {inputs[1]}");
                 break;
 
             case 4:
-                result = GGPO.UggAddLocalInput(ggpo, local_player_handle, input);
+                result = GGPO.AddLocalInput(ggpo, local_player_handle, input);
                 break;
 
             case 5:
-                foreach (var c in cache.Values) {
-                    c.Dispose();
-                }
-                cache.Clear();
-                result = GGPO.UggCloseSession(ggpo);
+                result = GGPO.CloseSession(ggpo);
+                ggpo = IntPtr.Zero;
                 break;
 
             case 6:
-                result = GGPO.UggIdle(ggpo, time);
+                result = GGPO.Idle(ggpo, time);
                 break;
 
             case 7:
-                result = GGPO.UggAddPlayer(ggpo, player_type, player_num, player_ip_address, player_port, out phandle);
+                result = GGPO.AddPlayer(ggpo, player_type, player_num, player_ip_address, player_port, out phandle);
                 break;
 
             case 8:
-                result = GGPO.UggDisconnectPlayer(ggpo, phandle);
+                result = GGPO.DisconnectPlayer(ggpo, phandle);
                 break;
 
             case 9:
-                result = GGPO.UggSetFrameDelay(ggpo, phandle, frame_delay);
+                result = GGPO.SetFrameDelay(ggpo, phandle, frame_delay);
                 break;
 
             case 10:
-                result = GGPO.UggAdvanceFrame(ggpo);
+                result = GGPO.AdvanceFrame(ggpo);
                 break;
 
             case 11:
-                result = GGPO.UggGetNetworkStats(ggpo, phandle, out int send_queue_len, out int recv_queue_len, out int ping, out int kbps_sent, out int local_frames_behind, out int remote_frames_behind);
+                result = GGPO.GetNetworkStats(ggpo, phandle, out int send_queue_len, out int recv_queue_len, out int ping, out int kbps_sent, out int local_frames_behind, out int remote_frames_behind);
                 Debug.Log($"DllSynchronizeInput{send_queue_len}, {recv_queue_len}, {ping}, {kbps_sent}, " +
                     $"{ local_frames_behind}, {remote_frames_behind}");
                 break;
 
             case 12:
-                GGPO.UggLog(ggpo, logText);
+                GGPO.Log(ggpo, logText);
                 result = GGPO.OK;
                 break;
 
             case 13:
-                result = GGPO.UggSetDisconnectNotifyStart(ggpo, timeout);
+                result = GGPO.SetDisconnectNotifyStart(ggpo, timeout);
                 break;
 
             case 14:
-                result = GGPO.UggSetDisconnectTimeout(ggpo, timeout);
+                result = GGPO.SetDisconnectTimeout(ggpo, timeout);
                 break;
         }
-        GGPO.ReportFailure(result);
+        ReportFailure(result);
+    }
+
+    public static void ReportFailure(int result) {
+        if (result != GGPO.ERRORCODE_SUCCESS) {
+            Debug.LogWarning(GGPO.GetErrorCodeMessage(result));
+        }
+    }
+
+    private void OnDestroy() {
+        foreach (var c in cache.Values) {
+            if (c.IsCreated) {
+                c.Dispose();
+            }
+        }
+        cache.Clear();
     }
 }
