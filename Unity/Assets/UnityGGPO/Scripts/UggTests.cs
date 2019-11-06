@@ -311,7 +311,7 @@ public class UggTests : MonoBehaviour {
         }
     }
 
-    private void OnDestroy() {
+    void OnDestroy() {
         foreach (var c in cache.Values) {
             if (c.IsCreated) {
                 c.Dispose();

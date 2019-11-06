@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace VectorWar {
 
-    public static class LocalVW {
+    public static class LocalWar {
         public static GameState gs;
         public static NonGameState ngs;
 
@@ -49,6 +49,13 @@ namespace VectorWar {
         Transform[][] bulletLists;
         float next;
         NativeArray<byte> buffer;
+        int updateCount;
+
+        public static event Action<string> OnStatus;
+        public static event Action<string> OnChecksum;
+        public static event Action<string> OnLog;
+
+        public static Stopwatch updateWatch = new Stopwatch();
 
         public bool Running { get; set; }
 
@@ -64,14 +71,8 @@ namespace VectorWar {
             }
         }
 
-        public static event Action<string> OnStatus = (string s) => { };
-        public static event Action<string> OnChecksum = (string s) => { };
-        public static event Action<string> OnLog = (string s) => { };
-
-        public static Stopwatch updateWatch = new Stopwatch();
-
         public static void LogCallback(string text) {
-            OnLog(text);
+            OnLog?.Invoke(text);
         }
 
         public void OnTestSave() {
@@ -79,13 +80,13 @@ namespace VectorWar {
                 if (buffer.IsCreated) {
                     buffer.Dispose();
                 }
-                buffer = GameState.ToBytes(LocalVW.gs);
+                buffer = GameState.ToBytes(LocalWar.gs);
             }
         }
 
         public void OnTestLoad() {
             if (localMode) {
-                GameState.FromBytes(LocalVW.gs, buffer);
+                GameState.FromBytes(LocalWar.gs, buffer);
             }
         }
 
@@ -101,14 +102,14 @@ namespace VectorWar {
         }
 
         void InitRemote() {
-            // GGPO.SetLogDelegate(LogCallback);
+            GGPO.SetLogDelegate(LogCallback);
             VectorWar.Init(new GameState(), new NonGameState(), perf);
 
             var remote_index = -1;
             var num_spectators = 0;
             var num_players = 0;
 
-            OnLog("Player Index: " + PlayerIndex);
+            OnLog?.Invoke("Player Index: " + PlayerIndex);
             for (int i = 0; i < connections.Count; ++i) {
                 if (i != PlayerIndex && remote_index == -1) {
                     remote_index = i;
@@ -152,27 +153,27 @@ namespace VectorWar {
         }
 
         void InitLocal() {
-            LocalVW.Init(new GameState(), new NonGameState());
+            LocalWar.Init(new GameState(), new NonGameState());
             int handle = 1;
             int controllerId = 0;
-            LocalVW.ngs.players = new PlayerConnectionInfo[2];
-            LocalVW.ngs.players[0] = new PlayerConnectionInfo {
+            LocalWar.ngs.players = new PlayerConnectionInfo[2];
+            LocalWar.ngs.players[0] = new PlayerConnectionInfo {
                 handle = handle,
                 type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
                 connect_progress = 100,
                 controllerId = controllerId
             };
-            LocalVW.ngs.SetConnectState(handle, PlayerConnectState.Connecting);
+            LocalWar.ngs.SetConnectState(handle, PlayerConnectState.Connecting);
             ++handle;
             ++controllerId;
-            LocalVW.ngs.players[1] = new PlayerConnectionInfo {
+            LocalWar.ngs.players[1] = new PlayerConnectionInfo {
                 handle = handle,
                 type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
                 connect_progress = 100,
                 controllerId = controllerId++
             };
-            LocalVW.ngs.SetConnectState(handle, PlayerConnectState.Connecting);
-            LocalVW.gs.Init(LocalVW.ngs.players.Length);
+            LocalWar.ngs.SetConnectState(handle, PlayerConnectState.Connecting);
+            LocalWar.gs.Init(LocalWar.ngs.players.Length);
         }
 
         public void DisconnectPlayer(int player) {
@@ -202,8 +203,6 @@ namespace VectorWar {
             }
         }
 
-        int updateCount;
-
         void Update() {
             if (Running) {
                 ++updateCount;
@@ -211,7 +210,7 @@ namespace VectorWar {
                 var now = Time.time;
                 var extraMs = Mathf.Max(0, (int)((next - now) * 1000f) - 1);
                 if (localMode) {
-                    LocalVW.Idle(extraMs);
+                    LocalWar.Idle(extraMs);
                 }
                 else {
                     VectorWar.Idle(extraMs);
@@ -219,7 +218,7 @@ namespace VectorWar {
 
                 if (now >= next) {
                     if (localMode) {
-                        LocalVW.RunFrame();
+                        LocalWar.RunFrame();
                     }
                     else {
                         VectorWar.RunFrame();
@@ -230,7 +229,7 @@ namespace VectorWar {
 
                 if (localMode) {
                     OnStatus?.Invoke(string.Format("time{0:.00}", (float)updateWatch.ElapsedMilliseconds / updateCount));
-                    UpdateGameView(LocalVW.gs, LocalVW.ngs);
+                    UpdateGameView(LocalWar.gs, LocalWar.ngs);
                 }
                 else {
                     var idlePerc = (float)VectorWar.idleWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
@@ -258,7 +257,7 @@ namespace VectorWar {
 
         void UpdateGameView(GameState gs, NonGameState ngs) {
             // OnStatus(ngs.status);
-            OnChecksum(RenderChecksum(ngs.periodic) + RenderChecksum(ngs.now));
+            OnChecksum?.Invoke(RenderChecksum(ngs.periodic) + RenderChecksum(ngs.now));
 
             var shipsGss = gs._ships;
             if (shipViews.Length != shipsGss.Length) {

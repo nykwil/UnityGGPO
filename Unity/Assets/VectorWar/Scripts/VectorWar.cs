@@ -26,7 +26,7 @@ namespace VectorWar {
         static IntPtr vw_free_buffer_callback;
         static IntPtr vw_on_event_callback;
 
-        public static event Action<string> OnLog = (string s) => { };
+        public static event Action<string> OnLog;
 
         public static Stopwatch frameWatch = new Stopwatch();
         public static Stopwatch idleWatch = new Stopwatch();
@@ -39,7 +39,7 @@ namespace VectorWar {
          */
 
         static bool Vw_begin_game_callback(string name) {
-            OnLog($"vw_begin_game_callback");
+            OnLog?.Invoke($"vw_begin_game_callback");
             return true;
         }
 
@@ -66,7 +66,7 @@ namespace VectorWar {
             int connection_interrupted_disconnect_timeout = data[2];
             int connection_resumed_player = data[1];
 
-            OnLog($"vw_on_event_callback {data[0]} {data[1]} {data[2]} {data[3]}");
+            OnLog?.Invoke($"vw_on_event_callback {data[0]} {data[1]} {data[2]} {data[3]}");
 
             int progress;
             switch (info_code) {
@@ -117,7 +117,7 @@ namespace VectorWar {
          */
 
         static bool Vw_advance_frame_callback(int flags) {
-            OnLog($"vw_begin_game_callback {flags}");
+            OnLog?.Invoke($"vw_begin_game_callback {flags}");
 
             // Make sure we fetch new inputs from GGPO and use those to update the game state
             // instead of reading from the keyboard.
@@ -135,7 +135,7 @@ namespace VectorWar {
          */
 
         static unsafe bool Vw_load_game_state_callback(void* dataPtr, int length) {
-            OnLog($"vw_load_game_state_callback {length}");
+            OnLog?.Invoke($"vw_load_game_state_callback {length}");
             GameState.FromBytes(gs, Helper.ToArray(dataPtr, length));
             return true;
         }
@@ -147,8 +147,8 @@ namespace VectorWar {
          * buffer and len parameters.
          */
 
-        static private unsafe bool Vw_save_game_state_callback(void** buffer, int* length, int* checksum, int frame) {
-            OnLog($"vw_save_game_state_callback {frame}");
+        static unsafe bool Vw_save_game_state_callback(void** buffer, int* length, int* checksum, int frame) {
+            OnLog?.Invoke($"vw_save_game_state_callback {frame}");
             Debug.Assert(gs != null);
             var bytes = GameState.ToBytes(gs);
             *checksum = Helper.CalcFletcher32(bytes);
@@ -166,7 +166,7 @@ namespace VectorWar {
          */
 
         static unsafe bool Vw_log_game_state(string filename, void* buffer, int length) {
-            OnLog($"vw_log_game_state {filename}");
+            OnLog?.Invoke($"vw_log_game_state {filename}");
 
             var gamestate = new GameState();
             GameState.FromBytes(gamestate, Helper.ToArray(buffer, length));
@@ -195,7 +195,7 @@ namespace VectorWar {
         }
 
         static unsafe void Vw_free_buffer_callback(void* dataPtr) {
-            OnLog($"vw_free_buffer_callback");
+            OnLog?.Invoke($"vw_free_buffer_callback");
 
             if (cache.TryGetValue((long)dataPtr, out var data)) {
                 data.Dispose();
@@ -230,7 +230,7 @@ namespace VectorWar {
                                 "vectorwar", num_players, localport);
 
             if (ggpo == IntPtr.Zero) {
-                OnLog("Session Error");
+                OnLog?.Invoke("Session Error");
             }
 
 #endif
@@ -327,10 +327,10 @@ namespace VectorWar {
                 string logbuf;
                 var result = GGPO.DisconnectPlayer(ggpo, ngs.players[playerIndex].handle);
                 if (GGPO.SUCCEEDED(result)) {
-                    logbuf = $"Disconnected player {playerIndex}.\n";
+                    logbuf = $"Disconnected player {playerIndex}.";
                 }
                 else {
-                    logbuf = $"Error while disconnecting player (err:{result}).\n";
+                    logbuf = $"Error while disconnecting player (err:{result}).";
                 }
                 SetStatusText(logbuf);
             }
@@ -455,7 +455,7 @@ namespace VectorWar {
                     AdvanceFrame(inputs, disconnect_flags);
                 }
                 else {
-                    OnLog("Error inputsync");
+                    OnLog?.Invoke("Error inputsync");
                 }
                 frameWatch.Stop();
             }

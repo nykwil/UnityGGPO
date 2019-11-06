@@ -33,9 +33,9 @@ namespace VectorWar {
             btnPlayer1.onClick.AddListener(OnPlayer1);
             btnPlayer2.onClick.AddListener(OnPlayer2);
 
-            tglRunnerLog.isOn = true;
-            tglVectorWarLog.isOn = true;
-            tglGameStateLog.isOn = true;
+            tglRunnerLog.isOn = false;
+            tglVectorWarLog.isOn = false;
+            tglGameStateLog.isOn = false;
 
             tglRunnerLog.onValueChanged.AddListener(OnToggleRunnerLog);
             tglVectorWarLog.onValueChanged.AddListener(OnVectorWarLog);
@@ -49,6 +49,7 @@ namespace VectorWar {
             inpPlayerIndex.text = runner.PlayerIndex.ToString();
 
             SetConnectText("Startup");
+            LogPanelVisibility();
         }
 
         void OnDestroy() {

@@ -77,7 +77,7 @@ namespace VectorWar {
         public int _framenumber;
         public Ship[] _ships;
 
-        public static event Action<string> OnLog = (string s) => { };
+        public static event Action<string> OnLog;
 
         [NonSerialized]
         public readonly Rect _bounds = new Rect(0, 0, 640, 480);
@@ -167,7 +167,7 @@ namespace VectorWar {
         public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
             var ship = _ships[i];
 
-            OnLog($"parsing ship {i} inputs: {inputs}.\n");
+            OnLog?.Invoke($"parsing ship {i} inputs: {inputs}.");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
                 heading = (ship.heading - ROTATE_INCREMENT) % 360;
@@ -194,13 +194,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             var ship = _ships[index];
 
-            OnLog($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
+            OnLog?.Invoke($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    OnLog("firing bullet.\n");
+                    OnLog?.Invoke("firing bullet.");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(DegToRad(ship.heading));
                         float dy = Mathf.Sin(DegToRad(ship.heading));
@@ -230,11 +230,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            OnLog($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).\n");
+            OnLog?.Invoke($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            OnLog($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).\n");
+            OnLog?.Invoke($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {
