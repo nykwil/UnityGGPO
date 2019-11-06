@@ -22,7 +22,6 @@ public class GGPOPerformance : MonoBehaviour {
     const int IDC_REMOTE_AHEAD = 4;
 
     public void ggpoutil_perfmon_init() {
-        
     }
 
     public void ggpoutil_perfmon_update(IntPtr ggpo, int[] players, int num_players) {
@@ -39,13 +38,15 @@ public class GGPOPerformance : MonoBehaviour {
         }
 
         for (int j = 0; j < num_players; j++) {
-            UGGPO.UggGetNetworkStats(ggpo, players[j],
+            var result = GGPO.UggGetNetworkStats(ggpo, players[j],
                 out int send_queue_len,
                 out int recv_queue_len,
                 out int ping,
                 out int kbps_sent,
                 out int local_frames_behind,
                 out int remote_frames_behind);
+
+            Debug.Assert(GGPO.SUCCEEDED(result));
 
             /*
              * Random graphs
@@ -100,6 +101,5 @@ public class GGPOPerformance : MonoBehaviour {
     }
 
     private void SetWindowTextA(int iDC_NETWORK_LAG, string v) {
-     
     }
 }

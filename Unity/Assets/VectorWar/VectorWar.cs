@@ -2,10 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Collections;
-using UnityEngine;
 
 namespace VectorWar {
     using static VWConstants;
+
+    class InputAccess : BitAccess {
+        readonly Section Thrust = new Section(0, 1);
+        readonly Section Break = new Section(1, 1);
+        readonly Section RotateLeft = new Section(2, 1);
+        readonly Section RotateRight = new Section(3, 1);
+        readonly Section Fire = new Section(4, 1);
+        readonly Section Bomb = new Section(5, 1);
+
+        public bool InputThrust { get => Get(Thrust) != 0; set => Set(Thrust, value ? 1 : 0); }
+        public bool InputBreak { get => Get(Break) != 0; set => Set(Break, value ? 1 : 0); }
+        public bool InputRotateLeft { get => Get(RotateLeft) != 0; set => Set(RotateLeft, value ? 1 : 0); }
+        public bool InputRotateRight { get => Get(RotateRight) != 0; set => Set(RotateRight, value ? 1 : 0); }
+        public bool InputFire { get => Get(Fire) != 0; set => Set(Fire, value ? 1 : 0); }
+        public bool InputBomb { get => Get(Bomb) != 0; set => Set(Bomb, value ? 1 : 0); }
+    }
 
     public class VectorWar {
 
@@ -15,8 +30,10 @@ namespace VectorWar {
         GameState gs = null;
         NonGameState ngs = null;
         GGPOPerformance perf = null;
-        Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
+        readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
         IntPtr ggpo;
+
+        public static event Action<string> OnLog = (string s) => { };
 
         public VectorWar(GameState gs, NonGameState ngs, GGPOPerformance perf) {
             this.gs = gs;
@@ -24,25 +41,10 @@ namespace VectorWar {
             this.perf = perf;
         }
 
-        internal void InitSpectator(object localport, int length, object host_ip, object host_port) {
-        }
-
-        /*
-         * Simple checksum function stolen from wikipedia:
-         *
-         *   http://en.wikipedia.org/wiki/Fletcher%27s_checksum
-         */
-
-        int naive_fletcher32_per_byte(NativeArray<byte> data) {
-            uint sum1 = 0;
-            uint sum2 = 0;
-
-            int index;
-            for (index = 0; index < data.Length; ++index) {
-                sum1 = (sum1 + data[index]) % 0xffff;
-                sum2 = (sum2 + sum1) % 0xffff;
+        void ReportFailure(int result) {
+            if (!GGPO.SUCCEEDED(result)) {
+                OnLog(GGPO.GetErrorCodeMessage(result));
             }
-            return unchecked((int)((sum2 << 16) | sum1));
         }
 
         /*
@@ -53,7 +55,7 @@ namespace VectorWar {
          */
 
         bool vw_begin_game_callback(string name) {
-            Debug.Log($"vw_begin_game_callback");
+            OnLog($"vw_begin_game_callback");
             return true;
         }
 
@@ -79,43 +81,43 @@ namespace VectorWar {
             int connection_interrupted_disconnect_timeout = data[2];
             int connection_resumed_player = data[1];
 
-            Debug.Log($"vw_on_event_callback {data[0]} {data[1]} {data[2]} {data[3]}");
+            OnLog($"vw_on_event_callback {data[0]} {data[1]} {data[2]} {data[3]}");
 
             int progress;
             switch (info_code) {
-                case GGPOC.GGPO_EVENTCODE_CONNECTED_TO_PEER:
+                case GGPO.EVENTCODE_CONNECTED_TO_PEER:
                     ngs.SetConnectState(connected_player, PlayerConnectState.Synchronizing);
                     break;
 
-                case GGPOC.GGPO_EVENTCODE_SYNCHRONIZING_WITH_PEER:
+                case GGPO.EVENTCODE_SYNCHRONIZING_WITH_PEER:
                     progress = 100 * synchronizing_count / synchronizing_total;
                     ngs.UpdateConnectProgress(synchronizing_player, progress);
                     break;
 
-                case GGPOC.GGPO_EVENTCODE_SYNCHRONIZED_WITH_PEER:
+                case GGPO.EVENTCODE_SYNCHRONIZED_WITH_PEER:
                     ngs.UpdateConnectProgress(synchronized_player, 100);
                     break;
 
-                case GGPOC.GGPO_EVENTCODE_RUNNING:
+                case GGPO.EVENTCODE_RUNNING:
                     ngs.SetConnectState(PlayerConnectState.Running);
                     SetStatusText("");
                     break;
 
-                case GGPOC.GGPO_EVENTCODE_CONNECTION_INTERRUPTED:
+                case GGPO.EVENTCODE_CONNECTION_INTERRUPTED:
                     ngs.SetDisconnectTimeout(connection_interrupted_player,
                                              Helper.TimeGetTime(),
                                              connection_interrupted_disconnect_timeout);
                     break;
 
-                case GGPOC.GGPO_EVENTCODE_CONNECTION_RESUMED:
+                case GGPO.EVENTCODE_CONNECTION_RESUMED:
                     ngs.SetConnectState(connection_resumed_player, PlayerConnectState.Running);
                     break;
 
-                case GGPOC.GGPO_EVENTCODE_DISCONNECTED_FROM_PEER:
+                case GGPO.EVENTCODE_DISCONNECTED_FROM_PEER:
                     ngs.SetConnectState(disconnected_player, PlayerConnectState.Disconnected);
                     break;
 
-                case GGPOC.GGPO_EVENTCODE_TIMESYNC:
+                case GGPO.EVENTCODE_TIMESYNC:
                     Helper.Sleep(1000 * timesync_frames_ahead / 60);
                     break;
             }
@@ -130,12 +132,12 @@ namespace VectorWar {
          */
 
         bool vw_advance_frame_callback(int flags) {
-            Debug.Log($"vw_begin_game_callback {flags}");
+            OnLog($"vw_begin_game_callback {flags}");
 
-            // Make sure we fetch new inputs from GGPO and use those to update the game state instead
-            // of reading from the keyboard.
+            // Make sure we fetch new inputs from GGPO and use those to update the game state
+            // instead of reading from the keyboard.
             ulong[] inputs = new ulong[MAX_SHIPS];
-            UGGPO.UggSynchronizeInput(ggpo, inputs, MAX_SHIPS, out var disconnect_flags);
+            ReportFailure(GGPO.UggSynchronizeInput(ggpo, inputs, MAX_SHIPS, out var disconnect_flags));
 
             AdvanceFrame(inputs, disconnect_flags);
             return true;
@@ -148,7 +150,7 @@ namespace VectorWar {
          */
 
         unsafe bool vw_load_game_state_callback(void* dataPtr, int length) {
-            Debug.Log($"vw_load_game_state_callback {length}");
+            OnLog($"vw_load_game_state_callback {length}");
             gs = GameState.FromBytes(Helper.ToArray(dataPtr, length));
             return true;
         }
@@ -161,9 +163,9 @@ namespace VectorWar {
          */
 
         private unsafe bool vw_save_game_state_callback(void** buffer, int* length, int* checksum, int frame) {
-            Debug.Log($"vw_save_game_state_callback {frame}");
+            OnLog($"vw_save_game_state_callback {frame}");
             var bytes = GameState.ToBytes(gs);
-            *checksum = naive_fletcher32_per_byte(bytes);
+            *checksum = Helper.CalcFletcher32(bytes);
             *length = bytes.Length;
             var ptr = Helper.ToPtr(bytes);
             *buffer = ptr;
@@ -178,7 +180,7 @@ namespace VectorWar {
          */
 
         unsafe bool vw_log_game_state(string text, void* buffer, int length) {
-            Debug.Log($"vw_log_game_state {text}");
+            OnLog($"vw_log_game_state {text}");
 
             // FILE* fp = fopen(filename, "w"); if (fp)
             {
@@ -211,7 +213,7 @@ namespace VectorWar {
         }
 
         unsafe void vw_free_buffer_callback(void* dataPtr) {
-            Debug.Log($"vw_free_buffer_callback");
+            OnLog($"vw_free_buffer_callback");
 
             if (cache.TryGetValue((long)dataPtr, out var data)) {
                 data.Dispose();
@@ -233,12 +235,10 @@ namespace VectorWar {
             // Fill in a ggpo callbacks structure to pass to start_session. var cb = new GGPOSessionCallbacks();
 
 #if SYNC_TEST
-   result = ggpo_start_synctest(
-
-        cb, "vectorwar", num_players, 1);
+            result = ggpo_start_synctest(cb, "vectorwar", num_players, 1);
 #else
             unsafe {
-                ggpo = UGGPO.UggStartSession(
+                ggpo = GGPO.UggStartSession(
                     vw_begin_game_callback,
                     vw_advance_frame_callback,
                     vw_load_game_state_callback,
@@ -247,36 +247,41 @@ namespace VectorWar {
                     vw_free_buffer_callback,
                     vw_on_event_callback,
                     "vectorwar", num_players, localport);
+
+                if (ggpo == IntPtr.Zero) {
+                    OnLog("Session Error");
+                }
             }
 #endif
 
-            gs.PostInit(ggpo);
+            gs.ggpo = ggpo;
             // automatically disconnect clients after 3000 ms and start our count-down timer for
             // disconnects after 1000 ms. To completely disable disconnects, simply use a value of 0
             // for ggpo_set_disconnect_timeout.
-            UGGPO.UggSetDisconnectTimeout(ggpo, 3000);
-            UGGPO.UggSetDisconnectNotifyStart(ggpo, 1000);
+            ReportFailure(GGPO.UggSetDisconnectTimeout(ggpo, 3000));
+            ReportFailure(GGPO.UggSetDisconnectNotifyStart(ggpo, 1000));
 
-            int i;
-            for (i = 0; i < num_players + num_spectators; i++) {
-                int handle;
-                int result = UGGPO.UggAddPlayer(ggpo,
+            for (int i = 0; i < players.Count; i++) {
+                ReportFailure(GGPO.UggAddPlayer(ggpo,
                     (int)players[i].type,
                     players[i].player_num,
                     players[i].ip_address,
                     players[i].port,
-                    out handle);
-                ngs.players[i].handle = handle;
-                ngs.players[i].type = players[i].type;
+                    out int handle));
+
+                var vwPlayer = new PlayerConnectionInfo();
+                vwPlayer.handle = handle;
+                vwPlayer.type = players[i].type;
                 if (players[i].type == GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL) {
-                    ngs.players[i].connect_progress = 100;
+                    vwPlayer.connect_progress = 100;
                     ngs.local_player_handle = handle;
                     ngs.SetConnectState(handle, PlayerConnectState.Connecting);
-                    UGGPO.UggSetFrameDelay(ggpo, handle, FRAME_DELAY);
+                    ReportFailure(GGPO.UggSetFrameDelay(ggpo, handle, FRAME_DELAY));
                 }
                 else {
-                    ngs.players[i].connect_progress = 0;
+                    vwPlayer.connect_progress = 0;
                 }
+                ngs.players[i] = vwPlayer;
             }
 
             perf.ggpoutil_perfmon_init();
@@ -296,7 +301,7 @@ namespace VectorWar {
 
             // Fill in a ggpo callbacks structure to pass to start_session.
             unsafe {
-                ggpo = UGGPO.UggStartSpectating(
+                ggpo = GGPO.UggStartSpectating(
                         vw_begin_game_callback,
                         vw_advance_frame_callback,
                         vw_load_game_state_callback,
@@ -321,8 +326,8 @@ namespace VectorWar {
         public void DisconnectPlayer(int player) {
             if (player < ngs.num_players) {
                 string logbuf;
-                var result = UGGPO.UggDisconnectPlayer(ggpo, ngs.players[player].handle);
-                if (GGPOC.GGPO_SUCCEEDED(result)) {
+                var result = GGPO.UggDisconnectPlayer(ggpo, ngs.players[player].handle);
+                if (GGPO.SUCCEEDED(result)) {
                     logbuf = $"Disconnected player {player}.\n";
                 }
                 else {
@@ -344,14 +349,14 @@ namespace VectorWar {
 
             // update the checksums to display in the top of the window. this helps to detect desyncs.
             ngs.now.framenumber = gs._framenumber;
-            var buffer = GameState.ToBytes(gs);
-            ngs.now.checksum = naive_fletcher32_per_byte(buffer);
+            // var buffer = GameState.ToBytes(gs);
+            ngs.now.checksum = 0; // naive_fletcher32_per_byte(buffer);
             if ((gs._framenumber % 90) == 0) {
                 ngs.periodic = ngs.now;
             }
 
             // Notify ggpo that we've moved forward exactly 1 frame.
-            UGGPO.UggAdvanceFrame(ggpo);
+            ReportFailure(GGPO.UggAdvanceFrame(ggpo));
 
             // Update the performance monitor display.
             int[] handles = new int[MAX_PLAYERS];
@@ -372,32 +377,6 @@ namespace VectorWar {
          * transparently.
          */
 
-        struct InputInfo {
-            public int key;
-            public int input;
-
-            public InputInfo(int key, int input) {
-                this.key = key;
-                this.input = input;
-            }
-        }
-
-        class InputAccess : BitAccess {
-            readonly Section Thrust = new Section(0, 1);
-            readonly Section Break = new Section(1, 1);
-            readonly Section RotateLeft = new Section(2, 1);
-            readonly Section RotateRight = new Section(3, 1);
-            readonly Section Fire = new Section(4, 1);
-            readonly Section Bomb = new Section(5, 1);
-
-            public bool InputThrust { get => Get(Thrust) != 0; set => Set(Thrust, value ? 1 : 0); }
-            public bool InputBreak { get => Get(Break) != 0; set => Set(Break, value ? 1 : 0); }
-            public bool InputRotateLeft { get => Get(RotateLeft) != 0; set => Set(RotateLeft, value ? 1 : 0); }
-            public bool InputRotateRight { get => Get(RotateRight) != 0; set => Set(RotateRight, value ? 1 : 0); }
-            public bool InputFire { get => Get(Fire) != 0; set => Set(Fire, value ? 1 : 0); }
-            public bool InputBomb { get => Get(Bomb) != 0; set => Set(Bomb, value ? 1 : 0); }
-        }
-
         ulong ReadInputs() {
             var ia = new InputAccess();
             ia.InputThrust = UnityEngine.Input.GetKey(UnityEngine.KeyCode.UpArrow);
@@ -416,26 +395,29 @@ namespace VectorWar {
          */
 
         public void RunFrame() {
-            int result = GGPOC.GGPO_OK;
+            int result = GGPO.OK;
 
-            if (ngs.local_player_handle != GGPOC.GGPO_INVALID_HANDLE) {
+            if (ngs.local_player_handle != GGPO.INVALID_HANDLE) {
                 ulong input = ReadInputs();
 #if SYNC_TEST
      input = rand(); // test: use random inputs to demonstrate sync testing
 #endif
 
-                result = UGGPO.UggAddLocalInput(ggpo, ngs.local_player_handle, input);
+                result = GGPO.UggAddLocalInput(ggpo, ngs.local_player_handle, input);
             }
 
             // synchronize these inputs with ggpo. If we have enough input to proceed ggpo will
             // modify the input list with the correct inputs to use and return 1.
-            if (GGPOC.GGPO_SUCCEEDED(result)) {
+            if (GGPO.SUCCEEDED(result)) {
                 ulong[] inputs = new ulong[MAX_SHIPS];
-                result = UGGPO.UggSynchronizeInput(ggpo, inputs, MAX_SHIPS, out var disconnect_flags);
-                if (GGPOC.GGPO_SUCCEEDED(result)) {
+                result = GGPO.UggSynchronizeInput(ggpo, inputs, MAX_SHIPS, out var disconnect_flags);
+                if (GGPO.SUCCEEDED(result)) {
                     // inputs[0] and inputs[1] contain the inputs for p1 and p2. Advance the game by
                     // 1 frame using those inputs.
                     AdvanceFrame(inputs, disconnect_flags);
+                }
+                else {
+                    OnLog("Error inputsync");
                 }
             }
         }
@@ -448,11 +430,11 @@ namespace VectorWar {
          */
 
         public void Idle(int time) {
-            UGGPO.UggIdle(ggpo, time);
+            ReportFailure(GGPO.UggIdle(ggpo, time));
         }
 
         public void Exit() {
-            UGGPO.UggCloseSession(ggpo);
+            ReportFailure(GGPO.UggCloseSession(ggpo));
         }
 
         void SetStatusText(string status) {

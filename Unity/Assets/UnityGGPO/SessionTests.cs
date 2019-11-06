@@ -8,6 +8,18 @@ using UnityEngine;
 
 public static class Helper {
 
+    public static int CalcFletcher32(NativeArray<byte> data) {
+        uint sum1 = 0;
+        uint sum2 = 0;
+
+        int index;
+        for (index = 0; index < data.Length; ++index) {
+            sum1 = (sum1 + data[index]) % 0xffff;
+            sum2 = (sum2 + sum1) % 0xffff;
+        }
+        return unchecked((int)((sum2 << 16) | sum1));
+    }
+
     public static string GetString(IntPtr ptrStr) {
         return ptrStr != IntPtr.Zero ? Marshal.PtrToStringAnsi(ptrStr) : "";
     }
@@ -47,25 +59,9 @@ public class SessionTests : MonoBehaviour {
     public int numPlayers = 2;
 
     void Start() {
-        Log(string.Format("Plugin Version: {0} build {1}", UGGPO.Version, UGGPO.BuildNumber));
-        UGGPO.UggSetLogDelegate(Log);
+        Log(string.Format("Plugin Version: {0} build {1}", GGPO.Version, GGPO.BuildNumber));
+        GGPO.UggSetLogDelegate(Log);
         session = new GGPOSession();
-        session.StartSession(
-            BeginGame,
-            AdvanceFrame,
-            LoadGameState,
-            LogGameState,
-            SaveGameState,
-            FreeBuffer,
-            OnEventConnectedToPeer,
-            OnEventSynchronizingWithPeer,
-            OnEventSynchronizedWithPeer,
-            OnEventRunning,
-            OnEventConnectionInterrupted,
-            OnEventConnectionResumed,
-            OnEventDisconnectedFromPeer,
-            OnEventTimesync,
-            gameName, numPlayers, localPort);
     }
 
     void Update() {
@@ -75,13 +71,13 @@ public class SessionTests : MonoBehaviour {
         }
     }
 
-    bool BeginGame(string name) {
-        Debug.Log($"BeginGame({name})");
+    bool OnBeginGame(string name) {
+        Debug.Log($"OnBeginGame({name})");
         return true;
     }
 
-    bool AdvanceFrame(int flags) {
-        Debug.Log($"AdvanceFrame({flags})");
+    bool OnAdvanceFrame(int flags) {
+        Debug.Log($"OnAdvanceFrame({flags})");
         return true;
     }
 
@@ -125,31 +121,32 @@ public class SessionTests : MonoBehaviour {
         return true;
     }
 
-    NativeArray<byte> SaveGameState(out int checksum, int frame) {
+    NativeArray<byte> OnSaveGameState(out int checksum, int frame) {
+        Debug.Log($"OnSaveGameState({frame})");
         var data = new NativeArray<byte>(12, Allocator.Persistent);
         for (int i = 0; i < data.Length; ++i) {
             data[i] = (byte)i;
         }
-        checksum = 99;
+        checksum = Helper.CalcFletcher32(data);
         Debug.Log($"SafeSaveGameState({frame})");
         return data;
     }
 
-    bool LogGameState(string text, NativeArray<byte> data) {
+    bool OnLogGameState(string text, NativeArray<byte> data) {
         // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"SafeLogGameState({data.Length})");
+        Debug.Log($"OnLogGameState({data.Length})");
         return true;
     }
 
-    bool LoadGameState(NativeArray<byte> data) {
+    bool OnLoadGameState(NativeArray<byte> data) {
         // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"SafeLoadGameState({data.Length})");
+        Debug.Log($"OnLoadGameState({data.Length})");
         return true;
     }
 
-    void FreeBuffer(NativeArray<byte> data) {
+    void OnFreeBuffer(NativeArray<byte> data) {
         // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"SafeFreeBuffer({data.Length})");
+        Debug.Log($"OnFreeBuffer({data.Length})");
         data.Dispose();
     }
 
@@ -182,13 +179,13 @@ public class SessionTests : MonoBehaviour {
 
         switch (testId) {
             case 0:
-                session.StartSession(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, FreeBuffer,
+                session.StartSession(OnBeginGame, OnAdvanceFrame, OnLoadGameState, OnLogGameState, OnSaveGameState, OnFreeBuffer,
                     OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
                     OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventTimesync, "Game", numPlayers, localPort);
                 break;
 
             case 1:
-                session.StartSpectating(BeginGame, AdvanceFrame, LoadGameState, LogGameState, SaveGameState, FreeBuffer,
+                session.StartSpectating(OnBeginGame, OnAdvanceFrame, OnLoadGameState, OnLogGameState, OnSaveGameState, OnFreeBuffer,
                     OnEventConnectedToPeer, OnEventSynchronizingWithPeer, OnEventSynchronizedWithPeer, OnEventRunning, OnEventConnectionInterrupted,
                     OnEventConnectionResumed, OnEventDisconnectedFromPeer, OnEventTimesync, "Game", numPlayers, localPort, hostIp, hostPort);
                 break;

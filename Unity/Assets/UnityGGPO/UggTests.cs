@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -6,10 +7,26 @@ using Unity.Collections;
 using UnityEngine;
 
 public class UggTests : MonoBehaviour {
-    public int testId;
-    public bool runTest;
+    public int MAX_PLAYERS = 2;
 
-    const int MAX_PLAYERS = 2;
+    public int result = -1;
+    public int timeout = 1;
+    public int player_type = 3;
+    public int player_num = 4;
+    public string player_ip_address = "127.0.0.1";
+    public ushort player_port = 9000;
+    public ulong[] inputs = new ulong[] { 3, 4 };
+    public int local_player_handle = 0;
+    public ulong input = 0;
+    public int time = 0;
+    public int phandle = 0;
+    public int frame_delay = 10;
+    public string logText = "";
+    public string host_ip = "127.0.0.1";
+    public int num_players = 2;
+    public int host_port = 0;
+    public int local_port = 0;
+
     IntPtr ggpo;
 
     readonly static StringBuilder console = new StringBuilder();
@@ -32,56 +49,50 @@ public class UggTests : MonoBehaviour {
         int[] data = new int[4];
         Marshal.Copy(info, data, 0, 4);
         switch (data[0]) {
-            case GGPOC.GGPO_EVENTCODE_CONNECTED_TO_PEER:
+            case GGPO.EVENTCODE_CONNECTED_TO_PEER:
                 return OnEventConnectedToPeer(data[1]);
 
-            case GGPOC.GGPO_EVENTCODE_SYNCHRONIZING_WITH_PEER:
+            case GGPO.EVENTCODE_SYNCHRONIZING_WITH_PEER:
                 return OnEventSynchronizingWithPeer(data[1], data[2], data[3]);
 
-            case GGPOC.GGPO_EVENTCODE_SYNCHRONIZED_WITH_PEER:
+            case GGPO.EVENTCODE_SYNCHRONIZED_WITH_PEER:
                 return OnEventSynchronizedWithPeer(data[1]);
 
-            case GGPOC.GGPO_EVENTCODE_RUNNING:
+            case GGPO.EVENTCODE_RUNNING:
                 return OnEventRunning();
 
-            case GGPOC.GGPO_EVENTCODE_DISCONNECTED_FROM_PEER:
+            case GGPO.EVENTCODE_DISCONNECTED_FROM_PEER:
                 return OnEventDisconnectedFromPeer(data[1]);
 
-            case GGPOC.GGPO_EVENTCODE_TIMESYNC:
+            case GGPO.EVENTCODE_TIMESYNC:
                 return OnEventTimesync(data[1]);
 
-            case GGPOC.GGPO_EVENTCODE_CONNECTION_INTERRUPTED:
+            case GGPO.EVENTCODE_CONNECTION_INTERRUPTED:
                 return OnEventConnectionInterrupted(data[1], data[2]);
 
-            case GGPOC.GGPO_EVENTCODE_CONNECTION_RESUMED:
+            case GGPO.EVENTCODE_CONNECTION_RESUMED:
                 return OnEventConnectionResumed(data[1]);
         }
         return false;
     }
 
     void Start() {
-        Log(string.Format("Plugin Version: {0} build {1}", UGGPO.Version, UGGPO.BuildNumber));
-        UGGPO.UggSetLogDelegate(Log);
+        Log(string.Format("Plugin Version: {0} build {1}", GGPO.Version, GGPO.BuildNumber));
+        GGPO.UggSetLogDelegate(Log);
     }
 
-    void Update() {
-        if (runTest) {
-            runTest = false;
-            Tests();
-        }
-    }
-
-    bool BeginGame(string name) {
-        Debug.Log($"BeginGame({name})");
+    bool OnBeginGame(string name) {
+        Debug.Log($"OnBeginGame({name})");
         return true;
     }
 
-    bool AdvanceFrame(int flags) {
-        Debug.Log($"AdvanceFrame({flags})");
+    bool OnAdvanceFrame(int flags) {
+        Debug.Log($"OnAdvanceFrame({flags})");
         return true;
     }
 
-    unsafe bool SaveGameState(void** buffer, int* outLen, int* outChecksum, int frame) {
+    unsafe bool OnSaveGameState(void** buffer, int* outLen, int* outChecksum, int frame) {
+        Debug.Log($"OnSaveGameState({frame})");
         var data = new NativeArray<byte>(12, Allocator.Persistent);
         for (int i = 0; i < data.Length; ++i) {
             data[i] = (byte)i;
@@ -95,20 +106,20 @@ public class UggTests : MonoBehaviour {
         return true;
     }
 
-    unsafe bool LogGameState(string text, void* dataPtr, int length) {
+    unsafe bool OnLogGameState(string text, void* dataPtr, int length) {
         // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"LogGameState({text})");
+        Debug.Log($"OnLogGameState({text})");
         return true;
     }
 
-    unsafe bool LoadGameState(void* dataPtr, int length) {
+    unsafe bool OnLoadGameState(void* dataPtr, int length) {
         // var list = string.Join(",", Array.ConvertAll(data.ToArray(), x => x.ToString()));
-        Debug.Log($"LoadGameState()");
+        Debug.Log($"OnLoadGameState()");
         return true;
     }
 
-    unsafe void FreeBuffer(void* dataPtr) {
-        Debug.Log($"FreeBuffer({(long)dataPtr})");
+    unsafe void OnFreeBuffer(void* dataPtr) {
+        Debug.Log($"OnFreeBuffer({(long)dataPtr})");
         if (cache.TryGetValue((long)dataPtr, out var data)) {
             data.Dispose();
         }
@@ -163,103 +174,110 @@ public class UggTests : MonoBehaviour {
         GUI.Label(new Rect(0, 0, Screen.width, Screen.height), console.ToString());
     }
 
-    void Tests() {
-        int result = -1;
-        int timeout = 1;
-        int player_type = 3;
-        int player_num = 4;
-        string player_ip_address = "127.0.0.1";
-        short player_port = 9000;
-        ulong[] inputs = new ulong[] { 3, 4 };
-        int local_player_handle = 0;
-        ulong input = 0;
-        int time = 0;
-        int phandle = 0;
-        int frame_delay = 10;
-        string logText = "";
-        string host_ip = "127.0.0.1";
-        int num_players = 2;
-        int host_port = 0;
-        int local_port = 0;
-
+    [Button]
+    public void RunTest(int testId) {
         switch (testId) {
             case 0:
                 unsafe {
-                    ggpo = UGGPO.UggStartSession(BeginGame,
-                        AdvanceFrame,
-                        LoadGameState,
-                        LogGameState,
-                        SaveGameState,
-                        FreeBuffer,
+                    ggpo = GGPO.UggStartSession(OnBeginGame,
+                        OnAdvanceFrame,
+                        OnLoadGameState,
+                        OnLogGameState,
+                        OnSaveGameState,
+                        OnFreeBuffer,
                         OnEventCallback,
-                        "Game", num_players, local_port);
+                        "Tests", num_players, local_port);
+
+                    Debug.Assert(ggpo != IntPtr.Zero);
                 }
                 break;
 
             case 1:
                 unsafe {
-                    ggpo = UGGPO.UggStartSpectating(BeginGame,
-                        AdvanceFrame,
-                        LoadGameState,
-                        LogGameState,
-                        SaveGameState,
-                        FreeBuffer,
+                    ggpo = GGPO.UggStartSpectating(OnBeginGame,
+                        OnAdvanceFrame,
+                        OnLoadGameState,
+                        OnLogGameState,
+                        OnSaveGameState,
+                        OnFreeBuffer,
                         OnEventCallback,
-                        "Game", num_players, local_port, host_ip, host_port);
+                        "Tests", num_players, local_port, host_ip, host_port);
+
+                    Debug.Assert(ggpo != IntPtr.Zero);
                 }
                 break;
 
             case 2:
-                result = UGGPO.UggSetDisconnectTimeout(ggpo, timeout);
+                unsafe {
+                    result = GGPO.UggTestStartSession(out ggpo, OnBeginGame,
+                        OnAdvanceFrame,
+                        OnLoadGameState,
+                        OnLogGameState,
+                        OnSaveGameState,
+                        OnFreeBuffer,
+                        OnEventCallback,
+                        "Tests", num_players, local_port);
+
+                    Debug.Assert(ggpo != IntPtr.Zero);
+                }
                 break;
 
             case 3:
-                result = UGGPO.UggSynchronizeInput(ggpo, inputs, MAX_PLAYERS, out int disconnect_flags);
+                result = GGPO.UggSynchronizeInput(ggpo, inputs, MAX_PLAYERS, out int disconnect_flags);
                 Debug.Log($"DllSynchronizeInput{disconnect_flags} {inputs[0]} {inputs[1]}");
                 break;
 
             case 4:
-                result = UGGPO.UggAddLocalInput(ggpo, local_player_handle, input);
+                result = GGPO.UggAddLocalInput(ggpo, local_player_handle, input);
                 break;
 
             case 5:
-                result = UGGPO.UggCloseSession(ggpo);
+                foreach (var c in cache.Values) {
+                    c.Dispose();
+                }
+                cache.Clear();
+                result = GGPO.UggCloseSession(ggpo);
                 break;
 
             case 6:
-                result = UGGPO.UggIdle(ggpo, time);
+                result = GGPO.UggIdle(ggpo, time);
                 break;
 
             case 7:
-                result = UGGPO.UggAddPlayer(ggpo, player_type, player_num, player_ip_address, player_port, out phandle);
+                result = GGPO.UggAddPlayer(ggpo, player_type, player_num, player_ip_address, player_port, out phandle);
                 break;
 
             case 8:
-                result = UGGPO.UggDisconnectPlayer(ggpo, phandle);
+                result = GGPO.UggDisconnectPlayer(ggpo, phandle);
                 break;
 
             case 9:
-                result = UGGPO.UggSetFrameDelay(ggpo, phandle, frame_delay);
+                result = GGPO.UggSetFrameDelay(ggpo, phandle, frame_delay);
                 break;
 
             case 10:
-                result = UGGPO.UggAdvanceFrame(ggpo);
+                result = GGPO.UggAdvanceFrame(ggpo);
                 break;
 
             case 11:
-                result = UGGPO.UggGetNetworkStats(ggpo, phandle, out int send_queue_len, out int recv_queue_len, out int ping, out int kbps_sent, out int local_frames_behind, out int remote_frames_behind);
+                result = GGPO.UggGetNetworkStats(ggpo, phandle, out int send_queue_len, out int recv_queue_len, out int ping, out int kbps_sent, out int local_frames_behind, out int remote_frames_behind);
                 Debug.Log($"DllSynchronizeInput{send_queue_len}, {recv_queue_len}, {ping}, {kbps_sent}, " +
                     $"{ local_frames_behind}, {remote_frames_behind}");
                 break;
 
             case 12:
-                UGGPO.UggLog(ggpo, logText);
+                GGPO.UggLog(ggpo, logText);
+                result = GGPO.OK;
                 break;
 
             case 13:
-                result = UGGPO.UggSetDisconnectNotifyStart(ggpo, timeout);
+                result = GGPO.UggSetDisconnectNotifyStart(ggpo, timeout);
+                break;
+
+            case 14:
+                result = GGPO.UggSetDisconnectTimeout(ggpo, timeout);
                 break;
         }
-        Debug.Log($"Result={result}");
+        GGPO.ReportFailure(result);
     }
 }

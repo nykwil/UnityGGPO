@@ -24,17 +24,15 @@ namespace VectorWar {
         public int cooldown;
         public Bullet[] bullets = new Bullet[MAX_BULLETS];
         public int score;
-
-
     };
 
     [Serializable]
     public class GameState {
         public int _framenumber;
         public Ship[] _ships;
+        public IntPtr ggpo;
 
-        [NonSerialized]
-        IntPtr ggpo;
+        public static Action<string> Log = (string s) => Debug.Log(s);
 
         [NonSerialized]
         public readonly Rect _bounds = new Rect(0, 0, 640, 480);
@@ -88,10 +86,6 @@ namespace VectorWar {
             }
         }
 
-        public void PostInit(IntPtr ggpo) {
-            this.ggpo = ggpo;
-        }
-
         public void GetShipAI(int i, out float heading, out float thrust, out int fire) {
             heading = (_ships[i].heading + 5) % 360;
             thrust = 0;
@@ -101,7 +95,7 @@ namespace VectorWar {
         public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
             Ship ship = _ships[i];
 
-            UGGPO.UggLog(ggpo, $"parsing ship {i} inputs: {inputs}.\n");
+            Log($"parsing ship {i} inputs: {inputs}.\n");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
                 heading = (ship.heading + ROTATE_INCREMENT) % 360;
@@ -128,13 +122,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             Ship ship = _ships[index];
 
-            UGGPO.UggLog(ggpo, $"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
+            Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).\n");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    UGGPO.UggLog(ggpo, "firing bullet.\n");
+                    Log("firing bullet.\n");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(degtorad(ship.heading));
                         float dy = Mathf.Sin(degtorad(ship.heading));
@@ -164,11 +158,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            UGGPO.UggLog(ggpo, $"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).\n");
+            Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).\n");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            UGGPO.UggLog(ggpo, $"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).\n");
+            Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).\n");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {

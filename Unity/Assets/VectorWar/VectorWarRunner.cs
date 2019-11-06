@@ -1,5 +1,4 @@
-﻿using Sirenix.OdinInspector;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,7 +6,7 @@ namespace VectorWar {
 
     [Serializable]
     public class Connections {
-        public short port;
+        public ushort port;
         public string ip;
         public bool spectator;
         public bool local;
@@ -27,31 +26,26 @@ namespace VectorWar {
         ShipView[] shipViews = Array.Empty<ShipView>();
         Transform[][] bulletLists;
         float next;
-        VectorWar VectorWar;
-        UGGPO.LogDelegate logDelegate;
-        List<string> logs = new List<string>();
+        VectorWar vectorWar;
+        GGPO.LogDelegate logDelegate;
 
         public bool Running { get; set; }
 
         public static event Action<string> OnStatus = (string s) => { };
         public static event Action<string> OnPeriodicChecksum = (string s) => { };
         public static event Action<string> OnNowChecksum = (string s) => { };
+        public static event Action<string> OnLog = (string s) => { };
 
         public void LogCallback(string text) {
-            logs.Insert(0, text);
-        }
-
-        private void OnGUI() {
-            var s = String.Join("\n", logs);
-            GUILayout.Label(s);
+            OnLog(text);
         }
 
         public void Startup() {
             gs = new GameState();
             ngs = new NonGameState();
-            logDelegate = new UGGPO.LogDelegate(LogCallback);
-            UGGPO.UggSetLogDelegate(logDelegate);
-            VectorWar = new VectorWar(gs, ngs, perf);
+            logDelegate = new GGPO.LogDelegate(LogCallback);
+            GGPO.UggSetLogDelegate(logDelegate);
+            vectorWar = new VectorWar(gs, ngs, perf);
             var remote_index = -1;
             var num_spectators = 0;
             var num_players = 0;
@@ -72,42 +66,46 @@ namespace VectorWar {
                 }
             }
             if (connections[player_index].spectator) {
-                VectorWar.InitSpectator(connections[player_index].port, num_players, connections[remote_index].ip, connections[remote_index].port);
+                vectorWar.InitSpectator(connections[player_index].port, num_players, connections[remote_index].ip, connections[remote_index].port);
             }
             else {
                 var players = new List<GGPOPlayer>();
                 for (int i = 0; i < connections.Count; ++i) {
                     var player = new GGPOPlayer {
                         player_num = players.Count + 1,
-                        ip_address = connections[remote_index].ip,
-                        port = connections[remote_index].port
                     };
                     if (player_index == i) {
                         player.type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL;
+                        player.ip_address = "";
+                        player.port = 0;
                     }
                     else if (connections[i].spectator) {
                         player.type = GGPOPlayerType.GGPO_PLAYERTYPE_SPECTATOR;
+                        player.ip_address = connections[remote_index].ip;
+                        player.port = connections[remote_index].port;
                     }
                     else {
                         player.type = GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE;
+                        player.ip_address = connections[remote_index].ip;
+                        player.port = connections[remote_index].port;
                     }
                     players.Add(player);
                 }
-                VectorWar.Init(connections[player_index].port, num_players, players, num_spectators);
+                vectorWar.Init(connections[player_index].port, num_players, players, num_spectators);
             }
             Running = true;
         }
 
         public void DisconnectPlayer(int player) {
             if (Running) {
-                VectorWar.DisconnectPlayer(player);
+                vectorWar.DisconnectPlayer(player);
             }
         }
 
         public void Shutdown() {
             if (Running) {
-                UGGPO.UggSetLogDelegate(null);
-                VectorWar.Exit();
+                GGPO.UggSetLogDelegate(null);
+                vectorWar.Exit();
                 Running = false;
             }
         }
@@ -115,10 +113,10 @@ namespace VectorWar {
         void Update() {
             if (Running) {
                 var now = Time.time;
-                VectorWar.Idle(Mathf.Max(0, (int)((next - now) * 1000f) - 1));
+                vectorWar.Idle(Mathf.Max(0, (int)((next - now) * 1000f) - 1));
 
                 if (now >= next) {
-                    VectorWar.RunFrame();
+                    vectorWar.RunFrame();
                     next = now + 1f / 60f;
                 }
 

@@ -2,112 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Collections;
-
-public class UGGPO {
-
-    public static string Version {
-        get {
-            return Helper.GetString(UggPluginVersion());
-        }
-    }
-
-    public static int BuildNumber {
-        get {
-            return UggPluginBuildNumber();
-        }
-    }
-
-    const string libraryName = "UnityGGPO";
-
-    public delegate void LogDelegate(string text);
-
-    public delegate bool BeginGameDelegate(string text);
-
-    public delegate bool AdvanceFrameDelegate(int flags);
-
-    unsafe public delegate bool LoadGameStateDelegate(void* buffer, int length);
-
-    unsafe public delegate bool LogGameStateDelegate(string text, void* buffer, int length);
-
-    unsafe public delegate bool SaveGameStateDelegate(void** buffer, int* len, int* checksum, int frame);
-
-    unsafe public delegate void FreeBufferDelegate(void* buffer);
-
-    public delegate bool OnEventDelegate(IntPtr evt);
-
-    [DllImport(libraryName, CharSet = CharSet.Ansi)]
-    static extern IntPtr UggPluginVersion();
-
-    [DllImport(libraryName)]
-    static extern int UggPluginBuildNumber();
-
-    [DllImport(libraryName)]
-    public static extern void UggSetLogDelegate(LogDelegate callback);
-
-    [DllImport(libraryName)]
-    public static extern IntPtr UggStartSession(
-        BeginGameDelegate beginGame,
-        AdvanceFrameDelegate advanceFrame,
-        LoadGameStateDelegate loadGameState,
-        LogGameStateDelegate logGameState,
-        SaveGameStateDelegate saveGameState,
-        FreeBufferDelegate freeBuffer,
-        OnEventDelegate onEvent,
-        string game, int num_players, int localport);
-
-    [DllImport(libraryName)]
-    public static extern IntPtr UggStartSpectating(
-        BeginGameDelegate beginGame,
-        AdvanceFrameDelegate advanceFrame,
-        LoadGameStateDelegate loadGameState,
-        LogGameStateDelegate logGameState,
-        SaveGameStateDelegate saveGameState,
-        FreeBufferDelegate freeBuffer,
-        OnEventDelegate onEvent,
-        string game, int num_players, int localport, string host_ip, int host_port);
-
-    [DllImport(libraryName)]
-    public static extern int UggSetDisconnectNotifyStart(IntPtr ggpo, int timeout);
-
-    [DllImport(libraryName)]
-    public static extern int UggSetDisconnectTimeout(IntPtr ggpo, int timeout);
-
-    [DllImport(libraryName)]
-    public static extern int UggSynchronizeInput(IntPtr ggpo, ulong[] inputs, int length, out int disconnect_flags);
-
-    [DllImport(libraryName)]
-    public static extern int UggAddLocalInput(IntPtr ggpo, int local_player_handle, ulong input);
-
-    [DllImport(libraryName)]
-    public static extern int UggCloseSession(IntPtr ggpo);
-
-    [DllImport(libraryName)]
-    public static extern int UggIdle(IntPtr ggpo, int timeout);
-
-    [DllImport(libraryName)]
-    public static extern int UggAddPlayer(IntPtr ggpo, int player_type, int player_num, string player_ip_address, short player_port, out int phandle);
-
-    [DllImport(libraryName)]
-    public static extern int UggDisconnectPlayer(IntPtr ggpo, int phandle);
-
-    [DllImport(libraryName)]
-    public static extern int UggSetFrameDelay(IntPtr ggpo, int phandle, int frame_delay);
-
-    [DllImport(libraryName)]
-    public static extern int UggAdvanceFrame(IntPtr ggpo);
-
-    [DllImport(libraryName)]
-    public static extern void UggLog(IntPtr ggpo, string text);
-
-    [DllImport(libraryName)]
-    public static extern int UggGetNetworkStats(IntPtr ggpo, int phandle,
-        out int send_queue_len,
-        out int recv_queue_len,
-        out int ping,
-        out int kbps_sent,
-        out int local_frames_behind,
-        out int remote_frames_behind);
-}
+using UnityEngine;
 
 public class GGPOSession {
     // Pass throughs
@@ -154,15 +49,15 @@ public class GGPOSession {
     OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeer;
     OnEventEventcodeTimesyncDelegate onEventTimesync;
 
-    UGGPO.LoadGameStateDelegate _loadGameStateCallback;
-    UGGPO.LogGameStateDelegate _logGameStateCallback;
-    UGGPO.SaveGameStateDelegate _saveGameStateCallback;
-    UGGPO.FreeBufferDelegate _freeBufferCallback;
-    UGGPO.OnEventDelegate _onEventCallback;
+    GGPO.LoadGameStateDelegate _loadGameStateCallback;
+    GGPO.LogGameStateDelegate _logGameStateCallback;
+    GGPO.SaveGameStateDelegate _saveGameStateCallback;
+    GGPO.FreeBufferDelegate _freeBufferCallback;
+    GGPO.OnEventDelegate _onEventCallback;
 
     public void StartSession(
-            UGGPO.BeginGameDelegate beginGame,
-            UGGPO.AdvanceFrameDelegate advanceFrame,
+            GGPO.BeginGameDelegate beginGame,
+            GGPO.AdvanceFrameDelegate advanceFrame,
             SafeLoadGameStateDelegate loadGameState,
             SafeLogGameStateDelegate logGameState,
             SafeSaveGameStateDelegate saveGameState,
@@ -196,20 +91,22 @@ public class GGPOSession {
             _saveGameStateCallback = SaveGameState;
             _freeBufferCallback = FreeBuffer;
             _onEventCallback = OnEventCallback;
+            ggpo = GGPO.UggStartSession(beginGame,
+                advanceFrame,
+                _loadGameStateCallback,
+                _logGameStateCallback,
+                _saveGameStateCallback,
+                _freeBufferCallback,
+                _onEventCallback,
+                gameName, numPlayers, localport);
+
+            Debug.Assert(ggpo != IntPtr.Zero);
         }
-        ggpo = UGGPO.UggStartSession(beginGame,
-            advanceFrame,
-            _loadGameStateCallback,
-            _logGameStateCallback,
-            _saveGameStateCallback,
-            _freeBufferCallback,
-            _onEventCallback,
-            gameName, numPlayers, localport);
     }
 
     public void StartSpectating(
-            UGGPO.BeginGameDelegate beginGame,
-            UGGPO.AdvanceFrameDelegate advanceFrame,
+            GGPO.BeginGameDelegate beginGame,
+            GGPO.AdvanceFrameDelegate advanceFrame,
             SafeLoadGameStateDelegate loadGameState,
             SafeLogGameStateDelegate logGameState,
             SafeSaveGameStateDelegate saveGameState,
@@ -244,7 +141,7 @@ public class GGPOSession {
             _freeBufferCallback = FreeBuffer;
             _onEventCallback = OnEventCallback;
         }
-        ggpo = UGGPO.UggStartSpectating(beginGame,
+        ggpo = GGPO.UggStartSpectating(beginGame,
             advanceFrame,
             _loadGameStateCallback,
             _logGameStateCallback,
@@ -254,54 +151,9 @@ public class GGPOSession {
             gameName, numPlayers, localport, hostIp, hostPort);
     }
 
-    bool OnEventCallback(IntPtr evtPtr) {
-        /*
-        code = data[0];
-        connected.player = data[1];
-        synchronizing.player = data[1];
-        synchronizing.count = data[2];
-        synchronizing.total = data[3];
-        synchronized.player = data[1];
-        disconnected.player = data[1]
-        timesync.frames_ahead = data[1];
-        connection_interrupted.player = data[1];
-        connection_interrupted.disconnect_timeout = data[2];
-        connection_resumed.player = data[1];
-        */
-
-        int[] data = new int[4];
-        Marshal.Copy(evtPtr, data, 0, 4);
-        switch (data[0]) {
-            case GGPOC.GGPO_EVENTCODE_CONNECTED_TO_PEER:
-                return onEventConnectedToPeer(data[1]);
-
-            case GGPOC.GGPO_EVENTCODE_SYNCHRONIZING_WITH_PEER:
-                return onEventSynchronizingWithPeer(data[1], data[2], data[3]);
-
-            case GGPOC.GGPO_EVENTCODE_SYNCHRONIZED_WITH_PEER:
-                return onEventSynchronizedWithPeer(data[1]);
-
-            case GGPOC.GGPO_EVENTCODE_RUNNING:
-                return onEventRunning();
-
-            case GGPOC.GGPO_EVENTCODE_DISCONNECTED_FROM_PEER:
-                return onEventDisconnectedFromPeer(data[1]);
-
-            case GGPOC.GGPO_EVENTCODE_TIMESYNC:
-                return onEventTimesync(data[1]);
-
-            case GGPOC.GGPO_EVENTCODE_CONNECTION_INTERRUPTED:
-                return onEventConnectionInterrupted(data[1], data[2]);
-
-            case GGPOC.GGPO_EVENTCODE_CONNECTION_RESUMED:
-                return onEventConnectionResumed(data[1]);
-        }
-        return false;
-    }
-
-    public void GetNetworkStats(int p, out GGPONetworkStats stats) {
+    public int GetNetworkStats(int phandle, out GGPONetworkStats stats) {
         stats = new GGPONetworkStats();
-        UGGPO.UggGetNetworkStats(ggpo, p,
+        var result = GGPO.UggGetNetworkStats(ggpo, phandle,
             out stats.send_queue_len,
             out stats.recv_queue_len,
             out stats.ping,
@@ -309,56 +161,78 @@ public class GGPOSession {
             out stats.local_frames_behind,
             out stats.remote_frames_behind
         );
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
-    public void SetDisconnectNotifyStart(int timeout) {
-        UGGPO.UggSetDisconnectNotifyStart(ggpo, timeout);
+    public int SetDisconnectNotifyStart(int timeout) {
+        var result = GGPO.UggSetDisconnectNotifyStart(ggpo, timeout);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
-    public void SetDisconnectTimeout(int timeout) {
-        UGGPO.UggSetDisconnectTimeout(ggpo, timeout);
+    public int SetDisconnectTimeout(int timeout) {
+        var result = GGPO.UggSetDisconnectTimeout(ggpo, timeout);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
     public int SynchronizeInput(ulong[] inputs, int length, out int disconnect_flags) {
-        return UGGPO.UggSynchronizeInput(ggpo, inputs, length, out disconnect_flags);
+        var result = GGPO.UggSynchronizeInput(ggpo, inputs, length, out disconnect_flags);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
     public int AddLocalInput(int local_player_handle, ulong inputs) {
-        return UGGPO.UggAddLocalInput(ggpo, local_player_handle, inputs);
+        var result = GGPO.UggAddLocalInput(ggpo, local_player_handle, inputs);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
-    public void CloseSession() {
-        UGGPO.UggCloseSession(ggpo);
+    public int CloseSession() {
+        var result = GGPO.UggCloseSession(ggpo);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
-    public void Idle(int time) {
-        UGGPO.UggIdle(ggpo, time);
+    public int Idle(int time) {
+        var result = GGPO.UggIdle(ggpo, time);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
     public int AddPlayer(GGPOPlayer player, out int phandle) {
-        return UGGPO.UggAddPlayer(ggpo,
+        var result = GGPO.UggAddPlayer(ggpo,
             (int)player.type,
             player.player_num,
             player.ip_address,
             player.port,
             out phandle);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
     public int DisconnectPlayer(int phandle) {
-        return UGGPO.UggDisconnectPlayer(ggpo, phandle);
+        var result = GGPO.UggDisconnectPlayer(ggpo, phandle);
+        Debug.Assert(GGPO.SUCCEEDED(result));
+        return result;
     }
 
     public void SetFrameDelay(int phandle, int frame_delay) {
-        UGGPO.UggSetFrameDelay(ggpo, phandle, frame_delay);
+        var result = GGPO.UggSetFrameDelay(ggpo, phandle, frame_delay);
+        Debug.Assert(GGPO.SUCCEEDED(result));
     }
 
     public void AdvanceFrame() {
-        UGGPO.UggAdvanceFrame(ggpo);
+        var result = GGPO.UggAdvanceFrame(ggpo);
+        Debug.Assert(GGPO.SUCCEEDED(result));
     }
 
     public void Log(string v) {
-        UGGPO.UggLog(ggpo, v);
+        GGPO.UggLog(ggpo, v);
     }
+
+    // Callbacks
 
     unsafe void FreeBuffer(void* dataPtr) {
         if (cache.TryGetValue((long)dataPtr, out var data)) {
@@ -381,7 +255,52 @@ public class GGPOSession {
         return logGameStateCallback(text, Helper.ToArray(buffer, length));
     }
 
-    unsafe public bool LoadGameState(void* buffer, int length) {
+    unsafe bool LoadGameState(void* buffer, int length) {
         return loadGameStateCallback(Helper.ToArray(buffer, length));
+    }
+
+    bool OnEventCallback(IntPtr evtPtr) {
+        /*
+        code = data[0];
+        connected.player = data[1];
+        synchronizing.player = data[1];
+        synchronizing.count = data[2];
+        synchronizing.total = data[3];
+        synchronized.player = data[1];
+        disconnected.player = data[1]
+        timesync.frames_ahead = data[1];
+        connection_interrupted.player = data[1];
+        connection_interrupted.disconnect_timeout = data[2];
+        connection_resumed.player = data[1];
+        */
+
+        int[] data = new int[4];
+        Marshal.Copy(evtPtr, data, 0, 4);
+        switch (data[0]) {
+            case GGPO.EVENTCODE_CONNECTED_TO_PEER:
+                return onEventConnectedToPeer(data[1]);
+
+            case GGPO.EVENTCODE_SYNCHRONIZING_WITH_PEER:
+                return onEventSynchronizingWithPeer(data[1], data[2], data[3]);
+
+            case GGPO.EVENTCODE_SYNCHRONIZED_WITH_PEER:
+                return onEventSynchronizedWithPeer(data[1]);
+
+            case GGPO.EVENTCODE_RUNNING:
+                return onEventRunning();
+
+            case GGPO.EVENTCODE_DISCONNECTED_FROM_PEER:
+                return onEventDisconnectedFromPeer(data[1]);
+
+            case GGPO.EVENTCODE_TIMESYNC:
+                return onEventTimesync(data[1]);
+
+            case GGPO.EVENTCODE_CONNECTION_INTERRUPTED:
+                return onEventConnectionInterrupted(data[1], data[2]);
+
+            case GGPO.EVENTCODE_CONNECTION_RESUMED:
+                return onEventConnectionResumed(data[1]);
+        }
+        return false;
     }
 }
