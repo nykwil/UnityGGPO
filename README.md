@@ -1,6 +1,6 @@
 # UnityGGPO
 
-An interop DLL of the ggpo library that works with Unity 3D. 
+An interop DLL of the ggpo library that works with Unity 3D, and a port of VectorWar to Untity.
 
 Build:
 - run build_windows.cmd to build the solution.
