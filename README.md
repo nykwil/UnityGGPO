@@ -8,7 +8,7 @@ Build:
 
 Two ways to use:
 - Direct access to the ggpo library using the GGPO class requires unsafe calls and IntPtr function pointers.
-- Use the GGPO.Session helper class to have safe access using Unity's native collections library.
+- Use the GGPO.Session helper class to have safe access using Unity's native collections library and delegates.
 
 VectorWar
 - Run the VectorWar.scene.
