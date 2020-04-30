@@ -171,8 +171,8 @@ public class UggTests : MonoBehaviour {
         return true;
     }
 
-    bool OnEventSynchronizedWithPeer(int synchronizing_player) {
-        Debug.Log($"OnEventSynchronizedWithPeer({synchronizing_player})");
+    bool OnEventSynchronizedWithPeer(int synchronized_player) {
+        Debug.Log($"OnEventSynchronizedWithPeer({synchronized_player})");
         return true;
     }
 

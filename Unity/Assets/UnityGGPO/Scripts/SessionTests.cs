@@ -24,8 +24,8 @@ public class SessionTests : MonoBehaviour {
     public int hostPort = 7000;
     public string hostIp = "127.0.0.1";
 
-    public GGPOPlayer player;
 
+    public GGPOPlayer player;
     void Start() {
         Log(string.Format("Plugin Version: {0} build {1}", GGPO.Version, GGPO.BuildNumber));
         GGPO.Session.Init(Log);
@@ -73,8 +73,8 @@ public class SessionTests : MonoBehaviour {
         return true;
     }
 
-    bool OnEventSynchronizedWithPeer(int synchronizing_player) {
-        Debug.Log($"OnEventSynchronizedWithPeer({synchronizing_player})");
+    bool OnEventSynchronizedWithPeer(int synchronized_player) {
+        Debug.Log($"OnEventSynchronizedWithPeer({synchronized_player})");
         return true;
     }
 
@@ -88,15 +88,15 @@ public class SessionTests : MonoBehaviour {
         return true;
     }
 
-    NativeArray<byte> OnSaveGameState(out int checksum, int frame) {
+    bool OnSaveGameState(out NativeArray<byte> data, out int checksum, int frame) {
         Debug.Log($"OnSaveGameState({frame})");
-        var data = new NativeArray<byte>(12, Allocator.Persistent);
+        data = new NativeArray<byte>(12, Allocator.Persistent);
         for (int i = 0; i < data.Length; ++i) {
             data[i] = (byte)i;
         }
         checksum = Helper.CalcFletcher32(data);
         Debug.Log($"SafeSaveGameState({frame})");
-        return data;
+        return true;
     }
 
     bool OnLogGameState(string filename, NativeArray<byte> data) {

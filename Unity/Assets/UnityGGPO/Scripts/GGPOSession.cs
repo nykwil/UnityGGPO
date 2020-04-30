@@ -13,7 +13,7 @@ public static partial class GGPO {
 
         public delegate bool OnEventSynchronizingWithPeerDelegate(int synchronizing_player, int synchronizing_count, int synchronizing_total);
 
-        public delegate bool OnEventSynchronizedWithPeerDelegate(int synchronizing_player);
+        public delegate bool OnEventSynchronizedWithPeerDelegate(int synchronized_player);
 
         public delegate bool OnEventRunningDelegate();
 
@@ -29,11 +29,11 @@ public static partial class GGPO {
 
         public delegate bool SafeLogGameStateDelegate(string filename, NativeArray<byte> data);
 
-        public delegate NativeArray<byte> SafeSaveGameStateDelegate(out int checksum, int frame);
+        public delegate bool SafeSaveGameStateDelegate(out NativeArray<byte> data, out int checksum, int frame);
 
         public delegate void SafeFreeBufferDelegate(NativeArray<byte> data);
 
-        static IntPtr ggpo;
+        public static IntPtr ggpo; // @LOOK
         static readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
 
         static SafeLoadGameStateDelegate loadGameStateCallback;
@@ -66,7 +66,7 @@ public static partial class GGPO {
             return ggpo != IntPtr.Zero;
         }
 
-        public static void StartSession(
+        public static int StartSession(
                 BeginGameDelegate beginGame,
                 AdvanceFrameDelegate advanceFrame,
                 SafeLoadGameStateDelegate loadGameState,
@@ -105,7 +105,7 @@ public static partial class GGPO {
                 _freeBufferCallback = Marshal.GetFunctionPointerForDelegate<FreeBufferDelegate>(FreeBuffer);
                 _onEventCallback = Marshal.GetFunctionPointerForDelegate<OnEventDelegate>(OnEventCallback);
             }
-            GGPO.StartSession(out ggpo,
+            var result = GGPO.StartSession(out ggpo,
                 _beginGameCallback,
                 _advanceFrameCallback,
                 _loadGameStateCallback,
@@ -115,10 +115,10 @@ public static partial class GGPO {
                 _onEventCallback,
                 gameName, numPlayers, localport);
 
-            Debug.Assert(ggpo != IntPtr.Zero);
+            return result;
         }
 
-        public static void StartSpectating(
+        public static int StartSpectating(
                 BeginGameDelegate beginGame,
                 AdvanceFrameDelegate advanceFrame,
                 SafeLoadGameStateDelegate loadGameState,
@@ -158,7 +158,7 @@ public static partial class GGPO {
                 _onEventCallback = Marshal.GetFunctionPointerForDelegate<OnEventDelegate>(OnEventCallback);
             }
 
-            GGPO.StartSpectating(out ggpo,
+            var result = GGPO.StartSpectating(out ggpo,
                 _beginGameCallback,
                 _advanceFrameCallback,
                 _loadGameStateCallback,
@@ -167,6 +167,7 @@ public static partial class GGPO {
                 _freeBufferCallback,
                 _onEventCallback,
                 gameName, numPlayers, localport, hostIp, hostPort);
+            return result;
         }
 
         public static int GetNetworkStats(int phandle, out GGPONetworkStats stats) {
@@ -179,31 +180,26 @@ public static partial class GGPO {
                 out stats.local_frames_behind,
                 out stats.remote_frames_behind
             );
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
         public static int SetDisconnectNotifyStart(int timeout) {
             var result = GGPO.SetDisconnectNotifyStart(ggpo, timeout);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
         public static int SetDisconnectTimeout(int timeout) {
             var result = GGPO.SetDisconnectTimeout(ggpo, timeout);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
         public static int SynchronizeInput(ulong[] inputs, int length, out int disconnect_flags) {
             var result = GGPO.SynchronizeInput(ggpo, inputs, length, out disconnect_flags);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
         public static int AddLocalInput(int local_player_handle, ulong inputs) {
             var result = GGPO.AddLocalInput(ggpo, local_player_handle, inputs);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
@@ -213,14 +209,12 @@ public static partial class GGPO {
             }
             cache.Clear();
             var result = GGPO.CloseSession(ggpo);
-            Debug.Assert(SUCCEEDED(result));
             ggpo = IntPtr.Zero;
             return result;
         }
 
         public static int Idle(int time) {
             var result = GGPO.Idle(ggpo, time);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
@@ -231,25 +225,21 @@ public static partial class GGPO {
                 player.ip_address,
                 player.port,
                 out phandle);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
         public static int DisconnectPlayer(int phandle) {
             var result = GGPO.DisconnectPlayer(ggpo, phandle);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
         public static int SetFrameDelay(int phandle, int frame_delay) {
             var result = GGPO.SetFrameDelay(ggpo, phandle, frame_delay);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
         public static int AdvanceFrame() {
             var result = GGPO.AdvanceFrame(ggpo);
-            Debug.Assert(SUCCEEDED(result));
             return result;
         }
 
@@ -267,20 +257,20 @@ public static partial class GGPO {
 
         static unsafe void FreeBuffer(void* dataPtr) {
             if (cache.TryGetValue((long)dataPtr, out var data)) {
-                freeBufferCallback(data);
+                freeBufferCallback(data); 
                 cache.Remove((long)dataPtr);
             }
         }
 
         static unsafe bool SaveGameState(void** buffer, int* outLen, int* outChecksum, int frame) {
-            var data = saveGameStateCallback(out int checksum, frame);
+            var result = saveGameStateCallback(out var data, out int checksum, frame);
             var ptr = Helper.ToPtr(data);
             cache[(long)ptr] = data;
 
             *buffer = ptr;
             *outLen = data.Length;
             *outChecksum = checksum;
-            return true;
+            return result;
         }
 
         static unsafe bool LogGameState(string filename, void* buffer, int length) {

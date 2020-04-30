@@ -15,17 +15,6 @@ namespace VectorWar {
         public static NonGameState ngs = null;
         public static GGPOPerformance perf = null;
 
-        static readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
-        static IntPtr ggpo = IntPtr.Zero;
-
-        static IntPtr vw_begin_game_callback;
-        static IntPtr vw_advance_frame_callback;
-        static IntPtr vw_load_game_state_callback;
-        static IntPtr vw_log_game_state;
-        static IntPtr vw_save_game_state_callback;
-        static IntPtr vw_free_buffer_callback;
-        static IntPtr vw_on_event_callback;
-
         public static event Action<string> OnLog;
 
         public static Stopwatch frameWatch = new Stopwatch();
@@ -50,62 +39,58 @@ namespace VectorWar {
          * text at the bottom of the screen to notify the user.
          */
 
-        static bool Vw_on_event_callback(IntPtr evtPtr) {
-            Debug.Assert(gs != null && ngs != null);
-            int[] data = new int[4];
-            Marshal.Copy(evtPtr, data, 0, 4);
-            int info_code = data[0];
-            int connected_player = data[1];
-            int synchronizing_player = data[1];
-            int synchronizing_count = data[2];
-            int synchronizing_total = data[3];
-            int synchronized_player = data[1];
-            int disconnected_player = data[1];
-            int timesync_frames_ahead = data[1];
-            int connection_interrupted_player = data[1];
-            int connection_interrupted_disconnect_timeout = data[2];
-            int connection_resumed_player = data[1];
+        static bool OnEventConnectedToPeerDelegate(int connected_player)
+        {
+            ngs.SetConnectState(connected_player, PlayerConnectState.Synchronizing);
+            return true;
+        }
 
-            OnLog?.Invoke($"vw_on_event_callback {data[0]} {data[1]} {data[2]} {data[3]}");
+        static public bool OnEventSynchronizingWithPeerDelegate(int synchronizing_player, int synchronizing_count, int synchronizing_total)
+        {
+            var progress = 100 * synchronizing_count / synchronizing_total;
+            ngs.UpdateConnectProgress(synchronizing_player, progress);
+            return true;
+        }
 
-            int progress;
-            switch (info_code) {
-                case GGPO.EVENTCODE_CONNECTED_TO_PEER:
-                    ngs.SetConnectState(connected_player, PlayerConnectState.Synchronizing);
-                    break;
+        static public bool OnEventSynchronizedWithPeerDelegate(int synchronized_player)
+        {
+            ngs.UpdateConnectProgress(synchronized_player, 100);
+            return true;
+        }
 
-                case GGPO.EVENTCODE_SYNCHRONIZING_WITH_PEER:
-                    progress = 100 * synchronizing_count / synchronizing_total;
-                    ngs.UpdateConnectProgress(synchronizing_player, progress);
-                    break;
+        static public bool OnEventRunningDelegate()
+        {
+            ngs.SetConnectState(PlayerConnectState.Running);
+            SetStatusText("");
+            return true;
+        }
 
-                case GGPO.EVENTCODE_SYNCHRONIZED_WITH_PEER:
-                    ngs.UpdateConnectProgress(synchronized_player, 100);
-                    break;
+        static public bool OnEventConnectionInterruptedDelegate(int connection_interrupted_player, int connection_interrupted_disconnect_timeout)
+        {
+            ngs.SetDisconnectTimeout(connection_interrupted_player,
+                                     Helper.TimeGetTime(),
+                                     connection_interrupted_disconnect_timeout);
+            return true;
+        }
 
-                case GGPO.EVENTCODE_RUNNING:
-                    ngs.SetConnectState(PlayerConnectState.Running);
-                    SetStatusText("");
-                    break;
 
-                case GGPO.EVENTCODE_CONNECTION_INTERRUPTED:
-                    ngs.SetDisconnectTimeout(connection_interrupted_player,
-                                             Helper.TimeGetTime(),
-                                             connection_interrupted_disconnect_timeout);
-                    break;
+        static public bool OnEventConnectionResumedDelegate(int connection_resumed_player)
+        {
+            ngs.SetConnectState(connection_resumed_player, PlayerConnectState.Running);
+            return true;
+        }
 
-                case GGPO.EVENTCODE_CONNECTION_RESUMED:
-                    ngs.SetConnectState(connection_resumed_player, PlayerConnectState.Running);
-                    break;
 
-                case GGPO.EVENTCODE_DISCONNECTED_FROM_PEER:
-                    ngs.SetConnectState(disconnected_player, PlayerConnectState.Disconnected);
-                    break;
+        static public bool OnEventDisconnectedFromPeerDelegate(int disconnected_player)
+        {
+            ngs.SetConnectState(disconnected_player, PlayerConnectState.Disconnected);
+            return true;
+        }
 
-                case GGPO.EVENTCODE_TIMESYNC:
-                    Helper.Sleep(1000 * timesync_frames_ahead / 60);
-                    break;
-            }
+
+        static public bool OnEventEventcodeTimesyncDelegate(int timesync_frames_ahead)
+        {
+            Helper.Sleep(1000 * timesync_frames_ahead / 60);
             return true;
         }
 
@@ -122,7 +107,7 @@ namespace VectorWar {
             // Make sure we fetch new inputs from GGPO and use those to update the game state
             // instead of reading from the keyboard.
             ulong[] inputs = new ulong[MAX_SHIPS];
-            ReportFailure(GGPO.SynchronizeInput(ggpo, inputs, MAX_SHIPS, out var disconnect_flags));
+            ReportFailure(GGPO.Session.SynchronizeInput(inputs, MAX_SHIPS, out var disconnect_flags));
 
             AdvanceFrame(inputs, disconnect_flags);
             return true;
@@ -134,9 +119,9 @@ namespace VectorWar {
          * Makes our current state match the state passed in by GGPO.
          */
 
-        static unsafe bool Vw_load_game_state_callback(void* dataPtr, int length) {
-            OnLog?.Invoke($"vw_load_game_state_callback {length}");
-            GameState.FromBytes(gs, Helper.ToArray(dataPtr, length));
+        static unsafe bool Vw_load_game_state_callback(NativeArray<byte> data) {
+            OnLog?.Invoke($"vw_load_game_state_callback {data.Length}");
+            GameState.FromBytes(gs, data);
             return true;
         }
 
@@ -147,15 +132,11 @@ namespace VectorWar {
          * buffer and len parameters.
          */
 
-        static unsafe bool Vw_save_game_state_callback(void** buffer, int* length, int* checksum, int frame) {
+        static unsafe bool Vw_save_game_state_callback(out NativeArray<byte> data, out int checksum, int frame) {
             OnLog?.Invoke($"vw_save_game_state_callback {frame}");
             Debug.Assert(gs != null);
-            var bytes = GameState.ToBytes(gs);
-            *checksum = Helper.CalcFletcher32(bytes);
-            *length = bytes.Length;
-            var ptr = Helper.ToPtr(bytes);
-            *buffer = ptr;
-            cache[(long)ptr] = bytes;
+            data = GameState.ToBytes(gs);
+            checksum = Helper.CalcFletcher32(data);
             return true;
         }
 
@@ -165,11 +146,11 @@ namespace VectorWar {
          * Log the gamestate.  Used by the synctest debugging tool.
          */
 
-        static unsafe bool Vw_log_game_state(string filename, void* buffer, int length) {
+        static unsafe bool Vw_log_game_state(string filename, NativeArray<byte> data) {
             OnLog?.Invoke($"vw_log_game_state {filename}");
 
             var gamestate = new GameState();
-            GameState.FromBytes(gamestate, Helper.ToArray(buffer, length));
+            GameState.FromBytes(gamestate, data);
             string fp = "";
             fp += "GameState object.\n";
             fp += string.Format("  bounds: {0},{1} x {2},{3}.\n", gamestate._bounds.xMin, gamestate._bounds.yMin,
@@ -194,12 +175,11 @@ namespace VectorWar {
             return true;
         }
 
-        static unsafe void Vw_free_buffer_callback(void* dataPtr) {
+        static void Vw_free_buffer_callback(NativeArray<byte> data) {
             OnLog?.Invoke($"vw_free_buffer_callback");
-
-            if (cache.TryGetValue((long)dataPtr, out var data)) {
+            if (data.IsCreated)
+            {
                 data.Dispose();
-                cache.Remove((long)dataPtr);
             }
         }
 
@@ -217,21 +197,21 @@ namespace VectorWar {
 #if SYNC_TEST
             var result = ggpo_start_synctest(cb, "vectorwar", num_players, 1);
 #else
-            SetFuncPointers();
-
-            var result = GGPO.StartSession(out ggpo,
-                                vw_begin_game_callback,
-                                vw_advance_frame_callback,
-                                vw_load_game_state_callback,
-                                vw_log_game_state,
-                                vw_save_game_state_callback,
-                                vw_free_buffer_callback,
-                                vw_on_event_callback,
-                                "vectorwar", num_players, localport);
-
-            if (ggpo == IntPtr.Zero) {
-                OnLog?.Invoke("Session Error");
-            }
+            var result = GGPO.Session.StartSession(Vw_begin_game_callback,
+                    Vw_advance_frame_callback,
+                    Vw_load_game_state_callback,
+                    Vw_log_game_state,
+                    Vw_save_game_state_callback,
+                    Vw_free_buffer_callback,
+                    OnEventConnectedToPeerDelegate,
+                    OnEventSynchronizingWithPeerDelegate,
+                    OnEventSynchronizedWithPeerDelegate,
+                    OnEventRunningDelegate,
+                    OnEventConnectionInterruptedDelegate,
+                    OnEventConnectionResumedDelegate,
+                    OnEventDisconnectedFromPeerDelegate,
+                    OnEventEventcodeTimesyncDelegate,
+                    "vectorwar", num_players, localport);
 
 #endif
             ReportFailure(result);
@@ -239,19 +219,14 @@ namespace VectorWar {
             // automatically disconnect clients after 3000 ms and start our count-down timer for
             // disconnects after 1000 ms. To completely disable disconnects, simply use a value of 0
             // for ggpo_set_disconnect_timeout.
-            ReportFailure(GGPO.SetDisconnectTimeout(ggpo, 3000));
-            ReportFailure(GGPO.SetDisconnectNotifyStart(ggpo, 1000));
+            ReportFailure(GGPO.Session.SetDisconnectTimeout(3000));
+            ReportFailure(GGPO.Session.SetDisconnectNotifyStart(1000));
 
             int controllerId = 0;
             int playerIndex = 0;
             ngs.players = new PlayerConnectionInfo[num_players];
             for (int i = 0; i < players.Count; i++) {
-                ReportFailure(GGPO.AddPlayer(ggpo,
-                    (int)players[i].type,
-                    players[i].player_num,
-                    players[i].ip_address,
-                    players[i].port,
-                    out int handle));
+                ReportFailure(GGPO.Session.AddPlayer(players[i], out int handle));
 
                 if (players[i].type == GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL) {
                     var playerInfo = new PlayerConnectionInfo();
@@ -261,7 +236,7 @@ namespace VectorWar {
                     playerInfo.controllerId = controllerId++;
                     ngs.players[playerIndex++] = playerInfo;
                     ngs.SetConnectState(handle, PlayerConnectState.Connecting);
-                    ReportFailure(GGPO.SetFrameDelay(ggpo, handle, FRAME_DELAY));
+                    ReportFailure(GGPO.Session.SetFrameDelay(handle, FRAME_DELAY));
                 }
                 else if (players[i].type == GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE) {
                     var playerInfo = new PlayerConnectionInfo();
@@ -276,16 +251,6 @@ namespace VectorWar {
             SetStatusText("Connecting to peers.");
         }
 
-        static unsafe void SetFuncPointers() {
-            vw_begin_game_callback = Marshal.GetFunctionPointerForDelegate<GGPO.BeginGameDelegate>(Vw_begin_game_callback);
-            vw_advance_frame_callback = Marshal.GetFunctionPointerForDelegate<GGPO.AdvanceFrameDelegate>(Vw_advance_frame_callback);
-            vw_load_game_state_callback = Marshal.GetFunctionPointerForDelegate<GGPO.LoadGameStateDelegate>(Vw_load_game_state_callback);
-            vw_log_game_state = Marshal.GetFunctionPointerForDelegate<GGPO.LogGameStateDelegate>(Vw_log_game_state);
-            vw_save_game_state_callback = Marshal.GetFunctionPointerForDelegate<GGPO.SaveGameStateDelegate>(Vw_save_game_state_callback);
-            vw_free_buffer_callback = Marshal.GetFunctionPointerForDelegate<GGPO.FreeBufferDelegate>(Vw_free_buffer_callback);
-            vw_on_event_callback = Marshal.GetFunctionPointerForDelegate<GGPO.OnEventDelegate>(Vw_on_event_callback);
-        }
-
         /*
          * InitSpectator --
          *
@@ -298,15 +263,21 @@ namespace VectorWar {
             ngs.players = Array.Empty<PlayerConnectionInfo>();
 
             // Fill in a ggpo callbacks structure to pass to start_session.
-            SetFuncPointers();
-            var result = GGPO.StartSpectating(out ggpo,
-                    vw_begin_game_callback,
-                    vw_advance_frame_callback,
-                    vw_load_game_state_callback,
-                    vw_log_game_state,
-                    vw_save_game_state_callback,
-                    vw_free_buffer_callback,
-                    vw_on_event_callback,
+            var result = GGPO.Session.StartSpectating(
+                    Vw_begin_game_callback,
+                    Vw_advance_frame_callback,
+                    Vw_load_game_state_callback,
+                    Vw_log_game_state,
+                    Vw_save_game_state_callback,
+                    Vw_free_buffer_callback,
+                    OnEventConnectedToPeerDelegate,
+                    OnEventSynchronizingWithPeerDelegate,
+                    OnEventSynchronizedWithPeerDelegate,
+                    OnEventRunningDelegate,
+                    OnEventConnectionInterruptedDelegate,
+                    OnEventConnectionResumedDelegate,
+                    OnEventDisconnectedFromPeerDelegate,
+                    OnEventEventcodeTimesyncDelegate,
                     "vectorwar", num_players, localport, host_ip, host_port);
 
             ReportFailure(result);
@@ -325,7 +296,7 @@ namespace VectorWar {
         public static void DisconnectPlayer(int playerIndex) {
             if (playerIndex < ngs.players.Length) {
                 string logbuf;
-                var result = GGPO.DisconnectPlayer(ggpo, ngs.players[playerIndex].handle);
+                var result = GGPO.Session.DisconnectPlayer(ngs.players[playerIndex].handle);
                 if (GGPO.SUCCEEDED(result)) {
                     logbuf = $"Disconnected player {playerIndex}.";
                 }
@@ -355,7 +326,7 @@ namespace VectorWar {
             }
 
             // Notify ggpo that we've moved forward exactly 1 frame.
-            ReportFailure(GGPO.AdvanceFrame(ggpo));
+            ReportFailure(GGPO.Session.AdvanceFrame());
 
             // Update the performance monitor display.
             int[] handles = new int[MAX_PLAYERS];
@@ -365,7 +336,7 @@ namespace VectorWar {
                     handles[count++] = ngs.players[i].handle;
                 }
             }
-            perf.ggpoutil_perfmon_update(ggpo, handles, count);
+            perf.ggpoutil_perfmon_update(GGPO.Session.ggpo, handles, count);
         }
 
         /*
@@ -439,7 +410,7 @@ namespace VectorWar {
 #if SYNC_TEST
      input = rand(); // test: use random inputs to demonstrate sync testing
 #endif
-                    result = GGPO.AddLocalInput(ggpo, player.handle, input);
+                    result = GGPO.Session.AddLocalInput(player.handle, input);
                 }
             }
 
@@ -448,7 +419,7 @@ namespace VectorWar {
             if (GGPO.SUCCEEDED(result)) {
                 frameWatch.Start();
                 ulong[] inputs = new ulong[MAX_SHIPS];
-                result = GGPO.SynchronizeInput(ggpo, inputs, MAX_SHIPS, out var disconnect_flags);
+                result = GGPO.Session.SynchronizeInput(inputs, MAX_SHIPS, out var disconnect_flags);
                 if (GGPO.SUCCEEDED(result)) {
                     // inputs[0] and inputs[1] contain the inputs for p1 and p2. Advance the game by
                     // 1 frame using those inputs.
@@ -470,22 +441,14 @@ namespace VectorWar {
 
         public static void Idle(int time) {
             idleWatch.Start();
-            ReportFailure(GGPO.Idle(ggpo, time));
+            ReportFailure(GGPO.Session.Idle(time));
             idleWatch.Stop();
         }
 
         public static void Exit() {
-            if (ggpo != IntPtr.Zero) {
-                ReportFailure(GGPO.CloseSession(ggpo));
-                ggpo = IntPtr.Zero;
+            if (GGPO.Session.IsStarted()) {
+                ReportFailure(GGPO.Session.CloseSession());
             }
-
-            foreach (var c in cache.Values) {
-                if (c.IsCreated) {
-                    c.Dispose();
-                }
-            }
-            cache.Clear();
         }
 
         static void SetStatusText(string status) {
