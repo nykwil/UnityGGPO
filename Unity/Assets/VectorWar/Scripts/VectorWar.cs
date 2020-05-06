@@ -119,7 +119,7 @@ namespace VectorWar {
          * Makes our current state match the state passed in by GGPO.
          */
 
-        static unsafe bool Vw_load_game_state_callback(NativeArray<byte> data) {
+        static bool Vw_load_game_state_callback(NativeArray<byte> data) {
             OnLog?.Invoke($"vw_load_game_state_callback {data.Length}");
             GameState.FromBytes(gs, data);
             return true;
@@ -132,7 +132,7 @@ namespace VectorWar {
          * buffer and len parameters.
          */
 
-        static unsafe bool Vw_save_game_state_callback(out NativeArray<byte> data, out int checksum, int frame) {
+        static bool Vw_save_game_state_callback(out NativeArray<byte> data, out int checksum, int frame) {
             OnLog?.Invoke($"vw_save_game_state_callback {frame}");
             Debug.Assert(gs != null);
             data = GameState.ToBytes(gs);
@@ -146,7 +146,7 @@ namespace VectorWar {
          * Log the gamestate.  Used by the synctest debugging tool.
          */
 
-        static unsafe bool Vw_log_game_state(string filename, NativeArray<byte> data) {
+        static bool Vw_log_game_state(string filename, NativeArray<byte> data) {
             OnLog?.Invoke($"vw_log_game_state {filename}");
 
             var gamestate = new GameState();
