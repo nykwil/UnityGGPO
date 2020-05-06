@@ -30,7 +30,12 @@ public static class Helper {
 
     unsafe public static NativeArray<byte> ToArray(void* dataPointer, int length) {
         unsafe {
-            return NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPointer, length, Allocator.Persistent);
+            var array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPointer, length, Allocator.Persistent);
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, AtomicSafetyHandle.Create());
+#endif
+            return array;
         }
     }
 
