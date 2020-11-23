@@ -1,33 +1,93 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
+[ExecuteInEditMode]
 public class GGPOPerformance : MonoBehaviour {
-    const int MAX_GRAPH_SIZE = 4096;
-    const int MAX_PLAYERS = 4;
-    int _last_text_update_time;
-    int _num_players;
-    int _first_graph_index = 0;
-    int _graph_size = 0;
-    int[,] _ping_graph = new int[MAX_PLAYERS, MAX_GRAPH_SIZE];
-    int[,] _local_fairness_graph = new int[MAX_PLAYERS, MAX_GRAPH_SIZE];
-    int[,] _remote_fairness_graph = new int[MAX_PLAYERS, MAX_GRAPH_SIZE];
-    int[] _fairness_graph = new int[MAX_GRAPH_SIZE];
-    int[] _remote_queue_graph = new int[MAX_GRAPH_SIZE];
-    int[] _send_queue_graph = new int[MAX_GRAPH_SIZE];
+    public Rect fairnessRect;
+    public Rect networkRect;
 
-    const int IDC_NETWORK_LAG = 0;
-    const int IDC_FRAME_LAG = 1;
-    const int IDC_BANDWIDTH = 2;
-    const int IDC_LOCAL_AHEAD = 3;
-    const int IDC_REMOTE_AHEAD = 4;
+    public bool toggle; // @todo
+    public bool random; // @todo
+    public int _num_players = 2;
+    public int step = 1;
+
+    private const int MAX_GRAPH_SIZE = 4096;
+    private const int MAX_FAIRNESS = 20;
+    private const int MAX_PLAYERS = 4;
+
+    private string networkLag;
+    private string frameLag;
+    private string bandwidth;
+    private string localAhead;
+    private string remoteAhead;
+
+    private int _last_text_update_time;
+    private int _first_graph_index = 0;
+    private int _graph_size = 0;
+    private int[][] _ping_graph;
+    private int[][] _local_fairness_graph;
+    private int[][] _remote_fairness_graph;
+    private int[] _fairness_graph;
+    private int[] _remote_queue_graph;
+    private int[] _send_queue_graph;
+
+    private Color[] _fairness_pens = new Color[] { Color.blue, Color.grey, Color.red, Color.magenta };
+    private List<Vector2> pt = new List<Vector2>();
 
     public void ggpoutil_perfmon_init() {
+        _fairness_graph = new int[MAX_GRAPH_SIZE];
+        _remote_queue_graph = new int[MAX_GRAPH_SIZE];
+        _send_queue_graph = new int[MAX_GRAPH_SIZE];
+
+        _ping_graph = new int[MAX_PLAYERS][];
+        _local_fairness_graph = new int[MAX_PLAYERS][];
+        _remote_fairness_graph = new int[MAX_PLAYERS][];
+
+        for (int i = 0; i < MAX_PLAYERS; ++i) {
+            _ping_graph[i] = new int[MAX_GRAPH_SIZE];
+            _local_fairness_graph[i] = new int[MAX_GRAPH_SIZE];
+            _remote_fairness_graph[i] = new int[MAX_GRAPH_SIZE];
+        }
+    }
+
+    private void DrawGraph(Rect di, Color pen, int[] graph, int count, int min, int max) {
+        pt.Clear();
+
+        for (int i = 0; i < count; i += step) {
+            float y = Mathf.InverseLerp(min, max, graph[(_first_graph_index + i) % MAX_GRAPH_SIZE]);
+
+            pt.Add(new Vector2(Mathf.Lerp(di.xMin, di.xMax, (float)i / count),
+                Mathf.Lerp(di.yMin, di.yMax, y)));
+        }
+
+        GuiHelper.DrawLine(pt.ToArray(), pen, 1);
+    }
+
+    private void DrawGrid(Rect di) {
+        GuiHelper.DrawRect(di, Color.gray);
+    }
+
+    private void draw_network_graph_control(Rect di) {
+        DrawGrid(di);
+        for (int i = 0; i < _num_players; i++) {
+            DrawGraph(di, Color.green, _ping_graph[i], _graph_size, 0, 500);
+        }
+        DrawGraph(di, Color.red, _remote_queue_graph, _graph_size, 0, 14);
+        DrawGraph(di, Color.blue, _send_queue_graph, _graph_size, 0, 14);
+    }
+
+    private void draw_fairness_graph_control(Rect di) {
+        DrawGrid(di);
+
+        for (int i = 0; i < _num_players; i++) {
+            DrawGraph(di, _fairness_pens[i], _remote_fairness_graph[i], _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
+        }
+        DrawGraph(di, Color.yellow, _fairness_graph, _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
     }
 
     public void ggpoutil_perfmon_update(IntPtr ggpo, int[] players, int num_players) {
         int i;
-
-        _num_players = num_players;
 
         if (_graph_size < MAX_GRAPH_SIZE) {
             i = _graph_size++;
@@ -54,13 +114,13 @@ public class GGPOPerformance : MonoBehaviour {
             /*
              * Ping
              */
-            _ping_graph[j, i] = stats.ping;
+            _ping_graph[j][i] = stats.ping;
 
             /*
              * Frame Advantage
              */
-            _local_fairness_graph[j, i] = stats.local_frames_behind;
-            _remote_fairness_graph[j, i] = stats.remote_frames_behind;
+            _local_fairness_graph[j][i] = stats.local_frames_behind;
+            _remote_fairness_graph[j][i] = stats.remote_frames_behind;
             if (stats.local_frames_behind < 0 && stats.remote_frames_behind < 0) {
                 /*
                  * Both think it's unfair (which, ironically, is fair).  Scale both and subtrace.
@@ -82,19 +142,49 @@ public class GGPOPerformance : MonoBehaviour {
 
             int now = Helper.TimeGetTime();
             if (now > _last_text_update_time + 500) {
-                SetWindowTextA(IDC_NETWORK_LAG, $"{stats.ping} ms");
-                SetWindowTextA(IDC_FRAME_LAG, $"{((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames");
-                SetWindowTextA(IDC_BANDWIDTH, $"{stats.kbps_sent / 8f} kilobytes/sec");
-                SetWindowTextA(IDC_LOCAL_AHEAD, $"{stats.local_frames_behind} frames");
-                SetWindowTextA(IDC_REMOTE_AHEAD, $"{stats.remote_frames_behind} frames");
+                networkLag = $"{stats.ping} ms";
+                frameLag = $"{((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames";
+                bandwidth = $"{stats.kbps_sent / 8f} kilobytes/sec";
+                localAhead = $"{stats.local_frames_behind} frames";
+                remoteAhead = $"{stats.remote_frames_behind} frames";
                 _last_text_update_time = now;
             }
         }
-
-        //InvalidateRect(GetDlgItem(_dialog, IDC_FAIRNESS_GRAPH), NULL, FALSE);
-        // InvalidateRect(GetDlgItem(_dialog, IDC_NETWORK_GRAPH), NULL, FALSE);
     }
 
-    private void SetWindowTextA(int iDC_NETWORK_LAG, string v) {
+    private void RandomGraph(int[] graph, int size, int min, int max) {
+        for (int i = 0; i < size; ++i) {
+            graph[i] = UnityEngine.Random.Range(min, max);
+        }
+    }
+
+    public void OnGUI() {
+        if (random) {
+            random = false;
+            Debug.Log("RANDOM!!!");
+            ggpoutil_perfmon_init();
+
+            _graph_size = MAX_GRAPH_SIZE;
+            for (int i = 0; i < MAX_PLAYERS; ++i) {
+                _graph_size = MAX_GRAPH_SIZE;
+                RandomGraph(_ping_graph[i], _graph_size, 0, 500);
+                RandomGraph(_local_fairness_graph[i], _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
+                RandomGraph(_remote_fairness_graph[i], _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
+            }
+
+            RandomGraph(_remote_queue_graph, _graph_size, 0, 14);
+            RandomGraph(_send_queue_graph, _graph_size, 0, 14);
+            RandomGraph(_fairness_graph, _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
+        }
+
+        if (toggle && _remote_queue_graph != null && _remote_queue_graph.Length == MAX_GRAPH_SIZE) {
+            GUILayout.Label(networkLag);
+            GUILayout.Label(frameLag);
+            GUILayout.Label(bandwidth);
+            GUILayout.Label(localAhead);
+            GUILayout.Label(remoteAhead);
+            draw_fairness_graph_control(fairnessRect);
+            draw_network_graph_control(networkRect);
+        }
     }
 }

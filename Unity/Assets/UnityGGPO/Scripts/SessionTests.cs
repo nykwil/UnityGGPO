@@ -24,7 +24,6 @@ public class SessionTests : MonoBehaviour {
     public int hostPort = 7000;
     public string hostIp = "127.0.0.1";
 
-
     public GGPOPlayer player;
     void Start() {
         Log(string.Format("Plugin Version: {0} build {1}", GGPO.Version, GGPO.BuildNumber));

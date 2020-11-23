@@ -17,10 +17,7 @@ namespace VectorWar {
         public Toggle tglRunnerLog;
         public Toggle tglVectorWarLog;
         public Toggle tglGameStateLog;
-        public InputField[] inpIps;
-        public Toggle[] tglSpectators;
-        public InputField inpPlayerIndex;
-        public GameObject pnlConnections;
+        public ConnectionInterface connectionInterface;
         public GameObject pnlLog;
 
         void Awake() {
@@ -40,13 +37,6 @@ namespace VectorWar {
             tglRunnerLog.onValueChanged.AddListener(OnToggleRunnerLog);
             tglVectorWarLog.onValueChanged.AddListener(OnVectorWarLog);
             tglGameStateLog.onValueChanged.AddListener(OnGameStateLog);
-
-            for (int i = 0; i < runner.connections.Count; ++i) {
-                inpIps[i].text = runner.connections[i].ip + ":" + runner.connections[i].port;
-                tglSpectators[i].isOn = runner.connections[i].spectator;
-            }
-
-            inpPlayerIndex.text = runner.PlayerIndex.ToString();
 
             SetConnectText("Startup");
             LogPanelVisibility();
@@ -115,23 +105,14 @@ namespace VectorWar {
         }
 
         void OnConnect() {
-            if (!runner.Running) {
-                pnlConnections.SetActive(false);
+            if (!runner.IsRunning) {
+                connectionInterface.gameObject.SetActive(false);
                 SetConnectText("Shutdown");
 
-                for (int i = 0; i < runner.connections.Count; ++i) {
-                    var split = inpIps[i].text.Split(':');
-                    runner.connections[i].ip = split[0];
-                    runner.connections[i].port = ushort.Parse(split[1]);
-                    runner.connections[i].spectator = tglSpectators[i].isOn;
-                }
-
-                runner.PlayerIndex = int.Parse(inpPlayerIndex.text);
-
-                runner.Startup();
+                runner.Startup(connectionInterface.CreateGame());
             }
             else {
-                pnlConnections.SetActive(true);
+                connectionInterface.gameObject.SetActive(true);
                 SetConnectText("Startup");
                 runner.Shutdown();
             }
