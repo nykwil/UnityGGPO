@@ -5,18 +5,6 @@ using UnityEngine;
 
 namespace SharedGame {
 
-    public static class Utils {
-
-        public static T GetInterface<T>(GameObject inObj) where T : class {
-            if (!typeof(T).IsInterface) {
-                UnityEngine.Debug.LogError(typeof(T).ToString() + ": is not an actual interface!");
-                return null;
-            }
-
-            return inObj.GetComponents<Component>().OfType<T>().FirstOrDefault();
-        }
-    }
-
     public class GameRunner : MonoBehaviour {
         public IGameView view;
         private IGame game;

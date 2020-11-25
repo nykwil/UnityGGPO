@@ -13,7 +13,7 @@ namespace SharedGame {
         public bool spectator;
     }
 
-    public abstract class BaseGgpoGame : IGame {
+    public abstract class BaseGGPOGame : IGame {
         public List<Connections> connections;
 
         public int PlayerIndex { get; set; }
@@ -24,7 +24,7 @@ namespace SharedGame {
         public IGameState gs { get; private set; }
         public GameInfo ngs { get; private set; }
 
-        public GGPOPerformance perf = null;
+        public GGPOPerformancePanel perf = null;
 
         public static event Action<string> OnLog;
 
@@ -70,7 +70,7 @@ namespace SharedGame {
 
         public bool OnEventConnectionInterruptedDelegate(int connection_interrupted_player, int connection_interrupted_disconnect_timeout) {
             ngs.SetDisconnectTimeout(connection_interrupted_player,
-                                     Helper.TimeGetTime(),
+                                     global::Utils.TimeGetTime(),
                                      connection_interrupted_disconnect_timeout);
             return true;
         }
@@ -86,7 +86,7 @@ namespace SharedGame {
         }
 
         public bool OnEventEventcodeTimesyncDelegate(int timesync_frames_ahead) {
-            Helper.Sleep(1000 * timesync_frames_ahead / 60);
+            global::Utils.Sleep(1000 * timesync_frames_ahead / 60);
             return true;
         }
 
@@ -125,7 +125,7 @@ namespace SharedGame {
         private bool OnSaveGameStateCallback(out NativeArray<byte> data, out int checksum, int frame) {
             Log($"OnSaveGameStateCallback {frame}");
             data = gs.ToBytes();
-            checksum = Helper.CalcFletcher32(data);
+            checksum = global::Utils.CalcFletcher32(data);
             return true;
         }
 
@@ -358,7 +358,7 @@ namespace SharedGame {
             ngs.status = status;
         }
 
-        public void Init(IGameState _gs, GameInfo _ngs, GGPOPerformance _perf) {
+        public void Init(IGameState _gs, GameInfo _ngs, GGPOPerformancePanel _perf) {
             gs = _gs;
             ngs = _ngs;
             perf = _perf;
@@ -388,7 +388,7 @@ namespace SharedGame {
 
         public void Init() {
             GGPO.SetLogDelegate(GameRunner.LogCallback);
-            Init(CreateGameState(), new GameInfo(), GameObject.FindObjectOfType<GGPOPerformance>());
+            Init(CreateGameState(), new GameInfo(), GameObject.FindObjectOfType<GGPOPerformancePanel>());
 
             var remote_index = -1;
             var num_spectators = 0;

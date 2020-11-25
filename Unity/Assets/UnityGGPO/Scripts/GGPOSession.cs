@@ -264,7 +264,7 @@ public static partial class GGPO {
 
         static unsafe bool SaveGameState(void** buffer, int* outLen, int* outChecksum, int frame) {
             var result = saveGameStateCallback(out var data, out int checksum, frame);
-            var ptr = Helper.ToPtr(data);
+            var ptr = Utils.ToPtr(data);
             cache[(long)ptr] = data;
 
             *buffer = ptr;
@@ -274,11 +274,11 @@ public static partial class GGPO {
         }
 
         static unsafe bool LogGameState(string filename, void* buffer, int length) {
-            return logGameStateCallback(filename, Helper.ToArray(buffer, length));
+            return logGameStateCallback(filename, Utils.ToArray(buffer, length));
         }
 
         static unsafe bool LoadGameState(void* buffer, int length) {
-            return loadGameStateCallback(Helper.ToArray(buffer, length));
+            return loadGameStateCallback(Utils.ToArray(buffer, length));
         }
 
         static bool OnEventCallback(IntPtr evtPtr) {

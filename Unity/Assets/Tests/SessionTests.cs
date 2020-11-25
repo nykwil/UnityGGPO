@@ -93,7 +93,7 @@ public class SessionTests : MonoBehaviour {
         for (int i = 0; i < data.Length; ++i) {
             data[i] = (byte)i;
         }
-        checksum = Helper.CalcFletcher32(data);
+        checksum = Utils.CalcFletcher32(data);
         Debug.Log($"SafeSaveGameState({frame})");
         return true;
     }

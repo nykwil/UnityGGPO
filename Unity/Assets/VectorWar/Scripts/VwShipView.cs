@@ -30,7 +30,7 @@ namespace VectorWar {
 
                 case PlayerConnectState.Disconnecting:
                     status = "Waiting for player...";
-                    progress = (Helper.TimeGetTime() - info.disconnect_start) * 100 / info.disconnect_timeout;
+                    progress = (Utils.TimeGetTime() - info.disconnect_start) * 100 / info.disconnect_timeout;
                     break;
             }
 

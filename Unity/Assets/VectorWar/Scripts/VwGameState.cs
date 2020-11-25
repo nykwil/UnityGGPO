@@ -4,24 +4,6 @@ using Unity.Collections;
 using UnityEngine;
 using SharedGame;
 
-namespace SharedGame {
-
-    public interface IGameState {
-        int _framenumber { get; }
-
-        void Init(int num_players);
-
-        void Update(ulong[] inputs, int disconnect_flags);
-
-        void FromBytes(NativeArray<byte> data);
-
-        NativeArray<byte> ToBytes();
-
-        ulong ReadInputs(int controllerId);
-        void LogInfo(string filename);
-    }
-}
-
 namespace VectorWar {
 
     using static VWConstants;
@@ -210,7 +192,7 @@ namespace VectorWar {
         public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
             var ship = _ships[i];
 
-            BaseGgpoGame.Log($"parsing ship {i} inputs: {inputs}.");
+            BaseGGPOGame.Log($"parsing ship {i} inputs: {inputs}.");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
                 heading = (ship.heading - ROTATE_INCREMENT) % 360;
@@ -237,13 +219,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             var ship = _ships[index];
 
-            BaseGgpoGame.Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
+            BaseGGPOGame.Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    BaseGgpoGame.Log("firing bullet.");
+                    BaseGGPOGame.Log("firing bullet.");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(DegToRad(ship.heading));
                         float dy = Mathf.Sin(DegToRad(ship.heading));
@@ -273,11 +255,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            BaseGgpoGame.Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
+            BaseGGPOGame.Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            BaseGgpoGame.Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
+            BaseGGPOGame.Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {

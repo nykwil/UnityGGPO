@@ -10,7 +10,7 @@ namespace VectorWar {
         public InputField inpPlayerIndex;
         public Toggle tgLocal;
 
-        public void Load(VwGgpoGame runner) {
+        public void Load(VwGGPOGame runner) {
             for (int i = 0; i < runner.connections.Count; ++i) {
                 inpIps[i].text = runner.connections[i].ip + ":" + runner.connections[i].port;
                 tglSpectators[i].isOn = runner.connections[i].spectator;
@@ -19,7 +19,7 @@ namespace VectorWar {
             inpPlayerIndex.text = runner.PlayerIndex.ToString();
         }
 
-        public void Save(VwGgpoGame runner) {
+        public void Save(VwGGPOGame runner) {
             for (int i = 0; i < runner.connections.Count; ++i) {
                 var split = inpIps[i].text.Split(':');
                 runner.connections[i].ip = split[0];
@@ -35,7 +35,7 @@ namespace VectorWar {
                 return new VwLocalGame();
             }
             else {
-                var game = new VwGgpoGame();
+                var game = new VwGGPOGame();
                 Save(game);
                 return game;
             }

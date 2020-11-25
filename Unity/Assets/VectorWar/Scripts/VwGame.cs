@@ -2,7 +2,7 @@
 
 namespace VectorWar {
 
-    public class VwGgpoGame : BaseGgpoGame {
+    public class VwGGPOGame : BaseGGPOGame {
 
         public override string GetName() {
             return "vectorwar";

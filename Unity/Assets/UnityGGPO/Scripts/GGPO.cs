@@ -109,7 +109,7 @@ public static partial class GGPO {
 
     public static string Version {
         get {
-            return Helper.GetString(UggPluginVersion());
+            return Utils.GetString(UggPluginVersion());
         }
     }
 

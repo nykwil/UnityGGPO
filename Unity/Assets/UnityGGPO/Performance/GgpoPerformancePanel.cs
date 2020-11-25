@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class GGPOPerformance : MonoBehaviour {
+public class GGPOPerformancePanel : MonoBehaviour {
     public Rect fairnessRect;
     public Rect networkRect;
 
@@ -140,7 +140,7 @@ public class GGPOPerformance : MonoBehaviour {
                 _fairness_graph[i] = Mathf.Abs(stats.local_frames_behind) + Mathf.Abs(stats.remote_frames_behind);
             }
 
-            int now = Helper.TimeGetTime();
+            int now = Utils.TimeGetTime();
             if (now > _last_text_update_time + 500) {
                 networkLag = $"{stats.ping} ms";
                 frameLag = $"{((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames";

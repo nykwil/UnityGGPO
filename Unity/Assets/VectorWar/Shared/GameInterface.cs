@@ -23,7 +23,7 @@ namespace SharedGame {
             GameRunner.OnStatus += OnStatus;
             GameRunner.OnChecksum += OnChecksum;
             GameRunner.OnLog += OnLog;
-            BaseGgpoGame.OnLog += OnLog;
+            BaseGGPOGame.OnLog += OnLog;
             btnConnect.onClick.AddListener(OnConnect);
             btnPlayer1.onClick.AddListener(OnPlayer1);
             btnPlayer2.onClick.AddListener(OnPlayer2);
@@ -53,9 +53,9 @@ namespace SharedGame {
         }
 
         private void OnToggleGameLog(bool value) {
-            BaseGgpoGame.OnLog -= OnLog;
+            BaseGGPOGame.OnLog -= OnLog;
             if (value) {
-                BaseGgpoGame.OnLog += OnLog;
+                BaseGGPOGame.OnLog += OnLog;
             }
             LogPanelVisibility();
         }

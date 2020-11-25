@@ -4,7 +4,7 @@ using System.Threading;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
-public static class Helper {
+public static class Utils {
 
     public static int CalcFletcher32(NativeArray<byte> data) {
         uint sum1 = 0;

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5489812495742301117}
   - component: {fileID: 5489812495742301116}
   m_Layer: 0
-  m_Name: GGPOPerf
+  m_Name: GgpoPerformancePanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -43,3 +43,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edd19b423fc9a79439325310c448634d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fairnessRect:
+    serializedVersion: 2
+    x: 0
+    y: 100
+    width: 600
+    height: 100
+  networkRect:
+    serializedVersion: 2
+    x: 0
+    y: 300
+    width: 600
+    height: 100
+  toggle: 0
+  random: 0
+  _num_players: 2
+  step: 10

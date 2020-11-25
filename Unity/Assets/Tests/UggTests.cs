@@ -115,7 +115,7 @@ public class UggTests : MonoBehaviour {
         for (int i = 0; i < data.Length; ++i) {
             data[i] = (byte)i;
         }
-        var ptr = Helper.ToPtr(data);
+        var ptr = Utils.ToPtr(data);
         cache[(long)ptr] = data;
 
         *buffer = ptr;
