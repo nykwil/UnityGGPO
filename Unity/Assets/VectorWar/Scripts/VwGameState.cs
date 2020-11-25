@@ -2,10 +2,57 @@ using System;
 using System.IO;
 using Unity.Collections;
 using UnityEngine;
-using UnityEngine.Assertions;
+using SharedGame;
+
+namespace SharedGame {
+
+    public interface IGameState {
+        int _framenumber { get; }
+
+        void Init(int num_players);
+
+        void Update(ulong[] inputs, int disconnect_flags);
+
+        void FromBytes(NativeArray<byte> data);
+
+        NativeArray<byte> ToBytes();
+
+        ulong ReadInputs(int controllerId);
+        void LogInfo(string filename);
+    }
+}
 
 namespace VectorWar {
+
     using static VWConstants;
+
+    public static class VWConstants {
+        public const int MAX_SHIPS = 4;
+        public const int MAX_PLAYERS = 64;
+        public const int VK_UP = 0;
+        public const int VK_DOWN = 0;
+        public const int VK_LEFT = 0;
+        public const int VK_RIGHT = 0;
+
+        public const int INPUT_THRUST = (1 << 0);
+        public const int INPUT_BREAK = (1 << 1);
+        public const int INPUT_ROTATE_LEFT = (1 << 2);
+        public const int INPUT_ROTATE_RIGHT = (1 << 3);
+        public const int INPUT_FIRE = (1 << 4);
+        public const int INPUT_BOMB = (1 << 5);
+        public const int MAX_BULLETS = 30;
+
+        public const float PI = 3.1415926f;
+        public const int STARTING_HEALTH = 100;
+        public const float ROTATE_INCREMENT = 3f;
+        public const float SHIP_RADIUS = 15f;
+        public const float SHIP_THRUST = 0.06f;
+        public const float SHIP_MAX_THRUST = 4.0f;
+        public const float SHIP_BREAK_SPEED = 0.6f;
+        public const float BULLET_SPEED = 5f;
+        public const int BULLET_COOLDOWN = 8;
+        public const int BULLET_DAMAGE = 10;
+    }
 
     [Serializable]
     public struct Bullet {
@@ -73,14 +120,11 @@ namespace VectorWar {
     };
 
     [Serializable]
-    public class GameState {
-        public int _framenumber;
+    public struct VwGameState : IGameState {
+        public int _framenumber { get; set; }
         public Ship[] _ships;
 
-        public static event Action<string> OnLog;
-
-        [NonSerialized]
-        public readonly Rect _bounds = new Rect(0, 0, 640, 480);
+        public static Rect _bounds = new Rect(0, 0, 640, 480);
 
         public void Serialize(BinaryWriter bw) {
             bw.Write(_framenumber);
@@ -101,29 +145,28 @@ namespace VectorWar {
             }
         }
 
-        public static NativeArray<byte> ToBytes(GameState gs) {
+        public NativeArray<byte> ToBytes() {
             using (var memoryStream = new MemoryStream()) {
                 using (var writer = new BinaryWriter(memoryStream)) {
-                    gs.Serialize(writer);
+                    Serialize(writer);
                 }
                 return new NativeArray<byte>(memoryStream.ToArray(), Allocator.Persistent);
             }
         }
 
-        public static void FromBytes(GameState gs, NativeArray<byte> bytes) {
-            Assert.IsNotNull(gs);
+        public void FromBytes(NativeArray<byte> bytes) {
             using (var memoryStream = new MemoryStream(bytes.ToArray())) {
                 using (var reader = new BinaryReader(memoryStream)) {
-                    gs.Deserialize(reader);
+                    Deserialize(reader);
                 }
             }
         }
 
-        static float DegToRad(float deg) {
+        private static float DegToRad(float deg) {
             return PI * deg / 180;
         }
 
-        static float Distance(Vector2 lhs, Vector2 rhs) {
+        private static float Distance(Vector2 lhs, Vector2 rhs) {
             float x = rhs.x - lhs.x;
             float y = rhs.y - lhs.y;
             return Mathf.Sqrt(x * x + y * y);
@@ -167,7 +210,7 @@ namespace VectorWar {
         public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
             var ship = _ships[i];
 
-            OnLog?.Invoke($"parsing ship {i} inputs: {inputs}.");
+            BaseGgpoGame.Log($"parsing ship {i} inputs: {inputs}.");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
                 heading = (ship.heading - ROTATE_INCREMENT) % 360;
@@ -194,13 +237,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             var ship = _ships[index];
 
-            OnLog?.Invoke($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
+            BaseGgpoGame.Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    OnLog?.Invoke("firing bullet.");
+                    BaseGgpoGame.Log("firing bullet.");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(DegToRad(ship.heading));
                         float dy = Mathf.Sin(DegToRad(ship.heading));
@@ -230,11 +273,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            OnLog?.Invoke($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
+            BaseGgpoGame.Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            OnLog?.Invoke($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
+            BaseGgpoGame.Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {
@@ -271,6 +314,29 @@ namespace VectorWar {
             }
         }
 
+        public void LogInfo(string filename) {
+            string fp = "";
+            fp += "GameState object.\n";
+            fp += string.Format("  bounds: {0},{1} x {2},{3}.\n", _bounds.xMin, _bounds.yMin, _bounds.xMax, _bounds.yMax);
+            fp += string.Format("  num_ships: {0}.\n", _ships.Length);
+            for (int i = 0; i < _ships.Length; i++) {
+                var ship = _ships[i];
+                fp += string.Format("  ship {0} position:  %.4f, %.4f\n", i, ship.position.x, ship.position.y);
+                fp += string.Format("  ship {0} velocity:  %.4f, %.4f\n", i, ship.velocity.x, ship.velocity.y);
+                fp += string.Format("  ship {0} radius:    %d.\n", i, ship.radius);
+                fp += string.Format("  ship {0} heading:   %d.\n", i, ship.heading);
+                fp += string.Format("  ship {0} health:    %d.\n", i, ship.health);
+                fp += string.Format("  ship {0} cooldown:  %d.\n", i, ship.cooldown);
+                fp += string.Format("  ship {0} score:     {1}.\n", i, ship.score);
+                for (int j = 0; j < ship.bullets.Length; j++) {
+                    fp += string.Format("  ship {0} bullet {1}: {2} {3} -> {4} {5}.\n", i, j,
+                            ship.bullets[j].position.x, ship.bullets[j].position.y,
+                            ship.bullets[j].velocity.x, ship.bullets[j].velocity.y);
+                }
+            }
+            File.WriteAllText(filename, fp);
+        }
+
         public void Update(ulong[] inputs, int disconnect_flags) {
             _framenumber++;
             for (int i = 0; i < _ships.Length; i++) {
@@ -289,6 +355,53 @@ namespace VectorWar {
                     _ships[i].cooldown--;
                 }
             }
+        }
+
+        public ulong ReadInputs(int id) {
+            ulong input = 0;
+
+            if (id == 0) {
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.UpArrow)) {
+                    input |= INPUT_THRUST;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.DownArrow)) {
+                    input |= INPUT_BREAK;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.LeftArrow)) {
+                    input |= INPUT_ROTATE_LEFT;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightArrow)) {
+                    input |= INPUT_ROTATE_RIGHT;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightControl)) {
+                    input |= INPUT_FIRE;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightShift)) {
+                    input |= INPUT_BOMB;
+                }
+            }
+            else if (id == 1) {
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.W)) {
+                    input |= INPUT_THRUST;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.S)) {
+                    input |= INPUT_BREAK;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.A)) {
+                    input |= INPUT_ROTATE_LEFT;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.D)) {
+                    input |= INPUT_ROTATE_RIGHT;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.F)) {
+                    input |= INPUT_FIRE;
+                }
+                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.G)) {
+                    input |= INPUT_BOMB;
+                }
+            }
+
+            return input;
         }
     }
 }

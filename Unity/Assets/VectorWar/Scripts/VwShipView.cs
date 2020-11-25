@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using SharedGame;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace VectorWar {
 
-    public class ShipView : MonoBehaviour {
+    public class VwShipView : MonoBehaviour {
         public Text txtStatus;
         public Image imgProgress;
         public Transform model;

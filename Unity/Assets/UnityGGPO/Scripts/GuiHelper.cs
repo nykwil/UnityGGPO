@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 
 public static class GuiHelper {
 
@@ -55,7 +56,7 @@ public static class GuiHelper {
     public static void DrawRect(Rect di, Texture2D texture) {
         GUI.DrawTexture(di, texture);
     }
-    
+
     /// <summary>
     /// Draw a line between two points with the specified texture and thickness.
     /// The texture will be stretched to fill the drawing rectangle.

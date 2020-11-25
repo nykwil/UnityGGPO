@@ -1,15 +1,16 @@
-﻿using UnityEngine;
+﻿using SharedGame;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace VectorWar {
 
-    public class ConnectionInterface : MonoBehaviour {
+    public class VwConnectionInterface : MonoBehaviour, IConnectionInterface {
         public InputField[] inpIps;
         public Toggle[] tglSpectators;
         public InputField inpPlayerIndex;
         public Toggle tgLocal;
 
-        public void Load(OnlineGame runner) {
+        public void Load(VwGgpoGame runner) {
             for (int i = 0; i < runner.connections.Count; ++i) {
                 inpIps[i].text = runner.connections[i].ip + ":" + runner.connections[i].port;
                 tglSpectators[i].isOn = runner.connections[i].spectator;
@@ -18,7 +19,7 @@ namespace VectorWar {
             inpPlayerIndex.text = runner.PlayerIndex.ToString();
         }
 
-        public void Save(OnlineGame runner) {
+        public void Save(VwGgpoGame runner) {
             for (int i = 0; i < runner.connections.Count; ++i) {
                 var split = inpIps[i].text.Split(':');
                 runner.connections[i].ip = split[0];
@@ -31,13 +32,17 @@ namespace VectorWar {
 
         public IGame CreateGame() {
             if (tgLocal.isOn) {
-                return new LocalGame();
+                return new VwLocalGame();
             }
             else {
-                var game = new OnlineGame();
+                var game = new VwGgpoGame();
                 Save(game);
                 return game;
             }
+        }
+
+        public void SetVisible(bool v) {
+            gameObject.SetActive(v);
         }
     }
 }
