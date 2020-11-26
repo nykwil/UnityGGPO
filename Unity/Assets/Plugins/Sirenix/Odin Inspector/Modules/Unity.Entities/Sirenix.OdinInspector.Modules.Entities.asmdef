@@ -1,0 +1,11 @@
+{
+    "name": "Sirenix.OdinInspector.Modules.Entities",
+    "references": [ "Unity.Entities", "Unity.Entities.Editor", "Unity.Mathematics.Extensions", "Sirenix.OdinInspector.Attributes", "Sirenix.OdinInspector.Editor", "Sirenix.Utilities", "Sirenix.Utilities.Editor" ],
+    "includePlatforms": [ "Editor" ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "autoReferenced": true,
+    "overrideReferences": false,
+    "precompiledReferences": [ "Sirenix.Utilities.dll", "Sirenix.Utilities.Editor.dll", "Sirenix.OdinInspector.Attributes.dll", "Sirenix.OdinInspector.Editor.dll", "Sirenix.Serialization.dll" ],
+    "defineConstraints": []
+}
