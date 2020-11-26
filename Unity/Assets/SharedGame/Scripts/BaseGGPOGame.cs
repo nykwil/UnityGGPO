@@ -2,20 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Unity.Collections;
-using UnityEngine;
 
 namespace SharedGame {
 
-    [Serializable]
-    public class Connections {
-        public ushort port;
-        public string ip;
-        public bool spectator;
-    }
-
     public abstract class BaseGGPOGame : IGame {
-        public List<Connections> connections;
-
         public int PlayerIndex { get; set; }
 
         public const int MAX_PLAYERS = 2;
@@ -23,8 +13,7 @@ namespace SharedGame {
 
         public IGameState gs { get; private set; }
         public GameInfo ngs { get; private set; }
-
-        public GGPOPerformancePanel perf = null;
+        public IPerfUpdate perf { get; private set; }
 
         public static event Action<string> OnLog;
 
@@ -142,12 +131,69 @@ namespace SharedGame {
             return true;
         }
 
-        protected abstract IGameState CreateGameState();
-
         private void OnFreeBufferCallback(NativeArray<byte> data) {
             Log($"OnFreeBufferCallback");
             if (data.IsCreated) {
                 data.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="perfPanel"></param>
+        /// <param name="callback"></param>
+
+        public BaseGGPOGame(IPerfUpdate perfPanel, GGPO.LogDelegate callback) {
+            GGPO.SetLogDelegate(callback);
+            gs = CreateGameState();
+            ngs = new GameInfo();
+            perf = perfPanel;
+        }
+
+        public void Init(List<Connections> connections, int playerIndex) {
+            var remote_index = -1;
+            var num_spectators = 0;
+            var num_players = 0;
+
+            for (int i = 0; i < connections.Count; ++i) {
+                if (i != playerIndex && remote_index == -1) {
+                    remote_index = i;
+                }
+
+                if (connections[i].spectator) {
+                    ++num_spectators;
+                }
+                else {
+                    ++num_players;
+                }
+            }
+            if (connections[playerIndex].spectator) {
+                InitSpectator(connections[playerIndex].port, num_players, connections[remote_index].ip, connections[remote_index].port);
+            }
+            else {
+                var players = new List<GGPOPlayer>();
+                for (int i = 0; i < connections.Count; ++i) {
+                    var player = new GGPOPlayer {
+                        player_num = players.Count + 1,
+                    };
+                    if (playerIndex == i) {
+                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL;
+                        player.ip_address = "";
+                        player.port = 0;
+                    }
+                    else if (connections[i].spectator) {
+                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_SPECTATOR;
+                        player.ip_address = connections[remote_index].ip;
+                        player.port = connections[remote_index].port;
+                    }
+                    else {
+                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE;
+                        player.ip_address = connections[remote_index].ip;
+                        player.port = connections[remote_index].port;
+                    }
+                    players.Add(player);
+                }
+                Init(connections[playerIndex].port, num_players, players, num_spectators);
             }
         }
 
@@ -156,7 +202,8 @@ namespace SharedGame {
          * the video renderer and creates a new network session.
          */
 
-        protected void Init(int localport, int num_players, IList<GGPOPlayer> players, int num_spectators) {
+        public void Init(int localport, int num_players, IList<GGPOPlayer> players, int num_spectators) {
+            Log($"Init {localport} {num_players} {string.Join("|", players)} {num_spectators}");
             // Initialize the game state
             gs.Init(num_players);
 
@@ -213,17 +260,16 @@ namespace SharedGame {
                 }
             }
 
-            perf?.ggpoutil_perfmon_init();
             SetStatusText("Connecting to peers.");
         }
-
-        public abstract string GetName();
 
         /*
          * Create a new spectator session
          */
 
         public void InitSpectator(int localport, int num_players, string host_ip, int host_port) {
+            Log($"InitSpectator {localport} {num_players} {host_ip} {host_port}");
+
             // Initialize the game state
             gs.Init(num_players);
             ngs.players = Array.Empty<PlayerConnectionInfo>();
@@ -248,8 +294,6 @@ namespace SharedGame {
 
             CheckAndReport(result);
 
-            perf?.ggpoutil_perfmon_init();
-
             SetStatusText("Starting new spectator session");
         }
 
@@ -258,6 +302,8 @@ namespace SharedGame {
          */
 
         public void DisconnectPlayer(int playerIndex) {
+            Log($"DisconnectPlayer {playerIndex}");
+
             if (playerIndex < ngs.players.Length) {
                 string logbuf;
                 var result = GGPO.Session.DisconnectPlayer(ngs.players[playerIndex].handle);
@@ -298,7 +344,12 @@ namespace SharedGame {
                     handles[count++] = ngs.players[i].handle;
                 }
             }
-            perf?.ggpoutil_perfmon_update(GGPO.Session.ggpo, handles, count);
+
+            var statss = new GGPONetworkStats[count];
+            for (int i = 0; i < count; ++i) {
+                CheckAndReport(GGPO.Session.GetNetworkStats(handles[i], out statss[i]));
+            }
+            perf?.ggpoutil_perfmon_update(statss);
         }
 
         /*
@@ -349,6 +400,8 @@ namespace SharedGame {
         }
 
         public void Exit() {
+            Log($"Exit");
+
             if (GGPO.Session.IsStarted()) {
                 CheckAndReport(GGPO.Session.CloseSession());
             }
@@ -358,15 +411,9 @@ namespace SharedGame {
             ngs.status = status;
         }
 
-        public void Init(IGameState _gs, GameInfo _ngs, GGPOPerformancePanel _perf) {
-            gs = _gs;
-            ngs = _ngs;
-            perf = _perf;
-        }
-
         private void CheckAndReport(int result) {
             if (!GGPO.SUCCEEDED(result)) {
-                OnLog?.Invoke(GGPO.GetErrorCodeMessage(result));
+                Log(GGPO.GetErrorCodeMessage(result));
             }
         }
 
@@ -383,57 +430,12 @@ namespace SharedGame {
         }
 
         public static void Log(string value) {
+            UnityEngine.Debug.Log(value);
             OnLog?.Invoke(value);
         }
 
-        public void Init() {
-            GGPO.SetLogDelegate(GameRunner.LogCallback);
-            Init(CreateGameState(), new GameInfo(), GameObject.FindObjectOfType<GGPOPerformancePanel>());
+        public abstract string GetName();
 
-            var remote_index = -1;
-            var num_spectators = 0;
-            var num_players = 0;
-
-            for (int i = 0; i < connections.Count; ++i) {
-                if (i != PlayerIndex && remote_index == -1) {
-                    remote_index = i;
-                }
-
-                if (connections[i].spectator) {
-                    ++num_spectators;
-                }
-                else {
-                    ++num_players;
-                }
-            }
-            if (connections[PlayerIndex].spectator) {
-                InitSpectator(connections[PlayerIndex].port, num_players, connections[remote_index].ip, connections[remote_index].port);
-            }
-            else {
-                var players = new List<GGPOPlayer>();
-                for (int i = 0; i < connections.Count; ++i) {
-                    var player = new GGPOPlayer {
-                        player_num = players.Count + 1,
-                    };
-                    if (PlayerIndex == i) {
-                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL;
-                        player.ip_address = "";
-                        player.port = 0;
-                    }
-                    else if (connections[i].spectator) {
-                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_SPECTATOR;
-                        player.ip_address = connections[remote_index].ip;
-                        player.port = connections[remote_index].port;
-                    }
-                    else {
-                        player.type = GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE;
-                        player.ip_address = connections[remote_index].ip;
-                        player.port = connections[remote_index].port;
-                    }
-                    players.Add(player);
-                }
-                Init(connections[PlayerIndex].port, num_players, players, num_spectators);
-            }
-        }
+        protected abstract IGameState CreateGameState();
     }
 }

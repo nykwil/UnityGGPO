@@ -2,7 +2,12 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Collections;
-using UnityEngine;
+
+// @TODO Move
+public interface IPerfUpdate {
+
+    void ggpoutil_perfmon_update(GGPONetworkStats[] statss);
+}
 
 public static partial class GGPO {
 
@@ -34,29 +39,29 @@ public static partial class GGPO {
         public delegate void SafeFreeBufferDelegate(NativeArray<byte> data);
 
         public static IntPtr ggpo; // @LOOK
-        static readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
+        private static readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
 
-        static SafeLoadGameStateDelegate loadGameStateCallback;
-        static SafeLogGameStateDelegate logGameStateCallback;
-        static SafeSaveGameStateDelegate saveGameStateCallback;
-        static SafeFreeBufferDelegate freeBufferCallback;
+        private static SafeLoadGameStateDelegate loadGameStateCallback;
+        private static SafeLogGameStateDelegate logGameStateCallback;
+        private static SafeSaveGameStateDelegate saveGameStateCallback;
+        private static SafeFreeBufferDelegate freeBufferCallback;
 
-        static OnEventConnectedToPeerDelegate onEventConnectedToPeer;
-        static OnEventSynchronizingWithPeerDelegate onEventSynchronizingWithPeer;
-        static OnEventSynchronizedWithPeerDelegate onEventSynchronizedWithPeer;
-        static OnEventRunningDelegate onEventRunning;
-        static OnEventConnectionInterruptedDelegate onEventConnectionInterrupted;
-        static OnEventConnectionResumedDelegate onEventConnectionResumed;
-        static OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeer;
-        static OnEventEventcodeTimesyncDelegate onEventTimesync;
+        private static OnEventConnectedToPeerDelegate onEventConnectedToPeer;
+        private static OnEventSynchronizingWithPeerDelegate onEventSynchronizingWithPeer;
+        private static OnEventSynchronizedWithPeerDelegate onEventSynchronizedWithPeer;
+        private static OnEventRunningDelegate onEventRunning;
+        private static OnEventConnectionInterruptedDelegate onEventConnectionInterrupted;
+        private static OnEventConnectionResumedDelegate onEventConnectionResumed;
+        private static OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeer;
+        private static OnEventEventcodeTimesyncDelegate onEventTimesync;
 
-        static IntPtr _beginGameCallback;
-        static IntPtr _advanceFrameCallback;
-        static IntPtr _loadGameStateCallback;
-        static IntPtr _logGameStateCallback;
-        static IntPtr _saveGameStateCallback;
-        static IntPtr _freeBufferCallback;
-        static IntPtr _onEventCallback;
+        private static IntPtr _beginGameCallback;
+        private static IntPtr _advanceFrameCallback;
+        private static IntPtr _loadGameStateCallback;
+        private static IntPtr _logGameStateCallback;
+        private static IntPtr _saveGameStateCallback;
+        private static IntPtr _freeBufferCallback;
+        private static IntPtr _onEventCallback;
 
         public static void Init(LogDelegate log) {
             GGPO.SetLogDelegate(log);
@@ -255,14 +260,14 @@ public static partial class GGPO {
 
         // Callbacks
 
-        static unsafe void FreeBuffer(void* dataPtr) {
+        private static unsafe void FreeBuffer(void* dataPtr) {
             if (cache.TryGetValue((long)dataPtr, out var data)) {
-                freeBufferCallback(data); 
+                freeBufferCallback(data);
                 cache.Remove((long)dataPtr);
             }
         }
 
-        static unsafe bool SaveGameState(void** buffer, int* outLen, int* outChecksum, int frame) {
+        private static unsafe bool SaveGameState(void** buffer, int* outLen, int* outChecksum, int frame) {
             var result = saveGameStateCallback(out var data, out int checksum, frame);
             var ptr = Utils.ToPtr(data);
             cache[(long)ptr] = data;
@@ -273,15 +278,15 @@ public static partial class GGPO {
             return result;
         }
 
-        static unsafe bool LogGameState(string filename, void* buffer, int length) {
+        private static unsafe bool LogGameState(string filename, void* buffer, int length) {
             return logGameStateCallback(filename, Utils.ToArray(buffer, length));
         }
 
-        static unsafe bool LoadGameState(void* buffer, int length) {
+        private static unsafe bool LoadGameState(void* buffer, int length) {
             return loadGameStateCallback(Utils.ToArray(buffer, length));
         }
 
-        static bool OnEventCallback(IntPtr evtPtr) {
+        private static bool OnEventCallback(IntPtr evtPtr) {
             /*
             code = data[0];
             connected.player = data[1];

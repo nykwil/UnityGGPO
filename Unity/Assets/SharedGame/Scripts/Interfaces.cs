@@ -1,7 +1,15 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 using Unity.Collections;
+using UnityEngine;
 
 namespace SharedGame {
+
+    public class Connections {
+        public ushort port;
+        public string ip;
+        public bool spectator;
+    }
 
     public static class Utils {
 
@@ -31,18 +39,9 @@ namespace SharedGame {
         void LogInfo(string filename);
     }
 
-    public interface IConnectionInterface {
-
-        IGame CreateGame();
-
-        void SetVisible(bool v);
-    }
-
     public interface IGame {
         IGameState gs { get; }
         GameInfo ngs { get; }
-
-        void Init();
 
         void Idle(int ms);
 

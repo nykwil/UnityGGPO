@@ -16,14 +16,15 @@ namespace SharedGame {
         private readonly List<string> logs = new List<string>();
         public Toggle tglRunnerLog;
         public Toggle tglGameLog;
-        public IConnectionInterface connectionInterface;
         public GameObject pnlLog;
 
         private void Awake() {
-            GameRunner.OnStatus += OnStatus;
-            GameRunner.OnChecksum += OnChecksum;
-            GameRunner.OnLog += OnLog;
+            runner.OnStatus += OnStatus;
+            runner.OnChecksum += OnChecksum;
+            runner.OnLog += OnLog;
             BaseGGPOGame.OnLog += OnLog;
+            runner.OnRunningChanged += OnRunningChanged;
+
             btnConnect.onClick.AddListener(OnConnect);
             btnPlayer1.onClick.AddListener(OnPlayer1);
             btnPlayer2.onClick.AddListener(OnPlayer2);
@@ -34,22 +35,26 @@ namespace SharedGame {
             tglRunnerLog.onValueChanged.AddListener(OnToggleRunnerLog);
             tglGameLog.onValueChanged.AddListener(OnToggleGameLog);
 
-            SetConnectText("Startup");
+            SetConnectText("");
             LogPanelVisibility();
-            connectionInterface = Utils.GetInterface<IConnectionInterface>(gameObject);
-
-            Debug.Assert(connectionInterface != null);
         }
 
         private void OnDestroy() {
-            GameRunner.OnStatus -= OnStatus;
-            GameRunner.OnChecksum -= OnChecksum;
-            GameRunner.OnLog -= OnLog;
+            runner.OnStatus -= OnStatus;
+            runner.OnChecksum -= OnChecksum;
+            runner.OnLog -= OnLog;
+            runner.OnRunningChanged -= OnRunningChanged;
+
             btnConnect.onClick.RemoveListener(OnConnect);
             btnPlayer1.onClick.RemoveListener(OnPlayer1);
             btnPlayer2.onClick.RemoveListener(OnPlayer2);
+
             tglRunnerLog.onValueChanged.RemoveListener(OnToggleRunnerLog);
             tglGameLog.onValueChanged.RemoveListener(OnToggleGameLog);
+        }
+
+        private void OnRunningChanged(bool obj) {
+            SetConnectText(obj ? "Shutdown" : "");
         }
 
         private void OnToggleGameLog(bool value) {
@@ -61,9 +66,9 @@ namespace SharedGame {
         }
 
         private void OnToggleRunnerLog(bool value) {
-            GameRunner.OnLog -= OnLog;
+            runner.OnLog -= OnLog;
             if (value) {
-                GameRunner.OnLog += OnLog;
+                runner.OnLog += OnLog;
             }
             LogPanelVisibility();
         }
@@ -93,15 +98,7 @@ namespace SharedGame {
         }
 
         private void OnConnect() {
-            if (!runner.IsRunning) {
-                connectionInterface.SetVisible(false);
-                SetConnectText("Shutdown");
-
-                runner.Startup(connectionInterface.CreateGame());
-            }
-            else {
-                connectionInterface.SetVisible(true);
-                SetConnectText("Startup");
+            if (runner.IsRunning) {
                 runner.Shutdown();
             }
         }

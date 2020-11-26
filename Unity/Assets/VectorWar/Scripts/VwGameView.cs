@@ -1,12 +1,13 @@
-﻿using System;
+﻿using SharedGame;
+using System;
 using UnityEngine;
-using SharedGame;
 
 namespace VectorWar {
 
     public class VwGameView : MonoBehaviour, IGameView {
         public VwShipView shipPrefab;
         public Transform bulletPrefab;
+        public GameRunner runner;
 
         private VwShipView[] shipViews = Array.Empty<VwShipView>();
         private Transform[][] bulletLists;
@@ -43,6 +44,12 @@ namespace VectorWar {
             for (int j = 0; j < bulletList.Length; ++j) {
                 bulletList[j].position = bullets[j].position;
                 bulletList[j].gameObject.SetActive(bullets[j].active);
+            }
+        }
+
+        private void Update() {
+            if (runner.IsRunning) {
+                UpdateGameView(runner.Game);
             }
         }
     }

@@ -1,12 +1,11 @@
 {
-    "name": "UnityGGPO-VectorWar",
+    "name": "UnityGGPO-SharedGame",
     "references": [
-        "GUID:0c0029a6e6a29384bb13962f99bfd024",
-        "GUID:18e4a392e225ae14786f1b25084eda15"
+        "GUID:0c0029a6e6a29384bb13962f99bfd024"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

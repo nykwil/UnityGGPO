@@ -3,6 +3,8 @@
 namespace VectorWar {
 
     public class VwGGPOGame : BaseGGPOGame {
+        public VwGGPOGame(IPerfUpdate perfPanel, GGPO.LogDelegate callback) : base(perfPanel, callback) {
+        }
 
         public override string GetName() {
             return "vectorwar";

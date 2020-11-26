@@ -1,6 +1,8 @@
 {
-    "name": "GGPOPluginDef",
-    "references": [],
+    "name": "UnityGGPO-Tests",
+    "references": [
+        "GUID:0c0029a6e6a29384bb13962f99bfd024"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": true,

@@ -1,48 +1,89 @@
 ﻿using SharedGame;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace VectorWar {
 
-    public class VwConnectionInterface : MonoBehaviour, IConnectionInterface {
+    public class VwConnectionInterface : MonoBehaviour {
         public InputField[] inpIps;
         public Toggle[] tglSpectators;
         public InputField inpPlayerIndex;
         public Toggle tgLocal;
+        public GameRunner runner;
+        public Button btnConnect;
 
-        public void Load(VwGGPOGame runner) {
-            for (int i = 0; i < runner.connections.Count; ++i) {
-                inpIps[i].text = runner.connections[i].ip + ":" + runner.connections[i].port;
-                tglSpectators[i].isOn = runner.connections[i].spectator;
-            }
+        private List<Connections> connections = new List<Connections>();
+        private int playerIndex;
 
-            inpPlayerIndex.text = runner.PlayerIndex.ToString();
+        private void Awake() {
+            runner.OnRunningChanged += OnRunningChanged;
+            btnConnect.onClick.AddListener(OnConnect);
+            connections.Add(new Connections() {
+                ip="127.0.0.1",
+                port=7000,
+                spectator = false
+            });
+            connections.Add(new Connections() {
+                ip = "127.0.0.1",
+                port = 7001,
+                spectator = false
+            });
+            playerIndex = 0;
+            Load();
         }
 
-        public void Save(VwGGPOGame runner) {
-            for (int i = 0; i < runner.connections.Count; ++i) {
-                var split = inpIps[i].text.Split(':');
-                runner.connections[i].ip = split[0];
-                runner.connections[i].port = ushort.Parse(split[1]);
-                runner.connections[i].spectator = tglSpectators[i].isOn;
+        private void OnConnect() {
+            runner.Startup(CreateGame());
+        }
+
+        private void OnDestroy() {
+            runner.OnRunningChanged -= OnRunningChanged;
+            btnConnect.onClick.RemoveListener(OnConnect);
+        }
+
+        private void OnRunningChanged(bool obj) {
+            gameObject.SetActive(!obj);
+        }
+
+        public void Load() {
+            for (int i = 0; i < connections.Count; ++i) {
+                inpIps[i].text = connections[i].ip + ":" + connections[i].port;
+                tglSpectators[i].isOn = connections[i].spectator;
             }
 
-            runner.PlayerIndex = int.Parse(inpPlayerIndex.text);
+            inpPlayerIndex.text = playerIndex.ToString();
+        }
+
+        public void Save() {
+            for (int i = 0; i < connections.Count; ++i) {
+                var split = inpIps[i].text.Split(':');
+                connections[i].ip = split[0];
+                connections[i].port = ushort.Parse(split[1]);
+                connections[i].spectator = tglSpectators[i].isOn;
+            }
+
+            playerIndex = int.Parse(inpPlayerIndex.text);
+        }
+
+        public static void LogTodo(string s) {
+            // @TODO
+            Debug.Log(s);
         }
 
         public IGame CreateGame() {
             if (tgLocal.isOn) {
-                return new VwLocalGame();
-            }
-            else {
-                var game = new VwGGPOGame();
-                Save(game);
+                var game = new VwLocalGame();
                 return game;
             }
-        }
-
-        public void SetVisible(bool v) {
-            gameObject.SetActive(v);
+            else {
+                var perf = FindObjectOfType<GGPOPerformancePanel>();
+                perf.Setup();
+                Save();
+                var game = new VwGGPOGame(perf, LogTodo);
+                game.Init(connections, playerIndex);
+                return game;
+            }
         }
     }
 }

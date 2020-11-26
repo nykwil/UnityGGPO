@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class GGPOPerformancePanel : MonoBehaviour {
+public class GGPOPerformancePanel : MonoBehaviour, IPerfUpdate {
     public Rect fairnessRect;
     public Rect networkRect;
 
@@ -35,7 +35,7 @@ public class GGPOPerformancePanel : MonoBehaviour {
     private Color[] _fairness_pens = new Color[] { Color.blue, Color.grey, Color.red, Color.magenta };
     private List<Vector2> pt = new List<Vector2>();
 
-    public void ggpoutil_perfmon_init() {
+    public void Setup() {
         _fairness_graph = new int[MAX_GRAPH_SIZE];
         _remote_queue_graph = new int[MAX_GRAPH_SIZE];
         _send_queue_graph = new int[MAX_GRAPH_SIZE];
@@ -86,7 +86,9 @@ public class GGPOPerformancePanel : MonoBehaviour {
         DrawGraph(di, Color.yellow, _fairness_graph, _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
     }
 
-    public void ggpoutil_perfmon_update(IntPtr ggpo, int[] players, int num_players) {
+    public void ggpoutil_perfmon_update(GGPONetworkStats[] statss) {
+        int num_players = statss.Length;
+
         int i;
 
         if (_graph_size < MAX_GRAPH_SIZE) {
@@ -98,57 +100,56 @@ public class GGPOPerformancePanel : MonoBehaviour {
         }
 
         for (int j = 0; j < num_players; j++) {
-            GGPONetworkStats stats;
-            var result = GGPO.Session.GetNetworkStats(players[j], out stats);
+            UpdateStats(i, j, statss[j]);
+        }
+    }
 
-            Debug.Assert(GGPO.SUCCEEDED(result));
+    private void UpdateStats(int i, int j, GGPONetworkStats stats) {
+        /*
+         * Random graphs
+         */
+        if (j == 0) {
+            _remote_queue_graph[i] = stats.recv_queue_len;
+            _send_queue_graph[i] = stats.send_queue_len;
+        }
 
+        /*
+         * Ping
+         */
+        _ping_graph[j][i] = stats.ping;
+
+        /*
+         * Frame Advantage
+         */
+        _local_fairness_graph[j][i] = stats.local_frames_behind;
+        _remote_fairness_graph[j][i] = stats.remote_frames_behind;
+        if (stats.local_frames_behind < 0 && stats.remote_frames_behind < 0) {
             /*
-             * Random graphs
+             * Both think it's unfair (which, ironically, is fair).  Scale both and subtrace.
              */
-            if (j == 0) {
-                _remote_queue_graph[i] = stats.recv_queue_len;
-                _send_queue_graph[i] = stats.send_queue_len;
-            }
-
+            _fairness_graph[i] = Mathf.Abs(Mathf.Abs(stats.local_frames_behind) - Mathf.Abs(stats.remote_frames_behind));
+        }
+        else if (stats.local_frames_behind > 0 && stats.remote_frames_behind > 0) {
             /*
-             * Ping
+             * Impossible!  Unless the network has negative transmit time.  Odd....
              */
-            _ping_graph[j][i] = stats.ping;
-
+            _fairness_graph[i] = 0;
+        }
+        else {
             /*
-             * Frame Advantage
+             * They disagree.  Add.
              */
-            _local_fairness_graph[j][i] = stats.local_frames_behind;
-            _remote_fairness_graph[j][i] = stats.remote_frames_behind;
-            if (stats.local_frames_behind < 0 && stats.remote_frames_behind < 0) {
-                /*
-                 * Both think it's unfair (which, ironically, is fair).  Scale both and subtrace.
-                 */
-                _fairness_graph[i] = Mathf.Abs(Mathf.Abs(stats.local_frames_behind) - Mathf.Abs(stats.remote_frames_behind));
-            }
-            else if (stats.local_frames_behind > 0 && stats.remote_frames_behind > 0) {
-                /*
-                 * Impossible!  Unless the network has negative transmit time.  Odd....
-                 */
-                _fairness_graph[i] = 0;
-            }
-            else {
-                /*
-                 * They disagree.  Add.
-                 */
-                _fairness_graph[i] = Mathf.Abs(stats.local_frames_behind) + Mathf.Abs(stats.remote_frames_behind);
-            }
+            _fairness_graph[i] = Mathf.Abs(stats.local_frames_behind) + Mathf.Abs(stats.remote_frames_behind);
+        }
 
-            int now = Utils.TimeGetTime();
-            if (now > _last_text_update_time + 500) {
-                networkLag = $"{stats.ping} ms";
-                frameLag = $"{((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames";
-                bandwidth = $"{stats.kbps_sent / 8f} kilobytes/sec";
-                localAhead = $"{stats.local_frames_behind} frames";
-                remoteAhead = $"{stats.remote_frames_behind} frames";
-                _last_text_update_time = now;
-            }
+        int now = Utils.TimeGetTime();
+        if (now > _last_text_update_time + 500) {
+            networkLag = $"{stats.ping} ms";
+            frameLag = $"{((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames";
+            bandwidth = $"{stats.kbps_sent / 8f} kilobytes/sec";
+            localAhead = $"{stats.local_frames_behind} frames";
+            remoteAhead = $"{stats.remote_frames_behind} frames";
+            _last_text_update_time = now;
         }
     }
 
@@ -162,7 +163,7 @@ public class GGPOPerformancePanel : MonoBehaviour {
         if (random) {
             random = false;
             Debug.Log("RANDOM!!!");
-            ggpoutil_perfmon_init();
+            Setup();
 
             _graph_size = MAX_GRAPH_SIZE;
             for (int i = 0; i < MAX_PLAYERS; ++i) {

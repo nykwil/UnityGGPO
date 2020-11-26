@@ -13,6 +13,10 @@ public struct GGPOPlayer {
     public int player_num;
     public string ip_address;
     public ushort port;
+
+    public override string ToString() {
+        return $"({type},{player_num},{ip_address},{port})";
+    }
 }
 
 public class GGPONetworkStats {

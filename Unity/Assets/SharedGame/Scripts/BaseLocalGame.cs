@@ -2,17 +2,13 @@
 using Unity.Collections;
 
 namespace SharedGame {
+
     public abstract class BaseLocalGame : IGame {
         private NativeArray<byte> buffer;
 
         public IGameState gs { get; private set; }
 
         public GameInfo ngs { get; private set; }
-
-        public void Init(IGameState _gs, GameInfo _ngs) {
-            gs = _gs;
-            ngs = _ngs;
-        }
 
         public void Idle(int ms) {
         }
@@ -36,8 +32,9 @@ namespace SharedGame {
             gs.FromBytes(buffer);
         }
 
-        public void Init() {
-            Init(this.CreateGameState(), new GameInfo());
+        public BaseLocalGame() {
+            gs = CreateGameState();
+            ngs = new GameInfo();
             int handle = 1;
             int controllerId = 0;
             ngs.players = new PlayerConnectionInfo[2];

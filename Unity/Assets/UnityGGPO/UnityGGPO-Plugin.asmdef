@@ -1,12 +1,9 @@
 {
-    "name": "UnityGGPO-VectorWar",
-    "references": [
-        "GUID:0c0029a6e6a29384bb13962f99bfd024",
-        "GUID:18e4a392e225ae14786f1b25084eda15"
-    ],
+    "name": "UnityGGPO-Plugin",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
