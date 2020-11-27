@@ -9,7 +9,7 @@ public class MissileComponent : MonoBehaviour, IConvertGameObjectToEntity
         dstManager.AddComponentData(entity, new Missile
         {
         });
-        dstManager.AddComponentData(entity, new ForwardMove
+        dstManager.AddComponentData(entity, new MoveData
         {
         });
         dstManager.AddBuffer<HitBuffer>(entity);

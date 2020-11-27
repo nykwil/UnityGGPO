@@ -10,9 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 6946168255097083826}
   - component: {fileID: 6946168255097083825}
-  - component: {fileID: 6946168255097083830}
   - component: {fileID: 6946168255097083824}
   - component: {fileID: 6946168255097083829}
+  - component: {fileID: 159242764810463234}
+  - component: {fileID: 564601691}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -48,56 +49,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ConversionMode: 0
---- !u!114 &6946168255097083830
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6946168255097083831}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ccea9ea98e38942e0b0938c27ed1903e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_MotionType: 1
-  m_Smoothing: 0
-  m_Mass: 1
-  m_LinearDamping: 0.01
-  m_AngularDamping: 0.05
-  m_InitialLinearVelocity:
-    x: 0
-    y: 0
-    z: 0
-  m_InitialAngularVelocity:
-    x: 0
-    y: 0
-    z: 0
-  m_GravityFactor: 1
-  m_OverrideDefaultMassDistribution: 0
-  m_CenterOfMass:
-    x: 0
-    y: 0
-    z: 0
-  m_Orientation:
-    Value:
-      x: 0
-      y: 0
-      z: 0
-    RotationOrder: 4
-  m_InertiaTensor:
-    x: 0.4
-    y: 0.4
-    z: 0.4
-  m_CustomTags:
-    Tag00: 0
-    Tag01: 0
-    Tag02: 0
-    Tag03: 0
-    Tag04: 0
-    Tag05: 0
-    Tag06: 0
-    Tag07: 0
 --- !u!114 &6946168255097083824
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -162,7 +113,7 @@ MonoBehaviour:
       m_Override: 0
       m_Value:
         Category00: 0
-        Category01: 1
+        Category01: 0
         Category02: 0
         Category03: 0
         Category04: 0
@@ -170,8 +121,8 @@ MonoBehaviour:
         Category06: 0
         Category07: 0
         Category08: 0
-        Category09: 0
-        Category10: 0
+        Category09: 1
+        Category10: 1
         Category11: 0
         Category12: 0
         Category13: 0
@@ -198,15 +149,15 @@ MonoBehaviour:
       m_Value:
         Category00: 0
         Category01: 0
-        Category02: 1
+        Category02: 0
         Category03: 0
         Category04: 0
         Category05: 0
         Category06: 0
         Category07: 0
         Category08: 0
-        Category09: 0
-        Category10: 0
+        Category09: 1
+        Category10: 1
         Category11: 0
         Category12: 0
         Category13: 0
@@ -253,14 +204,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffc24eae7ccec4300ad2bc414f4fb2cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RotationSpeed: 2
-  MoveSpeed: 4
-  FireRate: 3
-  FireSpeed: 5
-  PlayerIndex: 0
+  RotationSpeed: 0.1
+  MoveSpeed: 0.1
+  FireRate: 10
+  FireSpeed: 0.1
+  PlayerIndex: 1
   MissilePrefab: {fileID: 4003407671089229777, guid: 053b947b144f94b49857b26bdbe94902,
     type: 3}
   physicsShape: {fileID: 6946168255097083824}
+--- !u!114 &159242764810463234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6946168255097083831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7edde8fb08293c4c8939af937cf599d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Angular:
+    x: 0
+    y: 0
+    z: 0
+  Linear:
+    x: 0
+    y: 0
+    z: 0
+--- !u!114 &564601691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6946168255097083831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7edde8fb08293c4c8939af937cf599d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Angular:
+    x: 0
+    y: 0
+    z: 0
+  Linear:
+    x: 0
+    y: 0
+    z: 0
 --- !u!1001 &2926206182282723025
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 
 namespace Unity.Spaceship
 {
@@ -38,6 +39,7 @@ namespace Unity.Spaceship
         public Entity MissilePrefab;
         public uint BelongsTo;
         public uint CollidesWith;
+        public BlobAssetReference<Collider> MissileCollider;
         public int MaxLife;
     }
 }

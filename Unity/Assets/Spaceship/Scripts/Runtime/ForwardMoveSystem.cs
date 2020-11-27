@@ -12,12 +12,10 @@ namespace Unity.Spaceship
         protected override void OnUpdate()
         {
             Entities
-                .ForEach((ref ForwardMove move, ref Translation tr, ref Rotation rot) =>
+                .ForEach((ref MoveData move, ref Translation tr, ref Rotation rot) =>
                 {
-                    var pos = float3.zero;
-                    pos.z = move.MoveSpeed;
-
-                    tr.Value += math.mul(rot.Value, pos);
+                    rot.Value = math.mul(rot.Value, quaternion.Euler(move.Angular));           
+                    tr.Value = tr.Value + move.Linear;
                 }).Schedule();
         }
     }

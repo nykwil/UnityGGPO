@@ -11,7 +11,7 @@ namespace Unity.Spaceship
         protected override void OnUpdate()
         {
             Entities
-                .ForEach((ref Player player, ref PhysicsVelocity pv, ref Rotation rot, ref ActiveInput activeInput) =>
+                .ForEach((ref Player player, ref MoveData pv, ref Rotation rot, ref ActiveInput activeInput) =>
                 {
                     // move player
                     if (activeInput.Left)

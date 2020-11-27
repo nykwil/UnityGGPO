@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Physics.Authoring;
 using Unity.Spaceship;
 using UnityEngine;
@@ -17,6 +19,20 @@ public class PlayerComponent : MonoBehaviour, IConvertGameObjectToEntity, IDecla
 
     public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
     {
+        var BelongsTo = physicsShape.BelongsTo.Value;
+        var CollidesWith = physicsShape.CollidesWith.Value;
+
+        var sphere = Unity.Physics.SphereCollider.Create(new SphereGeometry
+        {
+            Center = float3.zero,
+            Radius = 0.5f,
+        }, new CollisionFilter()
+        {
+            BelongsTo = BelongsTo,
+            CollidesWith = CollidesWith,
+            GroupIndex = 0
+        });
+
         dstManager.AddComponentData(entity, new Player
         {
             RotationSpeed = RotationSpeed,
@@ -25,10 +41,14 @@ public class PlayerComponent : MonoBehaviour, IConvertGameObjectToEntity, IDecla
             FireSpeed = FireSpeed,
             ElapsedTime = 0,
             PlayerIndex = PlayerIndex,
-            BelongsTo = physicsShape.BelongsTo.Value,
-            CollidesWith = physicsShape.CollidesWith.Value,
+            BelongsTo = BelongsTo,
+            CollidesWith = CollidesWith,
+            MissileCollider = sphere,
             MissilePrefab = MissilePrefab != null ? conversionSystem.GetPrimaryEntity(MissilePrefab) : Entity.Null
         });
+
+
+
         dstManager.AddComponentData(entity, new ActiveInput
         {
             Reverse = false,

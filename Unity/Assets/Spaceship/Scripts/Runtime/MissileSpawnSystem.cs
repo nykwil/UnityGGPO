@@ -1,6 +1,5 @@
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace Unity.Spaceship
@@ -20,25 +19,14 @@ namespace Unity.Spaceship
                         {
                             var missile = EntityManager.Instantiate(player.MissilePrefab);
 
-                            var sphere = SphereCollider.Create(new SphereGeometry
-                            {
-                                Center = float3.zero,
-                                Radius = 0.5f,
-                            }, new CollisionFilter()
-                            {
-                                BelongsTo = player.BelongsTo,
-                                CollidesWith = player.CollidesWith,
-                                GroupIndex = 0
-                            });
-
                             EntityManager.SetComponentData(missile, new Missile()
                             {
-                                collider = sphere,
+                                collider = player.MissileCollider,
                             });
-                            EntityManager.SetComponentData(missile, new ForwardMove()
+                            EntityManager.SetComponentData(missile, new MoveData()
                             {
-                                MoveSpeed = player.FireSpeed
-                            });
+                                Linear = math.mul(playerRot.Value, new float3(0, 0, player.FireSpeed))
+                            }); 
                             EntityManager.SetComponentData(missile, playerRot);
                             EntityManager.SetComponentData(missile, playerTr);
                             player.ElapsedTime = 0;
