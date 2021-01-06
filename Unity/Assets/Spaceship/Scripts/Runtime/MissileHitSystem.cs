@@ -7,7 +7,7 @@ using Unity.Physics;
 using Unity.Physics.Systems;
 using Unity.Transforms;
 
-namespace Unity.Spaceship
+namespace Spaceship
 {
     public struct HitBuffer : IBufferElementData
     {
@@ -31,30 +31,6 @@ namespace Unity.Spaceship
                 }
                 buffer.Clear();
             }).Run();
-        }
-    }
-
-    public class AsteroidHitProcessingSystem : SystemBase
-    {
-        protected override void OnUpdate()
-        {
-            using (var commandBuffer = new EntityCommandBuffer(Allocator.TempJob))
-            {
-                Entities
-                    .WithoutBurst()
-                    .WithStructuralChanges()
-                    .ForEach((Entity entity, ref Asteroid asteroid) =>
-                {
-                    var lookup = GetBufferFromEntity<HitBuffer>();
-                    var buffer = lookup[entity];
-                    for (int i = 0; i < buffer.Length; ++i)
-                    {
-                        commandBuffer.DestroyEntity(entity);
-                    }
-                    buffer.Clear();
-                }).Run();
-                commandBuffer.Playback(EntityManager);
-            }
         }
     }
 

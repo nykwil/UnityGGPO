@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 using Unity.Physics;
 
-namespace Unity.Spaceship
+namespace Spaceship
 {
     [GenerateAuthoringComponent]
     public struct Missile : IComponentData

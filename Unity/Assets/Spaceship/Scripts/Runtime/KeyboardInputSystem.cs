@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using UnityEngine;
 
-namespace Unity.Spaceship
+namespace Spaceship
 {
     public class KeyboardInputSystem : SystemBase
     {

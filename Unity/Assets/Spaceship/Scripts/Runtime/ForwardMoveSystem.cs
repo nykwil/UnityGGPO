@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 
-namespace Unity.Spaceship
+namespace Spaceship
 {
     [UpdateAfter(typeof(KeyboardInputSystem))]
     public class ForwardMoveSystem : SystemBase

@@ -1,40 +1,32 @@
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 
-namespace Unity.Spaceship
-{
+namespace Spaceship {
+
     [UpdateAfter(typeof(KeyboardInputSystem))]
-    public class PlayerMoveSystem : SystemBase
-    {
-        protected override void OnUpdate()
-        {
+    public class PlayerMoveSystem : SystemBase {
+
+        protected override void OnUpdate() {
             Entities
-                .ForEach((ref Player player, ref MoveData pv, ref Rotation rot, ref ActiveInput activeInput) =>
-                {
+                .ForEach((ref Player player, ref MoveData pv, ref Rotation rot, ref ActiveInput activeInput) => {
                     // move player
-                    if (activeInput.Left)
-                    {
+                    if (activeInput.Left) {
                         pv.Angular = new float3(0, player.RotationSpeed, 0);
                     }
-                    else if (activeInput.Right)
-                    {
+                    else if (activeInput.Right) {
                         pv.Angular = new float3(0, -player.RotationSpeed, 0);
                     }
-                    else
-                    {
+                    else {
                         pv.Angular = new float3(0, 0, 0);
                     }
 
                     var pos = float3.zero;
 
-                    if (activeInput.Accelerate)
-                    {
+                    if (activeInput.Accelerate) {
                         pos.z = player.MoveSpeed;
                     }
-                    else if (activeInput.Reverse)
-                    {
+                    else if (activeInput.Reverse) {
                         pos.z = -player.MoveSpeed;
                     }
 

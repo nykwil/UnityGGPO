@@ -2,7 +2,7 @@
 using Unity.Mathematics;
 using Unity.Physics;
 
-namespace Unity.Spaceship
+namespace Spaceship
 {
     public struct AsteroidSpawner : IComponentData
     {
