@@ -5,14 +5,15 @@ using Unity.Collections;
 
 namespace SharedGame {
 
-    public abstract class BaseGGPOGame : IGame {
+    public class GGPOGame : IGame {
         public int PlayerIndex { get; set; }
 
         public const int MAX_PLAYERS = 2;
         private const int FRAME_DELAY = 2;
 
-        public IGameState gs { get; private set; }
-        public GameInfo ngs { get; private set; }
+        public string Name { get; private set; }
+        public IGameState GameState { get; private set; }
+        public GameInfo GameInfo { get; private set; }
         public IPerfUpdate perf { get; private set; }
 
         public static event Action<string> OnLog;
@@ -36,41 +37,41 @@ namespace SharedGame {
          */
 
         private bool OnEventConnectedToPeerDelegate(int connected_player) {
-            ngs.SetConnectState(connected_player, PlayerConnectState.Synchronizing);
+            GameInfo.SetConnectState(connected_player, PlayerConnectState.Synchronizing);
             return true;
         }
 
         public bool OnEventSynchronizingWithPeerDelegate(int synchronizing_player, int synchronizing_count, int synchronizing_total) {
             var progress = 100 * synchronizing_count / synchronizing_total;
-            ngs.UpdateConnectProgress(synchronizing_player, progress);
+            GameInfo.UpdateConnectProgress(synchronizing_player, progress);
             return true;
         }
 
         public bool OnEventSynchronizedWithPeerDelegate(int synchronized_player) {
-            ngs.UpdateConnectProgress(synchronized_player, 100);
+            GameInfo.UpdateConnectProgress(synchronized_player, 100);
             return true;
         }
 
         public bool OnEventRunningDelegate() {
-            ngs.SetConnectState(PlayerConnectState.Running);
+            GameInfo.SetConnectState(PlayerConnectState.Running);
             SetStatusText("");
             return true;
         }
 
         public bool OnEventConnectionInterruptedDelegate(int connection_interrupted_player, int connection_interrupted_disconnect_timeout) {
-            ngs.SetDisconnectTimeout(connection_interrupted_player,
+            GameInfo.SetDisconnectTimeout(connection_interrupted_player,
                                      global::Utils.TimeGetTime(),
                                      connection_interrupted_disconnect_timeout);
             return true;
         }
 
         public bool OnEventConnectionResumedDelegate(int connection_resumed_player) {
-            ngs.SetConnectState(connection_resumed_player, PlayerConnectState.Running);
+            GameInfo.SetConnectState(connection_resumed_player, PlayerConnectState.Running);
             return true;
         }
 
         public bool OnEventDisconnectedFromPeerDelegate(int disconnected_player) {
-            ngs.SetConnectState(disconnected_player, PlayerConnectState.Disconnected);
+            GameInfo.SetConnectState(disconnected_player, PlayerConnectState.Disconnected);
             return true;
         }
 
@@ -102,7 +103,7 @@ namespace SharedGame {
 
         private bool OnLoadGameStateCallback(NativeArray<byte> data) {
             Log($"OnLoadGameStateCallback {data.Length}");
-            gs.FromBytes(data);
+            GameState.FromBytes(data);
             return true;
         }
 
@@ -113,7 +114,7 @@ namespace SharedGame {
 
         private bool OnSaveGameStateCallback(out NativeArray<byte> data, out int checksum, int frame) {
             Log($"OnSaveGameStateCallback {frame}");
-            data = gs.ToBytes();
+            data = GameState.ToBytes();
             checksum = global::Utils.CalcFletcher32(data);
             return true;
         }
@@ -124,18 +125,16 @@ namespace SharedGame {
 
         private bool OnLogGameState(string filename, NativeArray<byte> data) {
             Log($"OnLogGameState {filename}");
+            Log($"--Error-- Pretty sure this feature doesn't work properly");
 
-            var gamestate = this.CreateGameState();
-            gamestate.FromBytes(data);
-            gamestate.LogInfo(filename);
+            GameState.FromBytes(data);
+            GameState.LogInfo(filename);
             return true;
         }
 
         private void OnFreeBufferCallback(NativeArray<byte> data) {
             Log($"OnFreeBufferCallback");
-            if (data.IsCreated) {
-                data.Dispose();
-            }
+            GameState.FreeBytes(data);
         }
 
         /// <summary>
@@ -143,10 +142,11 @@ namespace SharedGame {
         /// <param name="perfPanel"></param>
         /// <param name="callback"></param>
 
-        public BaseGGPOGame(IPerfUpdate perfPanel, GGPO.LogDelegate callback) {
+        public GGPOGame(string name, IGameState gameState, IPerfUpdate perfPanel, GGPO.LogDelegate callback) {
+            Name = name;
             GGPO.SetLogDelegate(callback);
-            gs = CreateGameState();
-            ngs = new GameInfo();
+            GameState = gameState;
+            GameInfo = new GameInfo();
             perf = perfPanel;
         }
 
@@ -205,7 +205,7 @@ namespace SharedGame {
         public void Init(int localport, int num_players, IList<GGPOPlayer> players, int num_spectators) {
             Log($"Init {localport} {num_players} {string.Join("|", players)} {num_spectators}");
             // Initialize the game state
-            gs.Init(num_players);
+            GameState.Init(num_players);
 
 #if SYNC_TEST
             var result = ggpo_start_synctest(cb, GetName(), num_players, 1);
@@ -224,7 +224,7 @@ namespace SharedGame {
                     OnEventConnectionResumedDelegate,
                     OnEventDisconnectedFromPeerDelegate,
                     OnEventEventcodeTimesyncDelegate,
-                    GetName(), num_players, localport);
+                    Name, num_players, localport);
 
 #endif
             CheckAndReport(result);
@@ -237,7 +237,7 @@ namespace SharedGame {
 
             int controllerId = 0;
             int playerIndex = 0;
-            ngs.players = new PlayerConnectionInfo[num_players];
+            GameInfo.players = new PlayerConnectionInfo[num_players];
             for (int i = 0; i < players.Count; i++) {
                 CheckAndReport(GGPO.Session.AddPlayer(players[i], out int handle));
 
@@ -247,8 +247,8 @@ namespace SharedGame {
                     playerInfo.type = players[i].type;
                     playerInfo.connect_progress = 100;
                     playerInfo.controllerId = controllerId++;
-                    ngs.players[playerIndex++] = playerInfo;
-                    ngs.SetConnectState(handle, PlayerConnectState.Connecting);
+                    GameInfo.players[playerIndex++] = playerInfo;
+                    GameInfo.SetConnectState(handle, PlayerConnectState.Connecting);
                     CheckAndReport(GGPO.Session.SetFrameDelay(handle, FRAME_DELAY));
                 }
                 else if (players[i].type == GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE) {
@@ -256,7 +256,7 @@ namespace SharedGame {
                     playerInfo.handle = handle;
                     playerInfo.type = players[i].type;
                     playerInfo.connect_progress = 0;
-                    ngs.players[playerIndex++] = playerInfo;
+                    GameInfo.players[playerIndex++] = playerInfo;
                 }
             }
 
@@ -271,8 +271,8 @@ namespace SharedGame {
             Log($"InitSpectator {localport} {num_players} {host_ip} {host_port}");
 
             // Initialize the game state
-            gs.Init(num_players);
-            ngs.players = Array.Empty<PlayerConnectionInfo>();
+            GameState.Init(num_players);
+            GameInfo.players = Array.Empty<PlayerConnectionInfo>();
 
             // Fill in a ggpo callbacks structure to pass to start_session.
             var result = GGPO.Session.StartSpectating(
@@ -290,7 +290,7 @@ namespace SharedGame {
                     OnEventConnectionResumedDelegate,
                     OnEventDisconnectedFromPeerDelegate,
                     OnEventEventcodeTimesyncDelegate,
-                    GetName(), num_players, localport, host_ip, host_port);
+                    Name, num_players, localport, host_ip, host_port);
 
             CheckAndReport(result);
 
@@ -304,9 +304,9 @@ namespace SharedGame {
         public void DisconnectPlayer(int playerIndex) {
             Log($"DisconnectPlayer {playerIndex}");
 
-            if (playerIndex < ngs.players.Length) {
+            if (playerIndex < GameInfo.players.Length) {
                 string logbuf;
-                var result = GGPO.Session.DisconnectPlayer(ngs.players[playerIndex].handle);
+                var result = GGPO.Session.DisconnectPlayer(GameInfo.players[playerIndex].handle);
                 if (GGPO.SUCCEEDED(result)) {
                     logbuf = $"Disconnected player {playerIndex}.";
                 }
@@ -323,14 +323,14 @@ namespace SharedGame {
          */
 
         private void AdvanceFrame(ulong[] inputs, int disconnect_flags) {
-            gs.Update(inputs, disconnect_flags);
+            GameState.Update(inputs, disconnect_flags);
 
             // update the checksums to display in the top of the window. this helps to detect desyncs.
-            ngs.now.framenumber = gs._framenumber;
+            GameInfo.now.framenumber = GameState.Framenumber;
             // var buffer = GameState.ToBytes(gs);
-            ngs.now.checksum = 0; // naive_fletcher32_per_byte(buffer);
-            if ((gs._framenumber % 90) == 0) {
-                ngs.periodic = ngs.now;
+            GameInfo.now.checksum = 0; // naive_fletcher32_per_byte(buffer);
+            if ((GameState.Framenumber % 90) == 0) {
+                GameInfo.periodic = GameInfo.now;
             }
 
             // Notify ggpo that we've moved forward exactly 1 frame.
@@ -339,9 +339,9 @@ namespace SharedGame {
             // Update the performance monitor display.
             int[] handles = new int[MAX_PLAYERS];
             int count = 0;
-            for (int i = 0; i < ngs.players.Length; i++) {
-                if (ngs.players[i].type == GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE) {
-                    handles[count++] = ngs.players[i].handle;
+            for (int i = 0; i < GameInfo.players.Length; i++) {
+                if (GameInfo.players[i].type == GGPOPlayerType.GGPO_PLAYERTYPE_REMOTE) {
+                    handles[count++] = GameInfo.players[i].handle;
                 }
             }
 
@@ -359,10 +359,10 @@ namespace SharedGame {
         public void RunFrame() {
             var result = GGPO.OK;
 
-            for (int i = 0; i < ngs.players.Length; ++i) {
-                var player = ngs.players[i];
+            for (int i = 0; i < GameInfo.players.Length; ++i) {
+                var player = GameInfo.players[i];
                 if (player.type == GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL) {
-                    ulong input = gs.ReadInputs(player.controllerId);
+                    ulong input = GameState.ReadInputs(player.controllerId);
 #if SYNC_TEST
      input = rand(); // test: use random inputs to demonstrate sync testing
 #endif
@@ -408,7 +408,7 @@ namespace SharedGame {
         }
 
         private void SetStatusText(string status) {
-            ngs.status = status;
+            GameInfo.status = status;
         }
 
         private void CheckAndReport(int result) {
@@ -433,9 +433,5 @@ namespace SharedGame {
             UnityEngine.Debug.Log(value);
             OnLog?.Invoke(value);
         }
-
-        public abstract string GetName();
-
-        protected abstract IGameState CreateGameState();
     }
 }

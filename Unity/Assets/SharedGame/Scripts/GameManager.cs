@@ -1,11 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 
 namespace SharedGame {
 
-    // @TODO this shouldn't be a Component
-    public class GameRunner : MonoBehaviour {
+    public abstract class GameManager : MonoBehaviour {
+        private static GameManager _instance;
+
+        public static GameManager Instance {
+            get {
+                if (_instance == null) {
+                    _instance = FindObjectOfType<GameManager>();
+                }
+                return _instance;
+            }
+        }
+
         private float next;
 
         public event Action<string> OnStatus;
@@ -45,6 +56,7 @@ namespace SharedGame {
 
         private void OnDestroy() {
             Shutdown();
+            _instance = null;
         }
 
         private void Update() {
@@ -66,12 +78,16 @@ namespace SharedGame {
 
                 string status = Game.GetStatus(updateWatch);
                 OnStatus?.Invoke(status);
-                OnChecksum?.Invoke(RenderChecksum(Game.ngs.periodic) + RenderChecksum(Game.ngs.now));
+                OnChecksum?.Invoke(RenderChecksum(Game.GameInfo.periodic) + RenderChecksum(Game.GameInfo.now));
             }
         }
 
         private string RenderChecksum(GameInfo.ChecksumInfo info) {
             return string.Format("f:{0} c:{1}", info.framenumber, info.checksum); // %04d  %08x
         }
+
+        public abstract IGame CreateLocalGame();
+
+        public abstract IGame CreateGGPOGame(IPerfUpdate perfPanel, GGPO.LogDelegate logDelegate, List<Connections> connections, int playerIndex);
     }
 }

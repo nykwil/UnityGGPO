@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class GGPOPerformancePanel : MonoBehaviour, IPerfUpdate {
+public class GgpoPerformancePanel : MonoBehaviour, IPerfUpdate {
     public Rect fairnessRect;
     public Rect networkRect;
 

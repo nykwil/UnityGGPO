@@ -40,7 +40,6 @@ namespace Spaceship
         public Entity hitEntity;
     }
 
-    [UpdateAfter(typeof(EndFramePhysicsSystem))]
     public class MissileHitSystem : SystemBase
     {
         private BuildPhysicsWorld m_BuildPhysicsWorld;

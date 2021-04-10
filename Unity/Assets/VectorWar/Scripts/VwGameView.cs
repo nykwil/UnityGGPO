@@ -7,10 +7,10 @@ namespace VectorWar {
     public class VwGameView : MonoBehaviour, IGameView {
         public VwShipView shipPrefab;
         public Transform bulletPrefab;
-        public GameRunner runner;
 
         private VwShipView[] shipViews = Array.Empty<VwShipView>();
         private Transform[][] bulletLists;
+        private GameManager runner => GameManager.Instance;
 
         private void ResetView(VwGameState gs) {
             var shipGss = gs._ships;
@@ -27,8 +27,8 @@ namespace VectorWar {
         }
 
         public void UpdateGameView(IGame game) {
-            var gs = (VwGameState)game.gs;
-            var ngs = game.ngs;
+            var gs = (VwGameState)game.GameState;
+            var ngs = game.GameInfo;
 
             var shipsGss = gs._ships;
             if (shipViews.Length != shipsGss.Length) {

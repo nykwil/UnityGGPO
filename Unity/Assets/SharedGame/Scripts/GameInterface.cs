@@ -12,17 +12,18 @@ namespace SharedGame {
         public Button btnPlayer1;
         public Button btnPlayer2;
         public Button btnConnect;
-        public GameRunner runner;
-        private readonly List<string> logs = new List<string>();
         public Toggle tglRunnerLog;
         public Toggle tglGameLog;
         public GameObject pnlLog;
+
+        private GameManager runner => GameManager.Instance;
+        private readonly List<string> logs = new List<string>();
 
         private void Awake() {
             runner.OnStatus += OnStatus;
             runner.OnChecksum += OnChecksum;
             runner.OnLog += OnLog;
-            BaseGGPOGame.OnLog += OnLog;
+            GGPOGame.OnLog += OnLog;
             runner.OnRunningChanged += OnRunningChanged;
 
             btnConnect.onClick.AddListener(OnConnect);
@@ -58,9 +59,9 @@ namespace SharedGame {
         }
 
         private void OnToggleGameLog(bool value) {
-            BaseGGPOGame.OnLog -= OnLog;
+            GGPOGame.OnLog -= OnLog;
             if (value) {
-                BaseGGPOGame.OnLog += OnLog;
+                GGPOGame.OnLog += OnLog;
             }
             LogPanelVisibility();
         }

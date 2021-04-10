@@ -1,8 +1,8 @@
+using SharedGame;
 using System;
 using System.IO;
 using Unity.Collections;
 using UnityEngine;
-using SharedGame;
 
 namespace VectorWar {
 
@@ -103,13 +103,13 @@ namespace VectorWar {
 
     [Serializable]
     public struct VwGameState : IGameState {
-        public int _framenumber { get; set; }
+        public int Framenumber { get; set; }
         public Ship[] _ships;
 
         public static Rect _bounds = new Rect(0, 0, 640, 480);
 
         public void Serialize(BinaryWriter bw) {
-            bw.Write(_framenumber);
+            bw.Write(Framenumber);
             bw.Write(_ships.Length);
             for (int i = 0; i < _ships.Length; ++i) {
                 _ships[i].Serialize(bw);
@@ -117,7 +117,7 @@ namespace VectorWar {
         }
 
         public void Deserialize(BinaryReader br) {
-            _framenumber = br.ReadInt32();
+            Framenumber = br.ReadInt32();
             int length = br.ReadInt32();
             if (length != _ships.Length) {
                 _ships = new Ship[length];
@@ -164,7 +164,7 @@ namespace VectorWar {
             var w = _bounds.xMax - _bounds.xMin;
             var h = _bounds.yMax - _bounds.yMin;
             var r = h / 4;
-            _framenumber = 0;
+            Framenumber = 0;
             _ships = new Ship[num_players];
             for (int i = 0; i < _ships.Length; i++) {
                 _ships[i] = new Ship();
@@ -192,7 +192,7 @@ namespace VectorWar {
         public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
             var ship = _ships[i];
 
-            BaseGGPOGame.Log($"parsing ship {i} inputs: {inputs}.");
+            GGPOGame.Log($"parsing ship {i} inputs: {inputs}.");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
                 heading = (ship.heading - ROTATE_INCREMENT) % 360;
@@ -219,13 +219,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             var ship = _ships[index];
 
-            BaseGGPOGame.Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
+            GGPOGame.Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    BaseGGPOGame.Log("firing bullet.");
+                    GGPOGame.Log("firing bullet.");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(DegToRad(ship.heading));
                         float dy = Mathf.Sin(DegToRad(ship.heading));
@@ -255,11 +255,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            BaseGGPOGame.Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
+            GGPOGame.Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            BaseGGPOGame.Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
+            GGPOGame.Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {
@@ -320,7 +320,7 @@ namespace VectorWar {
         }
 
         public void Update(ulong[] inputs, int disconnect_flags) {
-            _framenumber++;
+            Framenumber++;
             for (int i = 0; i < _ships.Length; i++) {
                 float thrust, heading;
                 int fire;
@@ -384,6 +384,12 @@ namespace VectorWar {
             }
 
             return input;
+        }
+
+        public void FreeBytes(NativeArray<byte> data) {
+            if (data.IsCreated) {
+                data.Dispose();
+            }
         }
     }
 }

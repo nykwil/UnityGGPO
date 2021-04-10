@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using Unity.Collections;
-using UnityEngine;
 
 namespace SharedGame {
 
@@ -11,24 +9,12 @@ namespace SharedGame {
         public bool spectator;
     }
 
-    public static class Utils {
-
-        public static T GetInterface<T>(GameObject inObj) where T : class {
-            if (!typeof(T).IsInterface) {
-                UnityEngine.Debug.LogError(typeof(T).ToString() + ": is not an actual interface!");
-                return null;
-            }
-
-            return inObj.GetComponents<Component>().OfType<T>().FirstOrDefault();
-        }
-    }
-
     public interface IGameState {
-        int _framenumber { get; }
+        int Framenumber { get; }
 
-        void Init(int num_players);
+        void Init(int numPlayers);
 
-        void Update(ulong[] inputs, int disconnect_flags);
+        void Update(ulong[] inputs, int disconnectFlags);
 
         void FromBytes(NativeArray<byte> data);
 
@@ -37,11 +23,13 @@ namespace SharedGame {
         ulong ReadInputs(int controllerId);
 
         void LogInfo(string filename);
+
+        void FreeBytes(NativeArray<byte> data);
     }
 
     public interface IGame {
-        IGameState gs { get; }
-        GameInfo ngs { get; }
+        IGameState GameState { get; }
+        GameInfo GameInfo { get; }
 
         void Idle(int ms);
 

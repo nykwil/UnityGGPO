@@ -3,63 +3,59 @@ using Unity.Collections;
 
 namespace SharedGame {
 
-    public abstract class BaseLocalGame : IGame {
+    public class LocalGame : IGame {
         private NativeArray<byte> buffer;
 
-        public IGameState gs { get; private set; }
+        public IGameState GameState { get; private set; }
 
-        public GameInfo ngs { get; private set; }
+        public GameInfo GameInfo { get; private set; }
 
         public void Idle(int ms) {
         }
 
         public void RunFrame() {
-            var inputs = new ulong[ngs.players.Length];
+            var inputs = new ulong[GameInfo.players.Length];
             for (int i = 0; i < inputs.Length; ++i) {
-                inputs[i] = gs.ReadInputs(ngs.players[i].controllerId);
+                inputs[i] = GameState.ReadInputs(GameInfo.players[i].controllerId);
             }
-            gs.Update(inputs, 0);
+            GameState.Update(inputs, 0);
         }
 
         public void OnTestSave() {
             if (buffer.IsCreated) {
                 buffer.Dispose();
             }
-            buffer = gs.ToBytes();
+            buffer = GameState.ToBytes();
         }
 
         public void OnTestLoad() {
-            gs.FromBytes(buffer);
+            GameState.FromBytes(buffer);
         }
 
-        public BaseLocalGame() {
-            gs = CreateGameState();
-            ngs = new GameInfo();
+        public LocalGame(IGameState gameState) {
+            GameState = gameState;
+            GameInfo = new GameInfo();
             int handle = 1;
             int controllerId = 0;
-            ngs.players = new PlayerConnectionInfo[2];
-            ngs.players[0] = new PlayerConnectionInfo {
+            GameInfo.players = new PlayerConnectionInfo[2];
+            GameInfo.players[0] = new PlayerConnectionInfo {
                 handle = handle,
                 type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
                 connect_progress = 100,
                 controllerId = controllerId
             };
-            ngs.SetConnectState(handle, PlayerConnectState.Connecting);
+            GameInfo.SetConnectState(handle, PlayerConnectState.Connecting);
             ++handle;
             ++controllerId;
-            ngs.players[1] = new PlayerConnectionInfo {
+            GameInfo.players[1] = new PlayerConnectionInfo {
                 handle = handle,
                 type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
                 connect_progress = 100,
                 controllerId = controllerId++
             };
-            ngs.SetConnectState(handle, PlayerConnectState.Connecting);
-            gs.Init(ngs.players.Length);
+            GameInfo.SetConnectState(handle, PlayerConnectState.Connecting);
+            GameState.Init(GameInfo.players.Length);
         }
-
-        protected abstract IGameState CreateGameState();
-
-        protected abstract string GetName();
 
         public string GetStatus(Stopwatch updateWatch) {
             return string.Format("time{0:.00}", (float)updateWatch.ElapsedMilliseconds);

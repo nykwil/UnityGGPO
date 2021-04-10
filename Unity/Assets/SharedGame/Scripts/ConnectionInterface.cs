@@ -1,27 +1,26 @@
-﻿using SharedGame;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace VectorWar {
+namespace SharedGame {
 
-    public class VwConnectionInterface : MonoBehaviour {
+    public class ConnectionInterface : MonoBehaviour {
         public InputField[] inpIps;
         public Toggle[] tglSpectators;
         public InputField inpPlayerIndex;
         public Toggle tgLocal;
-        public GameRunner runner;
         public Button btnConnect;
 
         private List<Connections> connections = new List<Connections>();
         private int playerIndex;
+        private GameManager runner => GameManager.Instance;
 
         private void Awake() {
             runner.OnRunningChanged += OnRunningChanged;
             btnConnect.onClick.AddListener(OnConnect);
             connections.Add(new Connections() {
-                ip="127.0.0.1",
-                port=7000,
+                ip = "127.0.0.1",
+                port = 7000,
                 spectator = false
             });
             connections.Add(new Connections() {
@@ -73,16 +72,13 @@ namespace VectorWar {
 
         public IGame CreateGame() {
             if (tgLocal.isOn) {
-                var game = new VwLocalGame();
-                return game;
+                return GameManager.Instance.CreateLocalGame();
             }
             else {
-                var perf = FindObjectOfType<GGPOPerformancePanel>();
-                perf.Setup();
                 Save();
-                var game = new VwGGPOGame(perf, LogTodo);
-                game.Init(connections, playerIndex);
-                return game;
+                var perf = FindObjectOfType<GgpoPerformancePanel>();
+                perf.Setup();
+                return GameManager.Instance.CreateGGPOGame(perf, LogTodo, connections, playerIndex);
             }
         }
     }
