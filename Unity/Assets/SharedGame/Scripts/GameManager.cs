@@ -23,8 +23,6 @@ namespace SharedGame {
 
         public event Action<string> OnChecksum;
 
-        public event Action<string> OnLog;
-
         public event Action<bool> OnRunningChanged;
 
         public Stopwatch updateWatch = new Stopwatch();
@@ -32,10 +30,6 @@ namespace SharedGame {
         public bool IsRunning { get; private set; }
 
         public IGame Game { get; private set; }
-
-        public void LogCallback(string text) {
-            OnLog?.Invoke(text);
-        }
 
         public void Startup(IGame game) {
             Game = game;
@@ -88,6 +82,6 @@ namespace SharedGame {
 
         public abstract IGame CreateLocalGame();
 
-        public abstract IGame CreateGGPOGame(IPerfUpdate perfPanel, GGPO.LogDelegate logDelegate, List<Connections> connections, int playerIndex);
+        public abstract IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex);
     }
 }

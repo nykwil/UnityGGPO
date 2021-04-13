@@ -11,6 +11,7 @@ namespace SharedGame {
 
     public interface IGameState {
         int Framenumber { get; }
+        int Checksum { get; }
 
         void Init(int numPlayers);
 

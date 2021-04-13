@@ -4,4 +4,3 @@
 public struct TickCounterData : IComponentData {
     public int tickCount;
 }
-

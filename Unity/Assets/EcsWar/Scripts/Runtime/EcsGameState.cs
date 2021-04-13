@@ -6,7 +6,9 @@ using Unity.Entities;
 namespace EcsWar {
 
     public struct EcsGameState : IGameState {
-        public int Framenumber { get; set; }
+        public int Framenumber { get; private set; }
+
+        public int Checksum { get; private set; } 
 
         private Dictionary<byte, World> savedStates;
         private byte lastWorldId;

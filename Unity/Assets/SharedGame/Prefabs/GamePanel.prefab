@@ -1,5 +1,84 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &217658165931757021
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1564869901014443718}
+  - component: {fileID: 6931404691054546857}
+  - component: {fileID: 977618987323046056}
+  m_Layer: 5
+  m_Name: PluginLog
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1564869901014443718
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 217658165931757021}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 2536750269763726390}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: -239.99998}
+  m_SizeDelta: {x: 300, y: 439.99997}
+  m_Pivot: {x: 1, y: 0.5}
+--- !u!222 &6931404691054546857
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 217658165931757021}
+  m_CullTransparentMesh: 0
+--- !u!114 &977618987323046056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 217658165931757021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FontData:
+    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_FontSize: 12
+    m_FontStyle: 0
+    m_BestFit: 1
+    m_MinSize: 1
+    m_MaxSize: 40
+    m_Alignment: 0
+    m_AlignByGeometry: 0
+    m_RichText: 1
+    m_HorizontalOverflow: 0
+    m_VerticalOverflow: 0
+    m_LineSpacing: 1
+  m_Text: New Text
 --- !u!1 &4608805766180279814
 GameObject:
   m_ObjectHideFlags: 0
@@ -91,7 +170,6 @@ GameObject:
   - component: {fileID: 4608805766193824231}
   - component: {fileID: 4608805766193824230}
   - component: {fileID: 4608805766193824229}
-  - component: {fileID: 4608805766193824216}
   m_Layer: 5
   m_Name: TopBar
   m_TagString: Untagged
@@ -189,28 +267,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
---- !u!114 &4608805766193824216
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4608805766193824227}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8c76b324beac54240bd6db8dee3c5ea8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxLogLines: 20
-  txtStatus: {fileID: 4608805767698541354}
-  txtChecksum: {fileID: 4608805766338356659}
-  txtLog: {fileID: 4608805766231577732}
-  btnPlayer1: {fileID: 4608805766734756113}
-  btnPlayer2: {fileID: 4608805766945869645}
-  btnConnect: {fileID: 4608805767232854513}
-  tglRunnerLog: {fileID: 4608805767468604678}
-  tglGameLog: {fileID: 4608805766674637165}
-  pnlLog: {fileID: 4608805766231577729}
 --- !u!1 &4608805766231577729
 GameObject:
   m_ObjectHideFlags: 0
@@ -223,7 +279,7 @@ GameObject:
   - component: {fileID: 4608805766231577731}
   - component: {fileID: 4608805766231577732}
   m_Layer: 5
-  m_Name: Log
+  m_Name: GameLog
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -380,7 +436,7 @@ GameObject:
   - component: {fileID: 4608805766674637164}
   - component: {fileID: 4608805766674637165}
   m_Layer: 5
-  m_Name: Game
+  m_Name: TglGame
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1062,7 +1118,7 @@ GameObject:
   - component: {fileID: 4608805767468604677}
   - component: {fileID: 4608805767468604678}
   m_Layer: 5
-  m_Name: Runner
+  m_Name: TglPlugin
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1610,6 +1666,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2536750269763726390}
+  - component: {fileID: 6134977551680837119}
   m_Layer: 5
   m_Name: GamePanel
   m_TagString: Untagged
@@ -1624,12 +1681,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7066821189148908901}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4608805766193824228}
   - {fileID: 4608805766231577730}
+  - {fileID: 1564869901014443718}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1638,3 +1696,26 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 20}
   m_Pivot: {x: 0.5, y: 1}
+--- !u!114 &6134977551680837119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7066821189148908901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c76b324beac54240bd6db8dee3c5ea8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxLogLines: 20
+  txtStatus: {fileID: 4608805767698541354}
+  txtChecksum: {fileID: 4608805766338356659}
+  txtGameLog: {fileID: 4608805766231577732}
+  txtPluginLog: {fileID: 977618987323046056}
+  btnPlayer1: {fileID: 4608805766734756113}
+  btnPlayer2: {fileID: 4608805766945869645}
+  btnConnect: {fileID: 4608805767232854513}
+  tglPluginLog: {fileID: 4608805767468604678}
+  tglGameLog: {fileID: 4608805766674637165}
+  pnlLog: {fileID: 4608805766231577729}

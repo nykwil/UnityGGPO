@@ -16,7 +16,9 @@ namespace SharedGame {
         public GameInfo GameInfo { get; private set; }
         public IPerfUpdate perf { get; private set; }
 
-        public static event Action<string> OnLog;
+        public static event Action<string> OnGameLog;
+
+        public static event Action<string> OnPluginLog;
 
         public Stopwatch frameWatch = new Stopwatch();
         public Stopwatch idleWatch = new Stopwatch();
@@ -142,15 +144,15 @@ namespace SharedGame {
         /// <param name="perfPanel"></param>
         /// <param name="callback"></param>
 
-        public GGPOGame(string name, IGameState gameState, IPerfUpdate perfPanel, GGPO.LogDelegate callback) {
+        public GGPOGame(string name, IGameState gameState, IPerfUpdate perfPanel) {
             Name = name;
-            GGPO.SetLogDelegate(callback);
+            GGPO.SetLogDelegate(LogCallback);
             GameState = gameState;
             GameInfo = new GameInfo();
             perf = perfPanel;
         }
 
-        public void Init(List<Connections> connections, int playerIndex) {
+        public void Init(IList<Connections> connections, int playerIndex) {
             var remote_index = -1;
             var num_spectators = 0;
             var num_players = 0;
@@ -327,8 +329,7 @@ namespace SharedGame {
 
             // update the checksums to display in the top of the window. this helps to detect desyncs.
             GameInfo.now.framenumber = GameState.Framenumber;
-            // var buffer = GameState.ToBytes(gs);
-            GameInfo.now.checksum = 0; // naive_fletcher32_per_byte(buffer);
+            GameInfo.now.checksum = GameState.Checksum;
             if ((GameState.Framenumber % 90) == 0) {
                 GameInfo.periodic = GameInfo.now;
             }
@@ -382,7 +383,7 @@ namespace SharedGame {
                     AdvanceFrame(inputs, disconnect_flags);
                 }
                 else {
-                    OnLog?.Invoke("Error inputsync");
+                    Log("Error inputsync");
                 }
                 frameWatch.Stop();
             }
@@ -430,8 +431,11 @@ namespace SharedGame {
         }
 
         public static void Log(string value) {
-            UnityEngine.Debug.Log(value);
-            OnLog?.Invoke(value);
+            OnGameLog?.Invoke(value);
+        }
+
+        public static void LogCallback(string value) {
+            OnPluginLog?.Invoke(value);
         }
     }
 }

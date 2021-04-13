@@ -1,5 +1,6 @@
 {
     "name": "TinySpaceship",
+    "rootNamespace": "",
     "references": [
         "Unity.Entities",
         "Unity.Transforms",
@@ -7,7 +8,9 @@
         "Unity.Collections",
         "Unity.Jobs",
         "Unity.Burst",
-        "Unity.Physics"
+        "Unity.Physics",
+        "UnityGGPO-Plugin",
+        "UnityGGPO-SharedGame"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

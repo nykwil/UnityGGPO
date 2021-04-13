@@ -99,11 +99,27 @@ namespace VectorWar {
                 bullets[i].Deserialize(br);
             }
         }
-    };
+
+        // @LOOK Not hashing bullets.
+        public override int GetHashCode() {
+            int hashCode = 1858597544;
+            hashCode = hashCode * -1521134295 + position.GetHashCode();
+            hashCode = hashCode * -1521134295 + velocity.GetHashCode();
+            hashCode = hashCode * -1521134295 + radius.GetHashCode();
+            hashCode = hashCode * -1521134295 + heading.GetHashCode();
+            hashCode = hashCode * -1521134295 + health.GetHashCode();
+            hashCode = hashCode * -1521134295 + cooldown.GetHashCode();
+            hashCode = hashCode * -1521134295 + score.GetHashCode();
+            return hashCode;
+        }
+    }
 
     [Serializable]
     public struct VwGameState : IGameState {
-        public int Framenumber { get; set; }
+        public int Framenumber { get; private set; }
+
+        public int Checksum => GetHashCode();
+
         public Ship[] _ships;
 
         public static Rect _bounds = new Rect(0, 0, 640, 480);
@@ -390,6 +406,16 @@ namespace VectorWar {
             if (data.IsCreated) {
                 data.Dispose();
             }
+        }
+
+        public override int GetHashCode() {
+            int hashCode = -1214587014;
+            hashCode = hashCode * -1521134295 + Framenumber.GetHashCode();
+            hashCode = hashCode * -1521134295 + Checksum.GetHashCode();
+            foreach (var ship in _ships) {
+                hashCode = hashCode * -1521134295 + ship.GetHashCode();
+            }
+            return hashCode;
         }
     }
 }

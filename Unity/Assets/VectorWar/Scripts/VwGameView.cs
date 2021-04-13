@@ -10,7 +10,7 @@ namespace VectorWar {
 
         private VwShipView[] shipViews = Array.Empty<VwShipView>();
         private Transform[][] bulletLists;
-        private GameManager runner => GameManager.Instance;
+        private GameManager gameManager => GameManager.Instance;
 
         private void ResetView(VwGameState gs) {
             var shipGss = gs._ships;
@@ -48,8 +48,8 @@ namespace VectorWar {
         }
 
         private void Update() {
-            if (runner.IsRunning) {
-                UpdateGameView(runner.Game);
+            if (gameManager.IsRunning) {
+                UpdateGameView(gameManager.Game);
             }
         }
     }

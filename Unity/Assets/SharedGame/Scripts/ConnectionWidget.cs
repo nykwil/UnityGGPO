@@ -4,20 +4,20 @@ using UnityEngine.UI;
 
 namespace SharedGame {
 
-    public class ConnectionInterface : MonoBehaviour {
+    public class ConnectionWidget : MonoBehaviour {
         public InputField[] inpIps;
         public Toggle[] tglSpectators;
         public InputField inpPlayerIndex;
         public Toggle tgLocal;
         public Button btnConnect;
 
-        private List<Connections> connections = new List<Connections>();
-        private int playerIndex;
-        private GameManager runner => GameManager.Instance;
+        private GameManager gameManager => GameManager.Instance;
 
         private void Awake() {
-            runner.OnRunningChanged += OnRunningChanged;
+            gameManager.OnRunningChanged += OnRunningChanged;
             btnConnect.onClick.AddListener(OnConnect);
+
+            var connections = new List<Connections>();
             connections.Add(new Connections() {
                 ip = "127.0.0.1",
                 port = 7000,
@@ -28,16 +28,16 @@ namespace SharedGame {
                 port = 7001,
                 spectator = false
             });
-            playerIndex = 0;
-            Load();
+            inpPlayerIndex.text = "0";
+            LoadConnectionInfo(connections);
         }
 
         private void OnConnect() {
-            runner.Startup(CreateGame());
+            gameManager.Startup(CreateGame());
         }
 
         private void OnDestroy() {
-            runner.OnRunningChanged -= OnRunningChanged;
+            gameManager.OnRunningChanged -= OnRunningChanged;
             btnConnect.onClick.RemoveListener(OnConnect);
         }
 
@@ -45,29 +45,24 @@ namespace SharedGame {
             gameObject.SetActive(!obj);
         }
 
-        public void Load() {
+        public void LoadConnectionInfo(IList<Connections> connections) {
             for (int i = 0; i < connections.Count; ++i) {
                 inpIps[i].text = connections[i].ip + ":" + connections[i].port;
                 tglSpectators[i].isOn = connections[i].spectator;
             }
-
-            inpPlayerIndex.text = playerIndex.ToString();
         }
 
-        public void Save() {
-            for (int i = 0; i < connections.Count; ++i) {
+        public IList<Connections> GetConnectionInfo() {
+            var connections = new List<Connections>(inpIps.Length);
+            for (int i = 0; i < inpIps.Length; ++i) {
                 var split = inpIps[i].text.Split(':');
-                connections[i].ip = split[0];
-                connections[i].port = ushort.Parse(split[1]);
-                connections[i].spectator = tglSpectators[i].isOn;
+                connections.Add(new Connections() {
+                    ip = split[0],
+                    port = ushort.Parse(split[1]),
+                    spectator = false
+                });
             }
-
-            playerIndex = int.Parse(inpPlayerIndex.text);
-        }
-
-        public static void LogTodo(string s) {
-            // @TODO
-            Debug.Log(s);
+            return connections;
         }
 
         public IGame CreateGame() {
@@ -75,10 +70,11 @@ namespace SharedGame {
                 return GameManager.Instance.CreateLocalGame();
             }
             else {
-                Save();
+                var connectionInfo = GetConnectionInfo();
                 var perf = FindObjectOfType<GgpoPerformancePanel>();
                 perf.Setup();
-                return GameManager.Instance.CreateGGPOGame(perf, LogTodo, connections, playerIndex);
+                var playerIndex = int.Parse(inpPlayerIndex.text);
+                return GameManager.Instance.CreateGGPOGame(perf, connectionInfo, playerIndex);
             }
         }
     }

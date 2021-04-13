@@ -8,32 +8,34 @@ namespace SharedGame {
         public int maxLogLines = 20;
         public Text txtStatus;
         public Text txtChecksum;
-        public Text txtLog;
+        public Text txtGameLog;
+        public Text txtPluginLog;
         public Button btnPlayer1;
         public Button btnPlayer2;
         public Button btnConnect;
-        public Toggle tglRunnerLog;
+        public Toggle tglPluginLog;
         public Toggle tglGameLog;
         public GameObject pnlLog;
 
-        private GameManager runner => GameManager.Instance;
-        private readonly List<string> logs = new List<string>();
+        private GameManager gameManager => GameManager.Instance;
+        private readonly List<string> gameLogs = new List<string>();
+        private readonly List<string> pluginLogs = new List<string>();
 
         private void Awake() {
-            runner.OnStatus += OnStatus;
-            runner.OnChecksum += OnChecksum;
-            runner.OnLog += OnLog;
-            GGPOGame.OnLog += OnLog;
-            runner.OnRunningChanged += OnRunningChanged;
+            gameManager.OnStatus += OnStatus;
+            gameManager.OnChecksum += OnChecksum;
+            GGPOGame.OnPluginLog += OnPluginLog;
+            GGPOGame.OnGameLog += OnGameLog;
+            gameManager.OnRunningChanged += OnRunningChanged;
 
             btnConnect.onClick.AddListener(OnConnect);
             btnPlayer1.onClick.AddListener(OnPlayer1);
             btnPlayer2.onClick.AddListener(OnPlayer2);
 
-            tglRunnerLog.isOn = false;
+            tglPluginLog.isOn = false;
             tglGameLog.isOn = false;
 
-            tglRunnerLog.onValueChanged.AddListener(OnToggleRunnerLog);
+            tglPluginLog.onValueChanged.AddListener(OnTogglePluginLog);
             tglGameLog.onValueChanged.AddListener(OnToggleGameLog);
 
             SetConnectText("");
@@ -41,16 +43,17 @@ namespace SharedGame {
         }
 
         private void OnDestroy() {
-            runner.OnStatus -= OnStatus;
-            runner.OnChecksum -= OnChecksum;
-            runner.OnLog -= OnLog;
-            runner.OnRunningChanged -= OnRunningChanged;
+            gameManager.OnStatus -= OnStatus;
+            gameManager.OnChecksum -= OnChecksum;
+            GGPOGame.OnPluginLog -= OnPluginLog;
+            GGPOGame.OnGameLog -= OnGameLog;
+            gameManager.OnRunningChanged -= OnRunningChanged;
 
             btnConnect.onClick.RemoveListener(OnConnect);
             btnPlayer1.onClick.RemoveListener(OnPlayer1);
             btnPlayer2.onClick.RemoveListener(OnPlayer2);
 
-            tglRunnerLog.onValueChanged.RemoveListener(OnToggleRunnerLog);
+            tglPluginLog.onValueChanged.RemoveListener(OnTogglePluginLog);
             tglGameLog.onValueChanged.RemoveListener(OnToggleGameLog);
         }
 
@@ -59,48 +62,60 @@ namespace SharedGame {
         }
 
         private void OnToggleGameLog(bool value) {
-            GGPOGame.OnLog -= OnLog;
-            if (value) {
-                GGPOGame.OnLog += OnLog;
-            }
             LogPanelVisibility();
+            if (tglGameLog.isOn) {
+                txtGameLog.text = string.Join("\n", gameLogs);
+            }
         }
 
-        private void OnToggleRunnerLog(bool value) {
-            runner.OnLog -= OnLog;
-            if (value) {
-                runner.OnLog += OnLog;
-            }
+        private void OnTogglePluginLog(bool value) {
             LogPanelVisibility();
+            if (tglPluginLog.isOn) {
+                txtGameLog.text = string.Join("\n", gameLogs);
+            }
         }
 
         private void LogPanelVisibility() {
-            pnlLog.SetActive(tglGameLog.isOn || tglRunnerLog.isOn);
+            pnlLog.SetActive(tglGameLog.isOn || tglPluginLog.isOn);
         }
 
         private void SetConnectText(string text) {
             btnConnect.GetComponentInChildren<Text>().text = text;
         }
 
-        private void OnLog(string text) {
-            logs.Insert(0, text);
-            while (logs.Count > maxLogLines) {
-                logs.RemoveAt(logs.Count - 1);
+        private void OnGameLog(string text) {
+            Debug.Log("[GameLog] " + text);
+            gameLogs.Insert(0, text);
+            while (gameLogs.Count > maxLogLines) {
+                gameLogs.RemoveAt(gameLogs.Count - 1);
             }
-            txtLog.text = string.Join("\n", logs);
+            if (tglGameLog.isOn) {
+                txtGameLog.text = string.Join("\n", gameLogs);
+            }
+        }
+
+        private void OnPluginLog(string text) {
+            Debug.Log("[PluginLog] " + text);
+            pluginLogs.Insert(0, text);
+            while (pluginLogs.Count > maxLogLines) {
+                pluginLogs.RemoveAt(gameLogs.Count - 1);
+            }
+            if (tglPluginLog.isOn) {
+                txtPluginLog.text = string.Join("\n", pluginLogs);
+            }
         }
 
         private void OnPlayer1() {
-            runner.DisconnectPlayer(0);
+            gameManager.DisconnectPlayer(0);
         }
 
         private void OnPlayer2() {
-            runner.DisconnectPlayer(1);
+            gameManager.DisconnectPlayer(1);
         }
 
         private void OnConnect() {
-            if (runner.IsRunning) {
-                runner.Shutdown();
+            if (gameManager.IsRunning) {
+                gameManager.Shutdown();
             }
         }
 

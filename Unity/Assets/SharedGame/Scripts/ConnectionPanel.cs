@@ -8,15 +8,13 @@ namespace SharedGame {
         public Button btnLocal;
         public Button btnRemote;
         public Button btnHost;
-        public Text inpIps;
+        public InputField inpIp;
+        public InputField inpPort;
+        public Text txtIp;
+        public Text txtPort;
 
-        private GameManager runner => GameManager.Instance;
+        private GameManager gameManager => GameManager.Instance;
         private GgpoPerformancePanel perf;
-
-        public static void LogTodo(string s) {
-            // @TODO
-            Debug.Log(s);
-        }
 
         private void Awake() {
             perf = FindObjectOfType<GgpoPerformancePanel>();
@@ -24,9 +22,13 @@ namespace SharedGame {
             btnHost.onClick.AddListener(OnHostClick);
             btnRemote.onClick.AddListener(OnRemoteClick);
             btnLocal.onClick.AddListener(OnLocalClick);
+            inpIp.text = "127.0.0.1";
+            inpPort.text = "7001";
+            txtIp.text = "127.0.0.1";
+            txtPort.text = "7001";
         }
 
-        private void OnDestroy() {
+    private void OnDestroy() {
             btnHost.onClick.RemoveListener(OnHostClick);
             btnRemote.onClick.RemoveListener(OnRemoteClick);
             btnLocal.onClick.RemoveListener(OnLocalClick);
@@ -34,28 +36,35 @@ namespace SharedGame {
 
         private List<Connections> GetConnections() {
             var list = new List<Connections>();
-            var split = inpIps.text.Split(':');
             list.Add(new Connections() {
-                port = ushort.Parse(split[1]),
-                ip = split[0],
+                ip = inpIp.text,
+                port = ushort.Parse(inpPort.text),
+                spectator = false
+            });
+            list.Add(new Connections() {
+                ip = txtIp.text,
+                port = ushort.Parse(txtPort.text),
                 spectator = false
             });
             return list;
         }
 
         private void OnHostClick() {
-            var game = runner.CreateGGPOGame(perf, LogTodo, GetConnections(), 0);
-            runner.Startup(game);
+            var game = gameManager.CreateGGPOGame(perf, GetConnections(), 0);
+            gameManager.Startup(game);
+            gameObject.SetActive(false);
         }
 
         private void OnRemoteClick() {
-            var game = runner.CreateGGPOGame(perf, LogTodo, GetConnections(), 1);
-            runner.Startup(game);
+            var game = gameManager.CreateGGPOGame(perf, GetConnections(), 1);
+            gameManager.Startup(game);
+            gameObject.SetActive(false);
         }
 
         private void OnLocalClick() {
-            var game = runner.CreateLocalGame();
-            runner.Startup(game);
+            var game = gameManager.CreateLocalGame();
+            gameManager.Startup(game);
+            gameObject.SetActive(false);
         }
     }
 }

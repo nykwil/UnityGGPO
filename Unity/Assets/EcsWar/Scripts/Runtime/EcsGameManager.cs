@@ -9,8 +9,8 @@ namespace EcsWar {
             return new LocalGame(new EcsGameState());
         }
 
-        public override IGame CreateGGPOGame(IPerfUpdate perfPanel, GGPO.LogDelegate logDelegate, List<Connections> connections, int playerIndex) {
-            var game = new GGPOGame("ecs-game", new EcsGameState(), perfPanel, logDelegate);
+        public override IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
+            var game = new GGPOGame("ecs-game", new EcsGameState(), perfPanel);
             game.Init(connections, playerIndex);
             return game;
         }
