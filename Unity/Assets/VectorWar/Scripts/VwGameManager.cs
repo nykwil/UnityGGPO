@@ -5,12 +5,12 @@ namespace VectorWar {
 
     public class VwGameManager : GameManager {
 
-        public override IGame CreateLocalGame() {
-            return new LocalGame(new VwGameState());
+        protected override IGame CreateLocalGame() {
+            return new LocalGame(new VwGameState(2));
         }
 
-        public override IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
-            var game = new GGPOGame("vectorwar", new VwGameState(), perfPanel);
+        protected override IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
+            var game = new GGPOGame("vectorwar", new VwGameState(connections.Count), perfPanel);
             game.Init(connections, playerIndex);
             return game;
         }

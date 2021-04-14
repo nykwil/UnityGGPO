@@ -1,16 +1,24 @@
 ﻿using SharedGame;
 using System.Collections.Generic;
+using Unity.Entities;
 
 namespace EcsWar {
 
     public class EcsGameManager : GameManager {
+        private World activeWorld;
 
-        public override IGame CreateLocalGame() {
-            return new LocalGame(new EcsGameState());
+        private void Awake() {
+            activeWorld = World.DefaultGameObjectInjectionWorld;
+            var simGroup = activeWorld.GetExistingSystem<SimulationSystemGroup>();
+            simGroup.Enabled = false;
         }
 
-        public override IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
-            var game = new GGPOGame("ecs-game", new EcsGameState(), perfPanel);
+        protected override IGame CreateLocalGame() {
+            return new LocalGame(new EcsGameState(activeWorld));
+        }
+
+        protected override IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
+            var game = new GGPOGame("ecs-game", new EcsGameState(activeWorld), perfPanel);
             game.Init(connections, playerIndex);
             return game;
         }

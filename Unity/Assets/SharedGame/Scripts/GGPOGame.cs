@@ -207,7 +207,6 @@ namespace SharedGame {
         public void Init(int localport, int num_players, IList<GGPOPlayer> players, int num_spectators) {
             Log($"Init {localport} {num_players} {string.Join("|", players)} {num_spectators}");
             // Initialize the game state
-            GameState.Init(num_players);
 
 #if SYNC_TEST
             var result = ggpo_start_synctest(cb, GetName(), num_players, 1);
@@ -273,7 +272,6 @@ namespace SharedGame {
             Log($"InitSpectator {localport} {num_players} {host_ip} {host_port}");
 
             // Initialize the game state
-            GameState.Init(num_players);
             GameInfo.players = Array.Empty<PlayerConnectionInfo>();
 
             // Fill in a ggpo callbacks structure to pass to start_session.

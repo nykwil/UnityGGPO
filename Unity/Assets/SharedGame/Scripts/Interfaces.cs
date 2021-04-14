@@ -13,8 +13,6 @@ namespace SharedGame {
         int Framenumber { get; }
         int Checksum { get; }
 
-        void Init(int numPlayers);
-
         void Update(ulong[] inputs, int disconnectFlags);
 
         void FromBytes(NativeArray<byte> data);

@@ -31,10 +31,6 @@ namespace SharedGame {
 
         public IGame Game { get; private set; }
 
-        public void Startup(IGame game) {
-            Game = game;
-        }
-
         public void DisconnectPlayer(int player) {
             if (Game != null) {
                 Game.DisconnectPlayer(player);
@@ -80,8 +76,16 @@ namespace SharedGame {
             return string.Format("f:{0} c:{1}", info.framenumber, info.checksum); // %04d  %08x
         }
 
-        public abstract IGame CreateLocalGame();
+        public void StartLocalGame() {
+            Game = CreateLocalGame();
+        }
 
-        public abstract IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex);
+        public void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
+            Game = CreateGGPOGame(perfPanel, connections, playerIndex);
+        }
+
+        protected abstract IGame CreateLocalGame();
+
+        protected abstract IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex);
     }
 }

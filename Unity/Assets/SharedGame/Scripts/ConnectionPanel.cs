@@ -17,18 +17,21 @@ namespace SharedGame {
         private GgpoPerformancePanel perf;
 
         private void Awake() {
+            gameManager.OnRunningChanged += OnRunningChanged;
+
             perf = FindObjectOfType<GgpoPerformancePanel>();
             perf.Setup();
             btnHost.onClick.AddListener(OnHostClick);
             btnRemote.onClick.AddListener(OnRemoteClick);
             btnLocal.onClick.AddListener(OnLocalClick);
             inpIp.text = "127.0.0.1";
-            inpPort.text = "7001";
+            inpPort.text = "7000";
             txtIp.text = "127.0.0.1";
             txtPort.text = "7001";
         }
 
-    private void OnDestroy() {
+        private void OnDestroy() {
+            gameManager.OnRunningChanged -= OnRunningChanged;
             btnHost.onClick.RemoveListener(OnHostClick);
             btnRemote.onClick.RemoveListener(OnRemoteClick);
             btnLocal.onClick.RemoveListener(OnLocalClick);
@@ -50,21 +53,19 @@ namespace SharedGame {
         }
 
         private void OnHostClick() {
-            var game = gameManager.CreateGGPOGame(perf, GetConnections(), 0);
-            gameManager.Startup(game);
-            gameObject.SetActive(false);
+            gameManager.StartGGPOGame(perf, GetConnections(), 0);
         }
 
         private void OnRemoteClick() {
-            var game = gameManager.CreateGGPOGame(perf, GetConnections(), 1);
-            gameManager.Startup(game);
-            gameObject.SetActive(false);
+            gameManager.StartGGPOGame(perf, GetConnections(), 1);
         }
 
         private void OnLocalClick() {
-            var game = gameManager.CreateLocalGame();
-            gameManager.Startup(game);
-            gameObject.SetActive(false);
+            gameManager.StartLocalGame();
+        }
+
+        private void OnRunningChanged(bool isRunning) {
+            gameObject.SetActive(!isRunning);
         }
     }
 }

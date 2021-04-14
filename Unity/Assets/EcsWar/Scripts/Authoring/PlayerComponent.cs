@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
 using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Physics;
-using Unity.Physics.Authoring;
 using UnityEngine;
 
-namespace Spaceship {
+namespace EcsWar {
 
     public class PlayerComponent : MonoBehaviour, IConvertGameObjectToEntity, IDeclareReferencedPrefabs {
         public float RotationSpeed = 2f;
@@ -13,23 +10,10 @@ namespace Spaceship {
         public int FireRate = 3;
         public float FireSpeed = 5f;
         public int PlayerIndex;
-        public GameObject MissilePrefab = null;
-
-        public PhysicsShapeAuthoring physicsShape;
+        public GameObject BoltPrefab = null;
+        public float Radius;
 
         public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem) {
-            var BelongsTo = physicsShape.BelongsTo.Value;
-            var CollidesWith = physicsShape.CollidesWith.Value;
-
-            var sphere = Unity.Physics.SphereCollider.Create(new SphereGeometry {
-                Center = float3.zero,
-                Radius = 0.5f,
-            }, new CollisionFilter() {
-                BelongsTo = BelongsTo,
-                CollidesWith = CollidesWith,
-                GroupIndex = 0
-            });
-
             dstManager.AddComponentData(entity, new Player {
                 RotationSpeed = RotationSpeed,
                 MoveSpeed = MoveSpeed,
@@ -37,10 +21,8 @@ namespace Spaceship {
                 FireSpeed = FireSpeed,
                 ElapsedTime = 0,
                 PlayerIndex = PlayerIndex,
-                BelongsTo = BelongsTo,
-                CollidesWith = CollidesWith,
-                MissileCollider = sphere,
-                MissilePrefab = MissilePrefab != null ? conversionSystem.GetPrimaryEntity(MissilePrefab) : Entity.Null
+                BoltPrefab = BoltPrefab != null ? conversionSystem.GetPrimaryEntity(BoltPrefab) : Entity.Null,
+                Radius = Radius,
             });
 
             dstManager.AddComponentData(entity, new ActiveInput {
@@ -54,8 +36,8 @@ namespace Spaceship {
         }
 
         public void DeclareReferencedPrefabs(List<GameObject> referencedPrefabs) {
-            if (MissilePrefab != null)
-                referencedPrefabs.Add(MissilePrefab);
+            if (BoltPrefab != null)
+                referencedPrefabs.Add(BoltPrefab);
         }
     }
 }

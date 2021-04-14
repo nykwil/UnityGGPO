@@ -2,7 +2,7 @@
 using Unity.Mathematics;
 using Unity.Physics;
 
-namespace Spaceship
+namespace EcsWar
 {
     public struct AsteroidSpawner : IComponentData
     {
@@ -36,10 +36,8 @@ namespace Spaceship
         public float FireSpeed;
         public int ElapsedTime;
         public int PlayerIndex;
-        public Entity MissilePrefab;
-        public uint BelongsTo;
-        public uint CollidesWith;
-        public BlobAssetReference<Collider> MissileCollider;
+        public Entity BoltPrefab;
         public int MaxLife;
+        public float Radius;
     }
 }

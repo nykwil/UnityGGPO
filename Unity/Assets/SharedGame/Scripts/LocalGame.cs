@@ -54,7 +54,6 @@ namespace SharedGame {
                 controllerId = controllerId++
             };
             GameInfo.SetConnectState(handle, PlayerConnectState.Connecting);
-            GameState.Init(GameInfo.players.Length);
         }
 
         public string GetStatus(Stopwatch updateWatch) {

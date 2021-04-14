@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
 
-namespace Spaceship {
+namespace EcsWar {
 
     [GenerateAuthoringComponent]
     public struct MoveData : IComponentData {

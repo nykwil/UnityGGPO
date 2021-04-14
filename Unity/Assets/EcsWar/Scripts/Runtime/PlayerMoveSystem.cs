@@ -2,9 +2,8 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace Spaceship {
+namespace EcsWar {
 
-    [UpdateAfter(typeof(KeyboardInputSystem))]
     public class PlayerMoveSystem : SystemBase {
 
         protected override void OnUpdate() {
@@ -12,10 +11,10 @@ namespace Spaceship {
                 .ForEach((ref Player player, ref MoveData pv, ref Rotation rot, ref ActiveInput activeInput) => {
                     // move player
                     if (activeInput.Left) {
-                        pv.Angular = new float3(0, player.RotationSpeed, 0);
+                        pv.Angular = new float3(0, -player.RotationSpeed, 0);
                     }
                     else if (activeInput.Right) {
-                        pv.Angular = new float3(0, -player.RotationSpeed, 0);
+                        pv.Angular = new float3(0, player.RotationSpeed, 0);
                     }
                     else {
                         pv.Angular = new float3(0, 0, 0);

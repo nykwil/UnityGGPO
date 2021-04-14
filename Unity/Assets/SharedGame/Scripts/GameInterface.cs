@@ -15,7 +15,6 @@ namespace SharedGame {
         public Button btnConnect;
         public Toggle tglPluginLog;
         public Toggle tglGameLog;
-        public GameObject pnlLog;
 
         private GameManager gameManager => GameManager.Instance;
         private readonly List<string> gameLogs = new List<string>();
@@ -39,7 +38,6 @@ namespace SharedGame {
             tglGameLog.onValueChanged.AddListener(OnToggleGameLog);
 
             SetConnectText("");
-            LogPanelVisibility();
         }
 
         private void OnDestroy() {
@@ -58,25 +56,21 @@ namespace SharedGame {
         }
 
         private void OnRunningChanged(bool obj) {
-            SetConnectText(obj ? "Shutdown" : "");
+            SetConnectText(obj ? "Shutdown" : "--");
         }
 
         private void OnToggleGameLog(bool value) {
-            LogPanelVisibility();
             if (tglGameLog.isOn) {
                 txtGameLog.text = string.Join("\n", gameLogs);
             }
+            txtGameLog.gameObject.SetActive(tglGameLog.isOn);
         }
 
         private void OnTogglePluginLog(bool value) {
-            LogPanelVisibility();
             if (tglPluginLog.isOn) {
-                txtGameLog.text = string.Join("\n", gameLogs);
+                txtPluginLog.text = string.Join("\n", gameLogs);
             }
-        }
-
-        private void LogPanelVisibility() {
-            pnlLog.SetActive(tglGameLog.isOn || tglPluginLog.isOn);
+            txtPluginLog.gameObject.SetActive(tglPluginLog.isOn);
         }
 
         private void SetConnectText(string text) {

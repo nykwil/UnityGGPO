@@ -11,10 +11,6 @@ namespace VectorWar {
     public static class VWConstants {
         public const int MAX_SHIPS = 4;
         public const int MAX_PLAYERS = 64;
-        public const int VK_UP = 0;
-        public const int VK_DOWN = 0;
-        public const int VK_LEFT = 0;
-        public const int VK_RIGHT = 0;
 
         public const int INPUT_THRUST = (1 << 0);
         public const int INPUT_BREAK = (1 << 1);
@@ -176,7 +172,7 @@ namespace VectorWar {
          * Initialize our game state.
          */
 
-        public void Init(int num_players) {
+        public VwGameState(int num_players) {
             var w = _bounds.xMax - _bounds.xMin;
             var h = _bounds.yMax - _bounds.yMin;
             var r = h / 4;

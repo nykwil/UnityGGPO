@@ -4,9 +4,8 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 
-namespace Spaceship
+namespace EcsWar
 {
-    [UpdateAfter(typeof(KeyboardInputSystem))]
     public class ForwardMoveSystem : SystemBase
     {
         protected override void OnUpdate()

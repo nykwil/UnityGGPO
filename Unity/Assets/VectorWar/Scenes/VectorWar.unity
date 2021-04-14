@@ -402,6 +402,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: ConnectionPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 7860307290650082600, guid: 2115fb01582b0f04b86c7847d100c3a8,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7860307290650082607, guid: 2115fb01582b0f04b86c7847d100c3a8,
         type: 3}
       propertyPath: m_Pivot.x
@@ -1154,6 +1159,11 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4608805767232854512, guid: b12b6e7ae8c89864380fc19bee1086fc,
+        type: 3}
+      propertyPath: m_Name
+      value: Disconnect
+      objectReference: {fileID: 0}
     - target: {fileID: 4608805767232854516, guid: b12b6e7ae8c89864380fc19bee1086fc,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -1243,6 +1253,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4608805767977834242, guid: b12b6e7ae8c89864380fc19bee1086fc,
+        type: 3}
+      propertyPath: m_Text
+      value: Disconnect
       objectReference: {fileID: 0}
     - target: {fileID: 7066821189148908901, guid: b12b6e7ae8c89864380fc19bee1086fc,
         type: 3}

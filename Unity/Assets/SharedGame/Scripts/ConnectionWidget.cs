@@ -33,7 +33,16 @@ namespace SharedGame {
         }
 
         private void OnConnect() {
-            gameManager.Startup(CreateGame());
+            if (tgLocal.isOn) {
+                gameManager.StartLocalGame();
+            }
+            else {
+                var connectionInfo = GetConnectionInfo();
+                var perf = FindObjectOfType<GgpoPerformancePanel>();
+                perf.Setup();
+                var playerIndex = int.Parse(inpPlayerIndex.text);
+                gameManager.StartGGPOGame(perf, connectionInfo, playerIndex);
+            }
         }
 
         private void OnDestroy() {
@@ -63,19 +72,6 @@ namespace SharedGame {
                 });
             }
             return connections;
-        }
-
-        public IGame CreateGame() {
-            if (tgLocal.isOn) {
-                return GameManager.Instance.CreateLocalGame();
-            }
-            else {
-                var connectionInfo = GetConnectionInfo();
-                var perf = FindObjectOfType<GgpoPerformancePanel>();
-                perf.Setup();
-                var playerIndex = int.Parse(inpPlayerIndex.text);
-                return GameManager.Instance.CreateGGPOGame(perf, connectionInfo, playerIndex);
-            }
         }
     }
 }
