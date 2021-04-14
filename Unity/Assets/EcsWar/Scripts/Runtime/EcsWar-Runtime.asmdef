@@ -1,5 +1,5 @@
 {
-    "name": "TinySpaceship",
+    "name": "EcsWar-Runtime",
     "rootNamespace": "",
     "references": [
         "Unity.Entities",
@@ -8,9 +8,9 @@
         "Unity.Collections",
         "Unity.Jobs",
         "Unity.Burst",
-        "Unity.Physics",
         "UnityGGPO-Plugin",
-        "UnityGGPO-SharedGame"
+        "UnityGGPO-SharedGame",
+        "Unity.Entities.Hybrid"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

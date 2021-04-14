@@ -71,14 +71,14 @@ MonoBehaviour:
     m_FontStyle: 0
     m_BestFit: 1
     m_MinSize: 1
-    m_MaxSize: 40
+    m_MaxSize: 14
     m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: New Text
+  m_Text: 
 --- !u!1 &4608805766180279814
 GameObject:
   m_ObjectHideFlags: 0
@@ -338,14 +338,14 @@ MonoBehaviour:
     m_FontStyle: 0
     m_BestFit: 1
     m_MinSize: 1
-    m_MaxSize: 40
+    m_MaxSize: 14
     m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: New Text
+  m_Text: 
 --- !u!1 &4608805766338356656
 GameObject:
   m_ObjectHideFlags: 0
@@ -999,7 +999,7 @@ GameObject:
   - component: {fileID: 4608805767232854514}
   - component: {fileID: 4608805767232854513}
   m_Layer: 5
-  m_Name: Connect
+  m_Name: BtnDisconnect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1425,7 +1425,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Button
+  m_Text: Disconnect
 --- !u!1 &4608805768003918041
 GameObject:
   m_ObjectHideFlags: 0
@@ -1718,4 +1718,3 @@ MonoBehaviour:
   btnConnect: {fileID: 4608805767232854513}
   tglPluginLog: {fileID: 4608805767468604678}
   tglGameLog: {fileID: 4608805766674637165}
-  pnlLog: {fileID: 4608805766231577729}

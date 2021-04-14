@@ -8,7 +8,7 @@ namespace EcsWar {
 
         protected override void OnUpdate() {
             Entities
-                .ForEach((ref Player player, ref MoveData pv, ref Rotation rot, ref ActiveInput activeInput) => {
+                .ForEach((ref MoveData pv, in Player player, in Rotation rot, in ActiveInput activeInput) => {
                     // move player
                     if (activeInput.Left) {
                         pv.Angular = new float3(0, -player.RotationSpeed, 0);

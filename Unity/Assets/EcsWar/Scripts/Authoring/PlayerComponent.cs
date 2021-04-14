@@ -21,7 +21,7 @@ namespace EcsWar {
                 FireSpeed = FireSpeed,
                 ElapsedTime = 0,
                 PlayerIndex = PlayerIndex,
-                BoltPrefab = BoltPrefab != null ? conversionSystem.GetPrimaryEntity(BoltPrefab) : Entity.Null,
+                BoltPrefabEntity = BoltPrefab != null ? conversionSystem.GetPrimaryEntity(BoltPrefab) : Entity.Null,
                 Radius = Radius,
             });
 
@@ -36,8 +36,9 @@ namespace EcsWar {
         }
 
         public void DeclareReferencedPrefabs(List<GameObject> referencedPrefabs) {
-            if (BoltPrefab != null)
+            if (BoltPrefab != null) {
                 referencedPrefabs.Add(BoltPrefab);
+            }
         }
     }
 }

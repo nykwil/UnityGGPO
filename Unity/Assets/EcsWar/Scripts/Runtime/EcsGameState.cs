@@ -22,18 +22,6 @@ namespace EcsWar {
         private World activeWorld;
         private IEnumerable<ComponentSystemBase> simSystems;
 
-        public void FromBytes(NativeArray<byte> data) {
-            if (savedStates.TryGetValue(data[0], out var savedWorld)) {
-                CopyWorld(ref savedWorld, ref activeWorld);
-            }
-        }
-
-        public static void CopyWorld(ref World fromWorld, ref World toWorld) {
-            toWorld.EntityManager.DestroyAndResetAllEntities();
-            toWorld.EntityManager.CopyAndReplaceEntitiesFrom(fromWorld.EntityManager);
-            toWorld.SetTime(new Unity.Core.TimeData(fromWorld.Time.ElapsedTime, fromWorld.Time.DeltaTime));
-        }
-
         public EcsGameState(World activeWorld) {
             Checksum = 0;
             Framenumber = 0;
@@ -95,8 +83,22 @@ namespace EcsWar {
             return input;
         }
 
+        public static void CopyWorld(ref World fromWorld, ref World toWorld) {
+            toWorld.EntityManager.DestroyAndResetAllEntities();
+            toWorld.EntityManager.CopyAndReplaceEntitiesFrom(fromWorld.EntityManager);
+            toWorld.SetTime(new Unity.Core.TimeData(fromWorld.Time.ElapsedTime, fromWorld.Time.DeltaTime));
+        }
+
+        public void FromBytes(NativeArray<byte> data) {
+            GGPOGame.Log("Load State " + data[0]);
+            if (savedStates.TryGetValue(data[0], out var savedWorld)) {
+                CopyWorld(ref savedWorld, ref activeWorld);
+            }
+        }
+
         public NativeArray<byte> ToBytes() {
-            lastWorldId++;
+            lastWorldId = (byte)((lastWorldId + 1) % byte.MaxValue);
+            GGPOGame.Log("Save State to " + lastWorldId);
 
             var na = new NativeArray<byte>(1, Allocator.Persistent);
             na[0] = lastWorldId;
@@ -109,13 +111,14 @@ namespace EcsWar {
         private void InjectInputs(ulong[] inputsList) {
             var em = activeWorld.EntityManager;
             var group = em.CreateEntityQuery(
-                typeof(ActiveInput)
+                typeof(ActiveInput),
+                typeof(Player)
             );
 
             var entities = group.ToEntityArray(Allocator.TempJob);
+            var playerDatas = group.ToComponentDataArray<Player>(Allocator.TempJob);
             for (int i = 0; i < entities.Length; ++i) {
-                var playerData = em.GetComponentData<Player>(entities[i]);
-                var inputs = inputsList[playerData.PlayerIndex];
+                var inputs = inputsList[playerDatas[i].PlayerIndex];
 
                 em.SetComponentData(entities[i], new ActiveInput {
                     Accelerate = (inputs & INPUT_THRUST) != 0,
@@ -126,6 +129,7 @@ namespace EcsWar {
                 });
             }
             entities.Dispose();
+            playerDatas.Dispose();
         }
 
         public void Update(ulong[] inputs, int disconnect_flags) {
@@ -133,6 +137,8 @@ namespace EcsWar {
             foreach (var sys in simSystems) {
                 sys.Update();
             }
+            Framenumber += 1;
+            Checksum = Framenumber; // @todo
         }
 
         public void FreeBytes(NativeArray<byte> data) {

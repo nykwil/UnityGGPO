@@ -13,7 +13,7 @@ namespace EcsWar {
                     player.ElapsedTime += 1;
                     if (activeInput.Shoot) {
                         if (player.ElapsedTime > player.FireRate) {
-                            var boltEnt = EntityManager.Instantiate(player.BoltPrefab);
+                            var boltEnt = EntityManager.Instantiate(player.BoltPrefabEntity);
 
                             var data = EntityManager.GetComponentData<Bolt>(boltEnt);
                             data.PlayerIndex = player.PlayerIndex;
