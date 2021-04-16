@@ -14,7 +14,7 @@ namespace SharedGame {
         }
 
         public void RunFrame() {
-            var inputs = new ulong[GameInfo.players.Length];
+            var inputs = new long[GameInfo.players.Length];
             for (int i = 0; i < inputs.Length; ++i) {
                 inputs[i] = GameState.ReadInputs(GameInfo.players[i].controllerId);
             }

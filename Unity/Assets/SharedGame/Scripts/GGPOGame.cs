@@ -6,6 +6,8 @@ using Unity.Collections;
 namespace SharedGame {
 
     public class GGPOGame : IGame {
+        private bool verbose;
+
         public int PlayerIndex { get; set; }
 
         public const int MAX_PLAYERS = 2;
@@ -29,7 +31,7 @@ namespace SharedGame {
          */
 
         private bool OnBeginGameCallback(string name) {
-            Log($"OnBeginGameCallback");
+            LogGame($"OnBeginGameCallback");
             return true;
         }
 
@@ -88,12 +90,11 @@ namespace SharedGame {
          */
 
         private bool OnAdvanceFrameCallback(int flags) {
-            Log($"OnAdvanceFrameCallback {flags}");
+            LogGame($"OnAdvanceFrameCallback {flags}");
 
             // Make sure we fetch new inputs from GGPO and use those to update the game state
             // instead of reading from the keyboard.
-            ulong[] inputs = new ulong[MAX_PLAYERS];
-            CheckAndReport(GGPO.Session.SynchronizeInput(inputs, MAX_PLAYERS, out var disconnect_flags));
+            var inputs = GGPO.Session.SynchronizeInput(MAX_PLAYERS, out var disconnect_flags);
 
             AdvanceFrame(inputs, disconnect_flags);
             return true;
@@ -104,7 +105,7 @@ namespace SharedGame {
          */
 
         private bool OnLoadGameStateCallback(NativeArray<byte> data) {
-            Log($"OnLoadGameStateCallback {data.Length}");
+            LogGame($"OnLoadGameStateCallback {data.Length}");
             GameState.FromBytes(data);
             return true;
         }
@@ -115,7 +116,9 @@ namespace SharedGame {
          */
 
         private bool OnSaveGameStateCallback(out NativeArray<byte> data, out int checksum, int frame) {
-            Log($"OnSaveGameStateCallback {frame}");
+            if (verbose) {
+                LogGame($"OnSaveGameStateCallback {frame}");
+            }
             data = GameState.ToBytes();
             checksum = global::Utils.CalcFletcher32(data);
             return true;
@@ -126,8 +129,8 @@ namespace SharedGame {
          */
 
         private bool OnLogGameState(string filename, NativeArray<byte> data) {
-            Log($"OnLogGameState {filename}");
-            Log($"--Error-- Pretty sure this feature doesn't work properly");
+            LogGame($"OnLogGameState {filename}");
+            LogGame($"--Error-- Pretty sure this feature doesn't work properly");
 
             GameState.FromBytes(data);
             GameState.LogInfo(filename);
@@ -135,7 +138,7 @@ namespace SharedGame {
         }
 
         private void OnFreeBufferCallback(NativeArray<byte> data) {
-            Log($"OnFreeBufferCallback");
+            LogGame($"OnFreeBufferCallback");
             GameState.FreeBytes(data);
         }
 
@@ -145,9 +148,11 @@ namespace SharedGame {
         /// <param name="callback"></param>
 
         public GGPOGame(string name, IGameState gameState, IPerfUpdate perfPanel) {
+            LogGame("GGPOGame Created");
             Name = name;
-            GGPO.SetLogDelegate(LogCallback);
+            GGPO.SetLogDelegate(LogPlugin);
             GameState = gameState;
+            LogPlugin("GameState Set " + GameState);
             GameInfo = new GameInfo();
             perf = perfPanel;
         }
@@ -205,13 +210,14 @@ namespace SharedGame {
          */
 
         public void Init(int localport, int num_players, IList<GGPOPlayer> players, int num_spectators) {
-            Log($"Init {localport} {num_players} {string.Join("|", players)} {num_spectators}");
+            LogGame($"Init {localport} {num_players} {string.Join("|", players)} {num_spectators}");
             // Initialize the game state
 
 #if SYNC_TEST
             var result = ggpo_start_synctest(cb, GetName(), num_players, 1);
 #else
-            var result = GGPO.Session.StartSession(OnBeginGameCallback,
+            var result = GGPO.Session.StartSession(
+                    OnBeginGameCallback,
                     OnAdvanceFrameCallback,
                     OnLoadGameStateCallback,
                     OnLogGameState,
@@ -269,7 +275,7 @@ namespace SharedGame {
          */
 
         public void InitSpectator(int localport, int num_players, string host_ip, int host_port) {
-            Log($"InitSpectator {localport} {num_players} {host_ip} {host_port}");
+            LogGame($"InitSpectator {localport} {num_players} {host_ip} {host_port}");
 
             // Initialize the game state
             GameInfo.players = Array.Empty<PlayerConnectionInfo>();
@@ -302,7 +308,7 @@ namespace SharedGame {
          */
 
         public void DisconnectPlayer(int playerIndex) {
-            Log($"DisconnectPlayer {playerIndex}");
+            LogGame($"DisconnectPlayer {playerIndex}");
 
             if (playerIndex < GameInfo.players.Length) {
                 string logbuf;
@@ -322,7 +328,10 @@ namespace SharedGame {
          * for player 1 and player 2.
          */
 
-        private void AdvanceFrame(ulong[] inputs, int disconnect_flags) {
+        private void AdvanceFrame(long[] inputs, int disconnect_flags) {
+            if (GameState == null) {
+                LogPlugin("GameState is null what?");
+            }
             GameState.Update(inputs, disconnect_flags);
 
             // update the checksums to display in the top of the window. this helps to detect desyncs.
@@ -361,7 +370,7 @@ namespace SharedGame {
             for (int i = 0; i < GameInfo.players.Length; ++i) {
                 var player = GameInfo.players[i];
                 if (player.type == GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL) {
-                    ulong input = GameState.ReadInputs(player.controllerId);
+                    var input = GameState.ReadInputs(player.controllerId);
 #if SYNC_TEST
      input = rand(); // test: use random inputs to demonstrate sync testing
 #endif
@@ -373,15 +382,14 @@ namespace SharedGame {
             // modify the input list with the correct inputs to use and return 1.
             if (GGPO.SUCCEEDED(result)) {
                 frameWatch.Start();
-                ulong[] inputs = new ulong[MAX_PLAYERS];
-                result = GGPO.Session.SynchronizeInput(inputs, MAX_PLAYERS, out var disconnect_flags);
-                if (GGPO.SUCCEEDED(result)) {
+                try {
                     // inputs[0] and inputs[1] contain the inputs for p1 and p2. Advance the game by
                     // 1 frame using those inputs.
+                    var inputs = GGPO.Session.SynchronizeInput(MAX_PLAYERS, out var disconnect_flags);
                     AdvanceFrame(inputs, disconnect_flags);
                 }
-                else {
-                    Log("Error inputsync");
+                catch (Exception ex) {
+                    LogGame("Error " + ex);
                 }
                 frameWatch.Stop();
             }
@@ -399,7 +407,7 @@ namespace SharedGame {
         }
 
         public void Exit() {
-            Log($"Exit");
+            LogGame($"Exit");
 
             if (GGPO.Session.IsStarted()) {
                 CheckAndReport(GGPO.Session.CloseSession());
@@ -412,7 +420,7 @@ namespace SharedGame {
 
         private void CheckAndReport(int result) {
             if (!GGPO.SUCCEEDED(result)) {
-                Log(GGPO.GetErrorCodeMessage(result));
+                LogGame(GGPO.GetErrorCodeMessage(result));
             }
         }
 
@@ -428,11 +436,11 @@ namespace SharedGame {
             GGPO.SetLogDelegate(null);
         }
 
-        public static void Log(string value) {
+        public static void LogGame(string value) {
             OnGameLog?.Invoke(value);
         }
 
-        public static void LogCallback(string value) {
+        public static void LogPlugin(string value) {
             OnPluginLog?.Invoke(value);
         }
     }

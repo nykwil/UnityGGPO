@@ -5,7 +5,7 @@ using Unity.Entities;
 
 namespace EcsWar {
 
-    public struct EcsGameState : IGameState {
+    public class EcsGameState : IGameState {
         public const int INPUT_THRUST = (1 << 0);
         public const int INPUT_BREAK = (1 << 1);
         public const int INPUT_ROTATE_LEFT = (1 << 2);
@@ -22,22 +22,25 @@ namespace EcsWar {
         private World activeWorld;
         private IEnumerable<ComponentSystemBase> simSystems;
 
-        public EcsGameState(World activeWorld) {
+        public EcsGameState(EcsSceneInfo sceneInfo) {
             Checksum = 0;
             Framenumber = 0;
             lastWorldId = 0;
             savedStates = new Dictionary<byte, World>();
-            this.activeWorld = activeWorld;
+
+            activeWorld = World.DefaultGameObjectInjectionWorld;
             var simGroup = activeWorld.GetExistingSystem<SimulationSystemGroup>();
+            simGroup.Enabled = false;
             simSystems = simGroup.Systems;
+            sceneInfo.CreateScene(activeWorld);
         }
 
         public void LogInfo(string filename) {
             //@TODO
         }
 
-        public ulong ReadInputs(int id) {
-            ulong input = 0;
+        public long ReadInputs(int id) {
+            long input = 0;
 
             if (id == 0) {
                 if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.UpArrow)) {
@@ -90,7 +93,7 @@ namespace EcsWar {
         }
 
         public void FromBytes(NativeArray<byte> data) {
-            GGPOGame.Log("Load State " + data[0]);
+            GGPOGame.LogGame("Load State " + data[0]);
             if (savedStates.TryGetValue(data[0], out var savedWorld)) {
                 CopyWorld(ref savedWorld, ref activeWorld);
             }
@@ -98,17 +101,17 @@ namespace EcsWar {
 
         public NativeArray<byte> ToBytes() {
             lastWorldId = (byte)((lastWorldId + 1) % byte.MaxValue);
-            GGPOGame.Log("Save State to " + lastWorldId);
+            GGPOGame.LogGame("Save State to " + lastWorldId);
 
             var na = new NativeArray<byte>(1, Allocator.Persistent);
             na[0] = lastWorldId;
             var newWorld = new World(lastWorldId.ToString(), WorldFlags.Simulation);
-            savedStates[lastWorldId] = newWorld;
             CopyWorld(ref activeWorld, ref newWorld);
+            savedStates[lastWorldId] = newWorld;
             return na;
         }
 
-        private void InjectInputs(ulong[] inputsList) {
+        private void InjectInputs(long[] inputsList) {
             var em = activeWorld.EntityManager;
             var group = em.CreateEntityQuery(
                 typeof(ActiveInput),
@@ -132,7 +135,7 @@ namespace EcsWar {
             playerDatas.Dispose();
         }
 
-        public void Update(ulong[] inputs, int disconnect_flags) {
+        public void Update(long[] inputs, int disconnect_flags) {
             InjectInputs(inputs);
             foreach (var sys in simSystems) {
                 sys.Update();
@@ -141,13 +144,16 @@ namespace EcsWar {
             Checksum = Framenumber; // @todo
         }
 
-        public void FreeBytes(NativeArray<byte> data) {
-            if (savedStates.TryGetValue(data[0], out var world)) {
-                world.Dispose();
-                savedStates.Remove(data[0]);
+        public void FreeBytes(NativeArray<byte> arr) {
+            if (savedStates.TryGetValue(arr[0], out var world)) {
+                GGPOGame.LogGame("Free State at " + arr[0]);
+                if (world.IsCreated) {
+                    world.Dispose();
+                }
+                savedStates.Remove(arr[0]);
             }
-            if (data.IsCreated) {
-                data.Dispose();
+            if (arr.IsCreated) {
+                arr.Dispose();
             }
         }
     }

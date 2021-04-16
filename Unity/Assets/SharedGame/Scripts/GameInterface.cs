@@ -15,6 +15,8 @@ namespace SharedGame {
         public Button btnConnect;
         public Toggle tglPluginLog;
         public Toggle tglGameLog;
+        public bool gameLog = true;
+        public bool pluginLog = true;
 
         private GameManager gameManager => GameManager.Instance;
         private readonly List<string> gameLogs = new List<string>();
@@ -78,7 +80,9 @@ namespace SharedGame {
         }
 
         private void OnGameLog(string text) {
-            Debug.Log("[GameLog] " + text);
+            if (gameLog) {
+                Debug.Log("[GameLog] " + text);
+            }
             gameLogs.Insert(0, text);
             while (gameLogs.Count > maxLogLines) {
                 gameLogs.RemoveAt(gameLogs.Count - 1);
@@ -89,7 +93,9 @@ namespace SharedGame {
         }
 
         private void OnPluginLog(string text) {
-            Debug.Log("[PluginLog] " + text);
+            if (pluginLog) {
+                Debug.Log("[PluginLog] " + text);
+            }
             pluginLogs.Insert(0, text);
             while (pluginLogs.Count > maxLogLines) {
                 pluginLogs.RemoveAt(gameLogs.Count - 1);

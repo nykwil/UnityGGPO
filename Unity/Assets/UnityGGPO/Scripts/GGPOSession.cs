@@ -38,8 +38,11 @@ public static partial class GGPO {
 
         public delegate void SafeFreeBufferDelegate(NativeArray<byte> data);
 
-        public static IntPtr ggpo; // @LOOK
+        private static IntPtr ggpo;
         private static readonly Dictionary<long, NativeArray<byte>> cache = new Dictionary<long, NativeArray<byte>>();
+
+        private static BeginGameDelegate beginGameCallback;
+        private static AdvanceFrameDelegate advanceFrameCallback;
 
         private static SafeLoadGameStateDelegate loadGameStateCallback;
         private static SafeLogGameStateDelegate logGameStateCallback;
@@ -87,6 +90,8 @@ public static partial class GGPO {
                 OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeer,
                 OnEventEventcodeTimesyncDelegate onEventTimesync,
                 string gameName, int numPlayers, int localport) {
+            beginGameCallback = beginGame;
+            advanceFrameCallback = advanceFrame;
             loadGameStateCallback = loadGameState;
             logGameStateCallback = logGameState;
             saveGameStateCallback = saveGameState;
@@ -102,13 +107,13 @@ public static partial class GGPO {
             Session.onEventTimesync = onEventTimesync;
 
             unsafe {
-                _beginGameCallback = Marshal.GetFunctionPointerForDelegate(beginGame);
-                _advanceFrameCallback = Marshal.GetFunctionPointerForDelegate(advanceFrame);
+                _beginGameCallback = Marshal.GetFunctionPointerForDelegate<BeginGameDelegate>(OnBeginGame);
+                _advanceFrameCallback = Marshal.GetFunctionPointerForDelegate<AdvanceFrameDelegate>(OnAdvanceFrame);
                 _loadGameStateCallback = Marshal.GetFunctionPointerForDelegate<LoadGameStateDelegate>(LoadGameState);
                 _logGameStateCallback = Marshal.GetFunctionPointerForDelegate<LogGameStateDelegate>(LogGameState);
                 _saveGameStateCallback = Marshal.GetFunctionPointerForDelegate<SaveGameStateDelegate>(SaveGameState);
                 _freeBufferCallback = Marshal.GetFunctionPointerForDelegate<FreeBufferDelegate>(FreeBuffer);
-                _onEventCallback = Marshal.GetFunctionPointerForDelegate<OnEventDelegate>(OnEventCallback);
+                _onEventCallback = Marshal.GetFunctionPointerForDelegate<OnEventDelegate>(OnEvent);
             }
             var result = GGPO.StartSession(out ggpo,
                 _beginGameCallback,
@@ -139,6 +144,8 @@ public static partial class GGPO {
                 OnEventDisconnectedFromPeerDelegate onEventDisconnectedFromPeer,
                 OnEventEventcodeTimesyncDelegate onEventTimesync,
                 string gameName, int numPlayers, int localport, string hostIp, int hostPort) {
+            beginGameCallback = beginGame;
+            advanceFrameCallback = advanceFrame;
             loadGameStateCallback = loadGameState;
             logGameStateCallback = logGameState;
             saveGameStateCallback = saveGameState;
@@ -154,13 +161,13 @@ public static partial class GGPO {
             Session.onEventTimesync = onEventTimesync;
 
             unsafe {
-                _beginGameCallback = Marshal.GetFunctionPointerForDelegate(beginGame);
-                _advanceFrameCallback = Marshal.GetFunctionPointerForDelegate(advanceFrame);
+                _beginGameCallback = Marshal.GetFunctionPointerForDelegate<BeginGameDelegate>(OnBeginGame);
+                _advanceFrameCallback = Marshal.GetFunctionPointerForDelegate<AdvanceFrameDelegate>(OnAdvanceFrame);
                 _loadGameStateCallback = Marshal.GetFunctionPointerForDelegate<LoadGameStateDelegate>(LoadGameState);
                 _logGameStateCallback = Marshal.GetFunctionPointerForDelegate<LogGameStateDelegate>(LogGameState);
                 _saveGameStateCallback = Marshal.GetFunctionPointerForDelegate<SaveGameStateDelegate>(SaveGameState);
                 _freeBufferCallback = Marshal.GetFunctionPointerForDelegate<FreeBufferDelegate>(FreeBuffer);
-                _onEventCallback = Marshal.GetFunctionPointerForDelegate<OnEventDelegate>(OnEventCallback);
+                _onEventCallback = Marshal.GetFunctionPointerForDelegate<OnEventDelegate>(OnEvent);
             }
 
             var result = GGPO.StartSpectating(out ggpo,
@@ -198,12 +205,11 @@ public static partial class GGPO {
             return result;
         }
 
-        public static int SynchronizeInput(ulong[] inputs, int length, out int disconnect_flags) {
-            var result = GGPO.SynchronizeInput(ggpo, inputs, length, out disconnect_flags);
-            return result;
+        public static long[] SynchronizeInput(int length, out int disconnect_flags) {
+            return GGPO.SynchronizeInput(ggpo, length, out disconnect_flags);
         }
 
-        public static int AddLocalInput(int local_player_handle, ulong inputs) {
+        public static int AddLocalInput(int local_player_handle, long inputs) {
             var result = GGPO.AddLocalInput(ggpo, local_player_handle, inputs);
             return result;
         }
@@ -286,7 +292,15 @@ public static partial class GGPO {
             return loadGameStateCallback(Utils.ToArray(buffer, length));
         }
 
-        private static bool OnEventCallback(IntPtr evtPtr) {
+        private static bool OnAdvanceFrame(int flags) {
+            return advanceFrameCallback.Invoke(flags);
+        }
+
+        private static bool OnBeginGame(string name) {
+            return beginGameCallback.Invoke(name);
+        }
+
+        private static bool OnEvent(IntPtr evtPtr) {
             /*
             code = data[0];
             connected.player = data[1];

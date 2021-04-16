@@ -188,10 +188,10 @@ public static partial class GGPO {
     static extern int UggSetDisconnectTimeout(IntPtr ggpo, int timeout);
 
     [DllImport(libraryName)]
-    static extern int UggSynchronizeInput(IntPtr ggpo, ulong[] inputs, int length, out int disconnect_flags);
+    static extern int UggSynchronizeInput(IntPtr ggpo, IntPtr inputs, int length, out int disconnect_flags);
 
     [DllImport(libraryName)]
-    static extern int UggAddLocalInput(IntPtr ggpo, int local_player_handle, ulong input);
+    static extern int UggAddLocalInput(IntPtr ggpo, int local_player_handle, long input);
 
     [DllImport(libraryName)]
     static extern int UggCloseSession(IntPtr ggpo);
@@ -264,11 +264,19 @@ public static partial class GGPO {
         return UggSetDisconnectTimeout(ggpo, timeout);
     }
 
-    public static int SynchronizeInput(IntPtr ggpo, ulong[] inputs, int length, out int disconnect_flags) {
-        return UggSynchronizeInput(ggpo, inputs, length, out disconnect_flags);
+    public static long[] SynchronizeInput(IntPtr ggpo, int length, out int disconnect_flags) {
+        IntPtr pnt = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(long)) * length);
+        var result = UggSynchronizeInput(ggpo, pnt, length, out disconnect_flags);
+        var inputs = new long[length];
+        Marshal.Copy(pnt, inputs, 0, length);
+        Marshal.FreeHGlobal(pnt);
+        if (!SUCCEEDED(result)) {
+            throw new Exception(GetErrorCodeMessage(result));
+        }
+        return inputs;
     }
 
-    public static int AddLocalInput(IntPtr ggpo, int local_player_handle, ulong input) {
+    public static int AddLocalInput(IntPtr ggpo, int local_player_handle, long input) {
         return UggAddLocalInput(ggpo, local_player_handle, input);
     }
 

@@ -5,7 +5,10 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/VectorWar/Scenes/VectorWar.unity
     guid: a48d4cc42ab5f0a4f815b1ccc060c7be
+  - enabled: 1
+    path: Assets/EcsWar/Scenes/EcsWar.unity
+    guid: a49d129c15f9cde41a541aa6413fc514
   m_configObjects: {}

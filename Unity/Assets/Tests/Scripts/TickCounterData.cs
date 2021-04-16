@@ -1,6 +1,9 @@
 ﻿using Unity.Entities;
 
-[GenerateAuthoringComponent]
-public struct TickCounterData : IComponentData {
-    public int tickCount;
+namespace Tests {
+
+    [GenerateAuthoringComponent]
+    public struct TickCounterData : IComponentData {
+        public int tickCount;
+    }
 }

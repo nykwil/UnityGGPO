@@ -654,11 +654,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd28ad5e195d9ec4ea554500823a37d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerPrefab: {fileID: 6946168255097083831, guid: be190f7d4e70e8a4bb10007c212c7c71,
-    type: 3}
-  startingPoints:
-  - {fileID: 1712505285}
-  - {fileID: 6946168255503215894}
+  ecsSceneInfo: {fileID: 11400000, guid: a50304f373e4c54448edcbd25f69ac63, type: 2}
 --- !u!4 &995625982
 Transform:
   m_ObjectHideFlags: 0
@@ -1249,7 +1245,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1712505285}
   m_Layer: 0
-  m_Name: Player1
+  m_Name: Start1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1348,7 +1344,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6946168255503215894}
   m_Layer: 0
-  m_Name: Player2
+  m_Name: Start2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

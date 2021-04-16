@@ -999,7 +999,7 @@ GameObject:
   - component: {fileID: 4608805767232854514}
   - component: {fileID: 4608805767232854513}
   m_Layer: 5
-  m_Name: BtnDisconnect
+  m_Name: Disconnect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1718,3 +1718,4 @@ MonoBehaviour:
   btnConnect: {fileID: 4608805767232854513}
   tglPluginLog: {fileID: 4608805767468604678}
   tglGameLog: {fileID: 4608805766674637165}
+  log: 1

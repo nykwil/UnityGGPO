@@ -201,10 +201,10 @@ namespace VectorWar {
             fire = 0;
         }
 
-        public void ParseShipInputs(ulong inputs, int i, out float heading, out float thrust, out int fire) {
+        public void ParseShipInputs(long inputs, int i, out float heading, out float thrust, out int fire) {
             var ship = _ships[i];
 
-            GGPOGame.Log($"parsing ship {i} inputs: {inputs}.");
+            GGPOGame.LogGame($"parsing ship {i} inputs: {inputs}.");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
                 heading = (ship.heading - ROTATE_INCREMENT) % 360;
@@ -231,13 +231,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             var ship = _ships[index];
 
-            GGPOGame.Log($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
+            GGPOGame.LogGame($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    GGPOGame.Log("firing bullet.");
+                    GGPOGame.LogGame("firing bullet.");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(DegToRad(ship.heading));
                         float dy = Mathf.Sin(DegToRad(ship.heading));
@@ -267,11 +267,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            GGPOGame.Log($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
+            GGPOGame.LogGame($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            GGPOGame.Log($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
+            GGPOGame.LogGame($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {
@@ -331,7 +331,7 @@ namespace VectorWar {
             File.WriteAllText(filename, fp);
         }
 
-        public void Update(ulong[] inputs, int disconnect_flags) {
+        public void Update(long[] inputs, int disconnect_flags) {
             Framenumber++;
             for (int i = 0; i < _ships.Length; i++) {
                 float thrust, heading;
@@ -351,8 +351,8 @@ namespace VectorWar {
             }
         }
 
-        public ulong ReadInputs(int id) {
-            ulong input = 0;
+        public long ReadInputs(int id) {
+            long input = 0;
 
             if (id == 0) {
                 if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.UpArrow)) {
@@ -407,7 +407,6 @@ namespace VectorWar {
         public override int GetHashCode() {
             int hashCode = -1214587014;
             hashCode = hashCode * -1521134295 + Framenumber.GetHashCode();
-            hashCode = hashCode * -1521134295 + Checksum.GetHashCode();
             foreach (var ship in _ships) {
                 hashCode = hashCode * -1521134295 + ship.GetHashCode();
             }

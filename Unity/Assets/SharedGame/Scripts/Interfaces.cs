@@ -13,13 +13,13 @@ namespace SharedGame {
         int Framenumber { get; }
         int Checksum { get; }
 
-        void Update(ulong[] inputs, int disconnectFlags);
+        void Update(long[] inputs, int disconnectFlags);
 
         void FromBytes(NativeArray<byte> data);
 
         NativeArray<byte> ToBytes();
 
-        ulong ReadInputs(int controllerId);
+        long ReadInputs(int controllerId);
 
         void LogInfo(string filename);
 

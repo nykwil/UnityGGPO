@@ -35,32 +35,38 @@ namespace Tests {
         public bool pressedRollback;
         public bool pressedSnapshot;
 
-        private static World simulationWorld;
+        private World simulationWorld;
 
-        public World world;
+        public World activeWorld;
 
         private void Awake() {
-            world = World.DefaultGameObjectInjectionWorld;
-            simulationWorld = new World("lockStepWorld", WorldFlags.Simulation);
+            activeWorld = World.DefaultGameObjectInjectionWorld;
         }
 
         private void Update() {
             if (pressedRollback) {
                 Debug.Log("pressedRollback");
                 pressedRollback = false;
-                CreateSnapShot(ref world, ref simulationWorld);
+                CreateSnapShot(activeWorld, simulationWorld);
             }
             if (pressedSnapshot) {
                 Debug.Log("pressedSnapshot");
                 pressedSnapshot = false;
-                CreateSnapShot(ref simulationWorld, ref world);
+                simulationWorld = SaveWorld();
             }
         }
 
-        public static void CreateSnapShot(ref World snapShotWorld, ref World world) {
+        public void CreateSnapShot(World snapShotWorld, World world) {
             snapShotWorld.EntityManager.DestroyAndResetAllEntities();
             snapShotWorld.EntityManager.CopyAndReplaceEntitiesFrom(world.EntityManager);
             snapShotWorld.SetTime(new Unity.Core.TimeData(world.Time.ElapsedTime, world.Time.DeltaTime));
+        }
+
+        public World SaveWorld() {
+            var world = new World("lockStepWorld", WorldFlags.Simulation);
+            world.EntityManager.CopyAndReplaceEntitiesFrom(activeWorld.EntityManager);
+            world.SetTime(new Unity.Core.TimeData(activeWorld.Time.ElapsedTime, activeWorld.Time.DeltaTime));
+            return world;
         }
 
         private void SimulateTicks(int tickNumber) {
