@@ -1,0 +1,15 @@
+{
+    "name": "UnityGGPO-SharedGame",
+    "references": [
+        "GUID:0c0029a6e6a29384bb13962f99bfd024"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
