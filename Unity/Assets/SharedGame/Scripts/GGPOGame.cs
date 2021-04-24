@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Unity.Collections;
+using UnityGGPO;
 
 namespace SharedGame {
 
@@ -64,7 +65,7 @@ namespace SharedGame {
 
         public bool OnEventConnectionInterruptedDelegate(int connection_interrupted_player, int connection_interrupted_disconnect_timeout) {
             GameInfo.SetDisconnectTimeout(connection_interrupted_player,
-                                     global::Utils.TimeGetTime(),
+                                     Utils.TimeGetTime(),
                                      connection_interrupted_disconnect_timeout);
             return true;
         }
@@ -80,7 +81,7 @@ namespace SharedGame {
         }
 
         public bool OnEventEventcodeTimesyncDelegate(int timesync_frames_ahead) {
-            global::Utils.Sleep(1000 * timesync_frames_ahead / 60);
+            Utils.Sleep(1000 * timesync_frames_ahead / 60);
             return true;
         }
 
@@ -120,7 +121,7 @@ namespace SharedGame {
                 LogGame($"OnSaveGameStateCallback {frame}");
             }
             data = GameState.ToBytes();
-            checksum = global::Utils.CalcFletcher32(data);
+            checksum = Utils.CalcFletcher32(data);
             return true;
         }
 

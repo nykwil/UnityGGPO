@@ -1,18 +1,19 @@
 ﻿using SharedGame;
 using System.Collections.Generic;
+using UnityGGPO;
 
 namespace VectorWar {
 
     public class VwGameManager : GameManager {
 
-        protected override IGame CreateLocalGame() {
-            return new LocalGame(new VwGameState(2));
+        public override void StartLocalGame() {
+            Game = new LocalGame(new VwGameState(2));
         }
 
-        protected override IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
+        public override void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
             var game = new GGPOGame("vectorwar", new VwGameState(connections.Count), perfPanel);
             game.Init(connections, playerIndex);
-            return game;
+            Game = game;
         }
     }
 }

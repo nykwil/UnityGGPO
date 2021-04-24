@@ -1,19 +1,20 @@
 ﻿using SharedGame;
 using System.Collections.Generic;
+using UnityGGPO;
 
 namespace EcsWar {
 
     public class EcsGameManager : GameManager {
         public EcsSceneInfo ecsSceneInfo;
 
-        protected override IGame CreateLocalGame() {
-            return new LocalGame(new EcsGameState(ecsSceneInfo));
+        public override void StartLocalGame() {
+            Game = new LocalGame(new EcsGameState(ecsSceneInfo));
         }
 
-        protected override IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
+        public override void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
             var game = new GGPOGame("ecsgame", new EcsGameState(ecsSceneInfo), perfPanel);
             game.Init(connections, playerIndex);
-            return game;
+            Game = game;
         }
     }
 }

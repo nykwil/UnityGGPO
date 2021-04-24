@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using UnityEngine;
+using UnityGGPO;
 
 namespace SharedGame {
 
@@ -25,11 +27,15 @@ namespace SharedGame {
 
         public event Action<bool> OnRunningChanged;
 
+        public event Action OnInit;
+
+        public event Action OnStateChanged;
+
         public Stopwatch updateWatch = new Stopwatch();
 
         public bool IsRunning { get; private set; }
 
-        public IGame Game { get; private set; }
+        public IGame Game { get; protected set; }
 
         public void DisconnectPlayer(int player) {
             if (Game != null) {
@@ -49,20 +55,29 @@ namespace SharedGame {
             _instance = null;
         }
 
+        protected virtual void OnPreRunFrame() {
+        }
+
         private void Update() {
             if (IsRunning != (Game != null)) {
                 IsRunning = Game != null;
                 OnRunningChanged?.Invoke(IsRunning);
+                if (IsRunning) {
+                    OnInit?.Invoke();
+                }
             }
             if (Game != null) {
                 updateWatch.Start();
                 var now = Time.time;
                 var extraMs = Mathf.Max(0, (int)((next - now) * 1000f) - 1);
                 Game.Idle(extraMs);
+                Thread.Sleep(extraMs);
 
                 if (now >= next) {
+                    OnPreRunFrame();
                     Game.RunFrame();
                     next = now + 1f / 60f;
+                    OnStateChanged?.Invoke();
                 }
                 updateWatch.Stop();
 
@@ -76,16 +91,8 @@ namespace SharedGame {
             return string.Format("f:{0} c:{1}", info.framenumber, info.checksum); // %04d  %08x
         }
 
-        public void StartLocalGame() {
-            Game = CreateLocalGame();
-        }
+        public abstract void StartLocalGame();
 
-        public void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
-            Game = CreateGGPOGame(perfPanel, connections, playerIndex);
-        }
-
-        protected abstract IGame CreateLocalGame();
-
-        protected abstract IGame CreateGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex);
+        public abstract void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex);
     }
 }
