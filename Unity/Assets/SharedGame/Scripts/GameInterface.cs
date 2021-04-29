@@ -25,8 +25,8 @@ namespace SharedGame {
         private void Awake() {
             gameManager.OnStatus += OnStatus;
             gameManager.OnChecksum += OnChecksum;
-            GGPOGame.OnPluginLog += OnPluginLog;
-            GGPOGame.OnGameLog += OnGameLog;
+            GGPORunner.OnPluginLog += OnPluginLog;
+            GGPORunner.OnGameLog += OnGameLog;
             gameManager.OnRunningChanged += OnRunningChanged;
 
             btnConnect.onClick.AddListener(OnConnect);
@@ -45,8 +45,8 @@ namespace SharedGame {
         private void OnDestroy() {
             gameManager.OnStatus -= OnStatus;
             gameManager.OnChecksum -= OnChecksum;
-            GGPOGame.OnPluginLog -= OnPluginLog;
-            GGPOGame.OnGameLog -= OnGameLog;
+            GGPORunner.OnPluginLog -= OnPluginLog;
+            GGPORunner.OnGameLog -= OnGameLog;
             gameManager.OnRunningChanged -= OnRunningChanged;
 
             btnConnect.onClick.RemoveListener(OnConnect);

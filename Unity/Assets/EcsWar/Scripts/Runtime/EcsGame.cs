@@ -5,7 +5,7 @@ using Unity.Entities;
 
 namespace EcsWar {
 
-    public class EcsGameState : IGameState {
+    public class EcsGame : IGame {
         public const int INPUT_THRUST = (1 << 0);
         public const int INPUT_BREAK = (1 << 1);
         public const int INPUT_ROTATE_LEFT = (1 << 2);
@@ -22,7 +22,7 @@ namespace EcsWar {
         private World activeWorld;
         private IEnumerable<ComponentSystemBase> simSystems;
 
-        public EcsGameState(EcsSceneInfo sceneInfo) {
+        public EcsGame(EcsSceneInfo sceneInfo) {
             Checksum = 0;
             Framenumber = 0;
             lastWorldId = 0;
@@ -93,7 +93,7 @@ namespace EcsWar {
         }
 
         public void FromBytes(NativeArray<byte> data) {
-            GGPOGame.LogGame("Load State " + data[0]);
+            GGPORunner.LogGame("Load State " + data[0]);
             if (savedStates.TryGetValue(data[0], out var savedWorld)) {
                 CopyWorld(ref savedWorld, ref activeWorld);
             }
@@ -101,7 +101,7 @@ namespace EcsWar {
 
         public NativeArray<byte> ToBytes() {
             lastWorldId = (byte)((lastWorldId + 1) % byte.MaxValue);
-            GGPOGame.LogGame("Save State to " + lastWorldId);
+            GGPORunner.LogGame("Save State to " + lastWorldId);
 
             var na = new NativeArray<byte>(1, Allocator.Persistent);
             na[0] = lastWorldId;
@@ -146,7 +146,7 @@ namespace EcsWar {
 
         public void FreeBytes(NativeArray<byte> arr) {
             if (savedStates.TryGetValue(arr[0], out var world)) {
-                GGPOGame.LogGame("Free State at " + arr[0]);
+                GGPORunner.LogGame("Free State at " + arr[0]);
                 if (world.IsCreated) {
                     world.Dispose();
                 }

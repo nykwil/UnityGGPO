@@ -9,7 +9,7 @@ namespace SharedGame {
         public bool spectator;
     }
 
-    public interface IGameState {
+    public interface IGame {
         int Framenumber { get; }
         int Checksum { get; }
 
@@ -26,8 +26,8 @@ namespace SharedGame {
         void FreeBytes(NativeArray<byte> data);
     }
 
-    public interface IGame {
-        IGameState GameState { get; }
+    public interface IGameRunner {
+        IGame Game { get; }
         GameInfo GameInfo { get; }
 
         void Idle(int ms);
@@ -43,6 +43,6 @@ namespace SharedGame {
 
     public interface IGameView {
 
-        void UpdateGameView(IGame game);
+        void UpdateGameView(IGameRunner runner);
     }
 }

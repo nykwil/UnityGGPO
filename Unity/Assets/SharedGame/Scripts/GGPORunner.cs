@@ -6,7 +6,7 @@ using UnityGGPO;
 
 namespace SharedGame {
 
-    public class GGPOGame : IGame {
+    public class GGPORunner : IGameRunner {
         private bool verbose;
 
         public int PlayerIndex { get; set; }
@@ -15,7 +15,7 @@ namespace SharedGame {
         private const int FRAME_DELAY = 2;
 
         public string Name { get; private set; }
-        public IGameState GameState { get; private set; }
+        public IGame Game { get; private set; }
         public GameInfo GameInfo { get; private set; }
         public IPerfUpdate perf { get; private set; }
 
@@ -107,7 +107,7 @@ namespace SharedGame {
 
         private bool OnLoadGameStateCallback(NativeArray<byte> data) {
             LogGame($"OnLoadGameStateCallback {data.Length}");
-            GameState.FromBytes(data);
+            Game.FromBytes(data);
             return true;
         }
 
@@ -120,7 +120,7 @@ namespace SharedGame {
             if (verbose) {
                 LogGame($"OnSaveGameStateCallback {frame}");
             }
-            data = GameState.ToBytes();
+            data = Game.ToBytes();
             checksum = Utils.CalcFletcher32(data);
             return true;
         }
@@ -133,14 +133,14 @@ namespace SharedGame {
             LogGame($"OnLogGameState {filename}");
             LogGame($"--Error-- Pretty sure this feature doesn't work properly");
 
-            GameState.FromBytes(data);
-            GameState.LogInfo(filename);
+            Game.FromBytes(data);
+            Game.LogInfo(filename);
             return true;
         }
 
         private void OnFreeBufferCallback(NativeArray<byte> data) {
             LogGame($"OnFreeBufferCallback");
-            GameState.FreeBytes(data);
+            Game.FreeBytes(data);
         }
 
         /// <summary>
@@ -148,12 +148,12 @@ namespace SharedGame {
         /// <param name="perfPanel"></param>
         /// <param name="callback"></param>
 
-        public GGPOGame(string name, IGameState gameState, IPerfUpdate perfPanel) {
+        public GGPORunner(string name, IGame game, IPerfUpdate perfPanel) {
             LogGame("GGPOGame Created");
             Name = name;
             GGPO.SetLogDelegate(LogPlugin);
-            GameState = gameState;
-            LogPlugin("GameState Set " + GameState);
+            Game = game;
+            LogPlugin("GameState Set " + Game);
             GameInfo = new GameInfo();
             perf = perfPanel;
         }
@@ -330,15 +330,15 @@ namespace SharedGame {
          */
 
         private void AdvanceFrame(long[] inputs, int disconnect_flags) {
-            if (GameState == null) {
+            if (Game == null) {
                 LogPlugin("GameState is null what?");
             }
-            GameState.Update(inputs, disconnect_flags);
+            Game.Update(inputs, disconnect_flags);
 
             // update the checksums to display in the top of the window. this helps to detect desyncs.
-            GameInfo.now.framenumber = GameState.Framenumber;
-            GameInfo.now.checksum = GameState.Checksum;
-            if ((GameState.Framenumber % 90) == 0) {
+            GameInfo.now.framenumber = Game.Framenumber;
+            GameInfo.now.checksum = Game.Checksum;
+            if ((Game.Framenumber % 90) == 0) {
                 GameInfo.periodic = GameInfo.now;
             }
 
@@ -371,7 +371,7 @@ namespace SharedGame {
             for (int i = 0; i < GameInfo.players.Length; ++i) {
                 var player = GameInfo.players[i];
                 if (player.type == GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL) {
-                    var input = GameState.ReadInputs(player.controllerId);
+                    var input = Game.ReadInputs(player.controllerId);
 #if SYNC_TEST
      input = rand(); // test: use random inputs to demonstrate sync testing
 #endif

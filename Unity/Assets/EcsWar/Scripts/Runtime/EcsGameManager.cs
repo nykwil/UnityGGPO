@@ -8,13 +8,13 @@ namespace EcsWar {
         public EcsSceneInfo ecsSceneInfo;
 
         public override void StartLocalGame() {
-            Game = new LocalGame(new EcsGameState(ecsSceneInfo));
+            StartGame(new LocalRunner(new EcsGame(ecsSceneInfo)));
         }
 
         public override void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
-            var game = new GGPOGame("ecsgame", new EcsGameState(ecsSceneInfo), perfPanel);
+            var game = new GGPORunner("ecsgame", new EcsGame(ecsSceneInfo), perfPanel);
             game.Init(connections, playerIndex);
-            Game = game;
+            StartGame(game);
         }
     }
 }

@@ -111,7 +111,7 @@ namespace VectorWar {
     }
 
     [Serializable]
-    public struct VwGameState : IGameState {
+    public struct VwGame : IGame {
         public int Framenumber { get; private set; }
 
         public int Checksum => GetHashCode();
@@ -172,7 +172,7 @@ namespace VectorWar {
          * Initialize our game state.
          */
 
-        public VwGameState(int num_players) {
+        public VwGame(int num_players) {
             var w = _bounds.xMax - _bounds.xMin;
             var h = _bounds.yMax - _bounds.yMin;
             var r = h / 4;
@@ -204,7 +204,7 @@ namespace VectorWar {
         public void ParseShipInputs(long inputs, int i, out float heading, out float thrust, out int fire) {
             var ship = _ships[i];
 
-            GGPOGame.LogGame($"parsing ship {i} inputs: {inputs}.");
+            GGPORunner.LogGame($"parsing ship {i} inputs: {inputs}.");
 
             if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
                 heading = (ship.heading - ROTATE_INCREMENT) % 360;
@@ -231,13 +231,13 @@ namespace VectorWar {
         public void MoveShip(int index, float heading, float thrust, int fire) {
             var ship = _ships[index];
 
-            GGPOGame.LogGame($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
+            GGPORunner.LogGame($"calculation of new ship coordinates: (thrust:{thrust} heading:{heading}).");
 
             ship.heading = heading;
 
             if (ship.cooldown == 0) {
                 if (fire != 0) {
-                    GGPOGame.LogGame("firing bullet.");
+                    GGPORunner.LogGame("firing bullet.");
                     for (int i = 0; i < ship.bullets.Length; i++) {
                         float dx = Mathf.Cos(DegToRad(ship.heading));
                         float dy = Mathf.Sin(DegToRad(ship.heading));
@@ -267,11 +267,11 @@ namespace VectorWar {
                     ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
                 }
             }
-            GGPOGame.LogGame($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
+            GGPORunner.LogGame($"new ship velocity: (dx:{ship.velocity.x} dy:{ship.velocity.y}).");
 
             ship.position.x += ship.velocity.x;
             ship.position.y += ship.velocity.y;
-            GGPOGame.LogGame($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
+            GGPORunner.LogGame($"new ship position: (dx:{ship.position.x} dy:{ship.position.y}).");
 
             if (ship.position.x - ship.radius < _bounds.xMin ||
                 ship.position.x + ship.radius > _bounds.xMax) {

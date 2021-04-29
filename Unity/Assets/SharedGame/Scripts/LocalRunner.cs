@@ -4,10 +4,10 @@ using UnityGGPO;
 
 namespace SharedGame {
 
-    public class LocalGame : IGame {
+    public class LocalRunner : IGameRunner {
         private NativeArray<byte> buffer;
 
-        public IGameState GameState { get; private set; }
+        public IGame Game { get; private set; }
 
         public GameInfo GameInfo { get; private set; }
 
@@ -17,24 +17,24 @@ namespace SharedGame {
         public void RunFrame() {
             var inputs = new long[GameInfo.players.Length];
             for (int i = 0; i < inputs.Length; ++i) {
-                inputs[i] = GameState.ReadInputs(GameInfo.players[i].controllerId);
+                inputs[i] = Game.ReadInputs(GameInfo.players[i].controllerId);
             }
-            GameState.Update(inputs, 0);
+            Game.Update(inputs, 0);
         }
 
         public void OnTestSave() {
             if (buffer.IsCreated) {
                 buffer.Dispose();
             }
-            buffer = GameState.ToBytes();
+            buffer = Game.ToBytes();
         }
 
         public void OnTestLoad() {
-            GameState.FromBytes(buffer);
+            Game.FromBytes(buffer);
         }
 
-        public LocalGame(IGameState gameState) {
-            GameState = gameState;
+        public LocalRunner(IGame game) {
+            Game = game;
             GameInfo = new GameInfo();
             int handle = 1;
             int controllerId = 0;

@@ -7,13 +7,13 @@ namespace VectorWar {
     public class VwGameManager : GameManager {
 
         public override void StartLocalGame() {
-            Game = new LocalGame(new VwGameState(2));
+            StartGame(new LocalRunner(new VwGame(2)));
         }
 
         public override void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
-            var game = new GGPOGame("vectorwar", new VwGameState(connections.Count), perfPanel);
+            var game = new GGPORunner("vectorwar", new VwGame(connections.Count), perfPanel);
             game.Init(connections, playerIndex);
-            Game = game;
+            StartGame(game);
         }
     }
 }

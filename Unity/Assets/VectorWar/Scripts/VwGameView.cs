@@ -12,7 +12,7 @@ namespace VectorWar {
         private Transform[][] bulletLists;
         private GameManager gameManager => GameManager.Instance;
 
-        private void ResetView(VwGameState gs) {
+        private void ResetView(VwGame gs) {
             var shipGss = gs._ships;
             shipViews = new VwShipView[shipGss.Length];
             bulletLists = new Transform[shipGss.Length][];
@@ -26,9 +26,9 @@ namespace VectorWar {
             }
         }
 
-        public void UpdateGameView(IGame game) {
-            var gs = (VwGameState)game.GameState;
-            var ngs = game.GameInfo;
+        public void UpdateGameView(IGameRunner runner) {
+            var gs = (VwGame)runner.Game;
+            var ngs = runner.GameInfo;
 
             var shipsGss = gs._ships;
             if (shipViews.Length != shipsGss.Length) {
@@ -49,7 +49,7 @@ namespace VectorWar {
 
         private void Update() {
             if (gameManager.IsRunning) {
-                UpdateGameView(gameManager.Game);
+                UpdateGameView(gameManager.Runner);
             }
         }
     }

@@ -35,18 +35,18 @@ namespace SharedGame {
 
         public bool IsRunning { get; private set; }
 
-        public IGame Game { get; protected set; }
+        public IGameRunner Runner { get; private set; }
 
         public void DisconnectPlayer(int player) {
-            if (Game != null) {
-                Game.DisconnectPlayer(player);
+            if (Runner != null) {
+                Runner.DisconnectPlayer(player);
             }
         }
 
         public void Shutdown() {
-            if (Game != null) {
-                Game.Shutdown();
-                Game = null;
+            if (Runner != null) {
+                Runner.Shutdown();
+                Runner = null;
             }
         }
 
@@ -59,36 +59,40 @@ namespace SharedGame {
         }
 
         private void Update() {
-            if (IsRunning != (Game != null)) {
-                IsRunning = Game != null;
+            if (IsRunning != (Runner != null)) {
+                IsRunning = Runner != null;
                 OnRunningChanged?.Invoke(IsRunning);
                 if (IsRunning) {
                     OnInit?.Invoke();
                 }
             }
-            if (Game != null) {
+            if (Runner != null) {
                 updateWatch.Start();
                 var now = Time.time;
                 var extraMs = Mathf.Max(0, (int)((next - now) * 1000f) - 1);
-                Game.Idle(extraMs);
+                Runner.Idle(extraMs);
                 Thread.Sleep(extraMs);
 
                 if (now >= next) {
                     OnPreRunFrame();
-                    Game.RunFrame();
+                    Runner.RunFrame();
                     next = now + 1f / 60f;
                     OnStateChanged?.Invoke();
                 }
                 updateWatch.Stop();
 
-                string status = Game.GetStatus(updateWatch);
+                string status = Runner.GetStatus(updateWatch);
                 OnStatus?.Invoke(status);
-                OnChecksum?.Invoke(RenderChecksum(Game.GameInfo.periodic) + RenderChecksum(Game.GameInfo.now));
+                OnChecksum?.Invoke(RenderChecksum(Runner.GameInfo.periodic) + RenderChecksum(Runner.GameInfo.now));
             }
         }
 
         private string RenderChecksum(GameInfo.ChecksumInfo info) {
             return string.Format("f:{0} c:{1}", info.framenumber, info.checksum); // %04d  %08x
+        }
+
+        public void StartGame(IGameRunner runner) {
+            Runner = runner;
         }
 
         public abstract void StartLocalGame();
