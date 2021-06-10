@@ -5,24 +5,14 @@ using UnityEngine;
 namespace EcsWar {
 
     public class PlayerComponent : MonoBehaviour, IConvertGameObjectToEntity, IDeclareReferencedPrefabs {
-        public float RotationSpeed = 2f;
-        public float MoveSpeed = 4f;
-        public int FireRate = 3;
-        public float FireSpeed = 5f;
-        public int PlayerIndex;
+        public PlayerInfo playerInfo;
         public GameObject BoltPrefab = null;
-        public float Radius;
 
         public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem) {
-            dstManager.AddComponentData(entity, new Player {
-                RotationSpeed = RotationSpeed,
-                MoveSpeed = MoveSpeed,
-                FireRate = FireRate,
-                FireSpeed = FireSpeed,
+            dstManager.AddComponentData(entity, new PlayerData {
                 ElapsedTime = 0,
-                PlayerIndex = PlayerIndex,
+                PlayerIndex = 0,
                 BoltPrefabEntity = BoltPrefab != null ? conversionSystem.GetPrimaryEntity(BoltPrefab) : Entity.Null,
-                Radius = Radius,
             });
 
             dstManager.AddComponentData(entity, new ActiveInput {
@@ -33,6 +23,8 @@ namespace EcsWar {
                 Shoot = false
             });
             dstManager.AddBuffer<HitBuffer>(entity);
+
+            dstManager.AddSharedComponentData(entity, playerInfo);
         }
 
         public void DeclareReferencedPrefabs(List<GameObject> referencedPrefabs) {

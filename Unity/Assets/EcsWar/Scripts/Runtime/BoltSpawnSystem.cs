@@ -9,22 +9,22 @@ namespace EcsWar {
         protected override void OnUpdate() {
             Entities
                 .WithStructuralChanges()
-                .ForEach((Entity playerEntity, ref ActiveInput activeInput, ref Player player, ref Translation playerTr, ref Rotation playerRot) => {
-                    player.ElapsedTime += 1;
+                .ForEach((Entity playerEntity, ref PlayerData playerData, in ActiveInput activeInput, in Translation playerTr, in Rotation playerRot, in PlayerInfo playerInfo) => {
+                    playerData.ElapsedTime += 1;
                     if (activeInput.Shoot) {
-                        if (player.ElapsedTime > player.FireRate) {
-                            var boltEnt = EntityManager.Instantiate(player.BoltPrefabEntity);
+                        if (playerData.ElapsedTime > playerInfo.FireRate) {
+                            var boltEnt = EntityManager.Instantiate(playerData.BoltPrefabEntity);
 
-                            var data = EntityManager.GetComponentData<Bolt>(boltEnt);
-                            data.PlayerIndex = player.PlayerIndex;
+                            var data = EntityManager.GetComponentData<BoltData>(boltEnt);
+                            data.PlayerIndex = playerData.PlayerIndex;
                             EntityManager.SetComponentData(boltEnt, data);
 
                             EntityManager.SetComponentData(boltEnt, new MoveData() {
-                                Linear = math.mul(playerRot.Value, new float3(0, 0, player.FireSpeed))
+                                Linear = math.mul(playerRot.Value, new float3(0, 0, playerInfo.FireSpeed))
                             });
                             EntityManager.SetComponentData(boltEnt, playerRot);
                             EntityManager.SetComponentData(boltEnt, playerTr);
-                            player.ElapsedTime = 0;
+                            playerData.ElapsedTime = 0;
                         }
                     }
                 }).Run();

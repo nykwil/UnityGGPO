@@ -15,7 +15,7 @@ namespace EcsWar {
             var playerPrefabEntity = GameObjectConversionUtility.ConvertGameObjectHierarchy(playerPrefab, settings);
             for (int i = 0; i < startingPoints.Length; ++i) {
                 var ent = activeWorld.EntityManager.Instantiate(playerPrefabEntity);
-                var playerData = activeWorld.EntityManager.GetComponentData<Player>(ent);
+                var playerData = activeWorld.EntityManager.GetComponentData<PlayerData>(ent);
                 var posData = activeWorld.EntityManager.GetComponentData<Translation>(ent);
 
                 posData.Value = startingPoints[i];

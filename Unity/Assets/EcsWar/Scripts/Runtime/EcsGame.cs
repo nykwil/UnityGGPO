@@ -2,6 +2,7 @@ using SharedGame;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
+using UnityEngine;
 
 namespace EcsWar {
 
@@ -12,6 +13,8 @@ namespace EcsWar {
         public const int INPUT_ROTATE_RIGHT = (1 << 3);
         public const int INPUT_FIRE = (1 << 4);
         public const int INPUT_BOMB = (1 << 5);
+
+        public bool verbose = false;
 
         public int Framenumber { get; private set; }
 
@@ -87,13 +90,14 @@ namespace EcsWar {
         }
 
         public static void CopyWorld(ref World fromWorld, ref World toWorld) {
-            toWorld.EntityManager.DestroyAndResetAllEntities();
             toWorld.EntityManager.CopyAndReplaceEntitiesFrom(fromWorld.EntityManager);
             toWorld.SetTime(new Unity.Core.TimeData(fromWorld.Time.ElapsedTime, fromWorld.Time.DeltaTime));
         }
 
         public void FromBytes(NativeArray<byte> data) {
-            GGPORunner.LogGame("Load State " + data[0]);
+            if (verbose) {
+                Debug.Log("Load State " + data[0]);
+            }
             if (savedStates.TryGetValue(data[0], out var savedWorld)) {
                 CopyWorld(ref savedWorld, ref activeWorld);
             }
@@ -101,7 +105,9 @@ namespace EcsWar {
 
         public NativeArray<byte> ToBytes() {
             lastWorldId = (byte)((lastWorldId + 1) % byte.MaxValue);
-            GGPORunner.LogGame("Save State to " + lastWorldId);
+            if (verbose) {
+                Debug.Log("Save State to " + lastWorldId);
+            }
 
             var na = new NativeArray<byte>(1, Allocator.Persistent);
             na[0] = lastWorldId;
@@ -115,11 +121,11 @@ namespace EcsWar {
             var em = activeWorld.EntityManager;
             var group = em.CreateEntityQuery(
                 typeof(ActiveInput),
-                typeof(Player)
+                typeof(PlayerData)
             );
 
             var entities = group.ToEntityArray(Allocator.TempJob);
-            var playerDatas = group.ToComponentDataArray<Player>(Allocator.TempJob);
+            var playerDatas = group.ToComponentDataArray<PlayerData>(Allocator.TempJob);
             for (int i = 0; i < entities.Length; ++i) {
                 var inputs = inputsList[playerDatas[i].PlayerIndex];
 
@@ -146,7 +152,10 @@ namespace EcsWar {
 
         public void FreeBytes(NativeArray<byte> arr) {
             if (savedStates.TryGetValue(arr[0], out var world)) {
-                GGPORunner.LogGame("Free State at " + arr[0]);
+                if (verbose) {
+                    Debug.Log("Free State at " + arr[0]);
+                }
+
                 if (world.IsCreated) {
                     world.Dispose();
                 }

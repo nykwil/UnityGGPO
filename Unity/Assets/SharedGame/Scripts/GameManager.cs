@@ -19,8 +19,6 @@ namespace SharedGame {
             }
         }
 
-        private float next;
-
         public event Action<string> OnStatus;
 
         public event Action<string> OnChecksum;
@@ -58,12 +56,18 @@ namespace SharedGame {
         protected virtual void OnPreRunFrame() {
         }
 
-        private void Update() {
+        private float startTime = 0;
+        public int targetFrame;
+
+        float next => startTime + targetFrame * (1f / 60f);
+
+        protected virtual void Update() {
             if (IsRunning != (Runner != null)) {
                 IsRunning = Runner != null;
                 OnRunningChanged?.Invoke(IsRunning);
                 if (IsRunning) {
                     OnInit?.Invoke();
+                    startTime = Time.time;
                 }
             }
             if (Runner != null) {
@@ -73,10 +77,11 @@ namespace SharedGame {
                 Runner.Idle(extraMs);
                 Thread.Sleep(extraMs);
 
-                if (now >= next) {
+                while (now >= next) {
                     OnPreRunFrame();
                     Runner.RunFrame();
-                    next = now + 1f / 60f;
+                    ++targetFrame;
+                    UnityEngine.Debug.Log("Ticking frame " + targetFrame);
                     OnStateChanged?.Invoke();
                 }
                 updateWatch.Stop();
