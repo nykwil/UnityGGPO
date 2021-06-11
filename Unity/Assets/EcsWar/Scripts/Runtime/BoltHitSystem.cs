@@ -6,10 +6,6 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public struct HitBuffer : IBufferElementData {
-        public int damage;
-    }
-
     public class PlayerHitProcessingSystem : SystemBase {
 
         protected override void OnUpdate() {
@@ -19,7 +15,7 @@ namespace EcsWar {
                     var lookup = GetBufferFromEntity<HitBuffer>();
                     var buffer = lookup[entity];
                     for (int i = 0; i < buffer.Length; ++i) {
-                        player.Life -= buffer[i].damage;
+                        player.Life -= buffer[i].Damage;
                     }
                     buffer.Clear();
                 }).Run();
@@ -32,19 +28,19 @@ namespace EcsWar {
     }
 
     public class BoltHitSystem : SystemBase {
-        private EntityQuery bulletQuery;
+        private EntityQuery playerQuery;
 
         protected override void OnCreate() {
             base.OnCreate();
-            bulletQuery = GetEntityQuery(
+            playerQuery = GetEntityQuery(
                 ComponentType.ReadOnly<Player>(),
                 ComponentType.ReadOnly<Translation>());
         }
 
         protected override void OnUpdate() {
-            var plEntityList = bulletQuery.ToEntityArray(Allocator.TempJob);
-            var plPlayerList = bulletQuery.ToComponentDataArray<Player>(Allocator.TempJob);
-            var plPosList = bulletQuery.ToComponentDataArray<Translation>(Allocator.TempJob);
+            var plEntityList = playerQuery.ToEntityArray(Allocator.TempJob);
+            var plPlayerList = playerQuery.ToComponentDataArray<Player>(Allocator.TempJob);
+            var plPosList = playerQuery.ToComponentDataArray<Translation>(Allocator.TempJob);
             var queue = new NativeQueue<HitInfo>(Allocator.TempJob);
 
             var pl = queue.AsParallelWriter();
@@ -72,7 +68,7 @@ namespace EcsWar {
                     var buffer = lookup[item.hitEntity];
                     if (buffer.IsCreated) {
                         buffer.Add(new HitBuffer() {
-                            damage = 1
+                            Damage = 1
                         });
                     }
                 }

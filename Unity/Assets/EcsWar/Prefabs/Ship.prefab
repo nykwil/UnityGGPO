@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 2748704813554987733}
   - component: {fileID: 2748704813554987562}
   m_Layer: 0
-  m_Name: SafeShip
+  m_Name: Ship
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -60,14 +60,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffc24eae7ccec4300ad2bc414f4fb2cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RotationSpeed: 0.1
-  MoveSpeed: 0.1
-  FireRate: 20
-  FireSpeed: 0.3
-  PlayerIndex: 1
+  player:
+    RotationSpeed: 0.1
+    MoveSpeed: 0.04
+    FireRate: 5
+    FireSpeed: 0.2
+    MaxLife: 100
+    Radius: 0.3
+    Friction: 0.5
+    ElapsedTime: 0
+    PlayerIndex: 0
   BoltPrefab: {fileID: 7931053775660704244, guid: 681cd90ae15df5a46a96139a2c6a467e,
     type: 3}
-  Radius: 0.3
 --- !u!114 &4932951480658677150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,7 +111,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1

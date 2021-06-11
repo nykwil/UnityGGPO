@@ -1,15 +1,9 @@
 ﻿using Unity.Entities;
-using Unity.Mathematics;
 
 namespace EcsWar {
 
-    public struct AsteroidSpawner : IComponentData {
-        public Entity Prefab;
-        public float Rate;
-        public float MinSpeed;
-        public float MaxSpeed;
-        public float PathVariation;
-        public float2 Max;
+    public struct HitBuffer : IBufferElementData {
+        public int Damage;
     }
 
     public struct ActiveInput : IComponentData {
@@ -24,15 +18,26 @@ namespace EcsWar {
         public int Life;
     }
 
+    [System.Serializable]
     public struct Player : IComponentData {
+
+        // Constants
         public float RotationSpeed;
         public float MoveSpeed;
         public int FireRate;
         public float FireSpeed;
-        public int ElapsedTime;
-        public int PlayerIndex;
-        public Entity BoltPrefabEntity;
         public int MaxLife;
         public float Radius;
+        public float Friction;
+
+        // Data
+        [UnityEngine.HideInInspector]
+        public int ElapsedTime;
+
+        [UnityEngine.HideInInspector]
+        public int PlayerIndex;
+
+        [UnityEngine.HideInInspector]
+        public Entity BoltPrefabEntity;
     }
 }

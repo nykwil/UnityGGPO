@@ -29,7 +29,16 @@ namespace EcsWar {
                         pos.z = -player.MoveSpeed;
                     }
 
-                    pv.Linear = math.mul(rot.Value, pos);
+                    float3 friction = new float3(0);
+
+                    var mag = math.length(pv.Linear);
+                    if (mag > 0) {
+                        var dir = math.normalize(pv.Linear);
+                        friction = dir * (mag * mag * player.Friction);
+                    }
+
+                    pv.Linear += math.mul(rot.Value, pos) - friction;
+
                 }).Run();
         }
     }

@@ -6,15 +6,17 @@ namespace EcsWar {
 
     public class EcsGameManager : GameManager {
         public EcsSceneInfo ecsSceneInfo;
+        public IGameRunner runner { get; set; }
 
         public override void StartLocalGame() {
-            StartGame(new LocalRunner(new EcsGame(ecsSceneInfo)));
+            runner = new LocalRunner(new EcsGame(ecsSceneInfo));
+            StartGame(runner);
         }
 
         public override void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex) {
-            var game = new GGPORunner("ecsgame", new EcsGame(ecsSceneInfo), perfPanel);
-            game.Init(connections, playerIndex);
-            StartGame(game);
+            runner = new GGPORunner("ecsgame", new EcsGame(ecsSceneInfo), perfPanel);
+            ((GGPORunner)runner).Init(connections, playerIndex);
+            StartGame(runner);
         }
     }
 }
