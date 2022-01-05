@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityGGPO;
 
-namespace UnityGGPO {
+namespace SharedGame {
 
     [ExecuteInEditMode]
     public class GgpoPerformancePanel : MonoBehaviour, IPerfUpdate {

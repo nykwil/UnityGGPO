@@ -1,5 +1,5 @@
 {
-    "name": "EcsWar-Runtime",
+    "name": "UnityGGPO.EcsWar.Runtime",
     "rootNamespace": "",
     "references": [
         "Unity.Entities",
@@ -8,13 +8,13 @@
         "Unity.Collections",
         "Unity.Jobs",
         "Unity.Burst",
-        "UnityGGPO-Plugin",
-        "UnityGGPO-SharedGame",
-        "Unity.Entities.Hybrid"
+        "Unity.Entities.Hybrid",
+        "UnityGGPO.SharedGame.Runtime",
+        "UnityGGPO.Plugin.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": true,
+    "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

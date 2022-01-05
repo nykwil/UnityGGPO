@@ -83,7 +83,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.9",
+      "version": "2.0.12",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -92,7 +92,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.vscode": {
-      "version": "1.2.3",
+      "version": "1.2.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -132,7 +132,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.performance.profile-analyzer": {
-      "version": "1.0.3",
+      "version": "1.1.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -201,7 +201,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
-      "version": "1.1.24",
+      "version": "1.1.29",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -252,6 +252,20 @@
         "nuget.castle-core": "1.0.1"
       },
       "url": "https://packages.unity.com"
+    },
+    "unityggpo.plugin": {
+      "version": "file:UnityGGPO",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "unityggpo.sharedgame": {
+      "version": "file:SharedGame",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "unityggpo.plugin": "1.0.0"
+      }
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

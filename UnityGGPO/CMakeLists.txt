@@ -11,4 +11,4 @@ add_library(UnityGGPO MODULE ${SOURCE_FILES})
 #add_definitions(-D_UNICODE -DUNICODE)
 target_link_libraries(UnityGGPO LINK_PUBLIC GGPO winmm.lib ws2_32.lib)
 
-install(TARGETS UnityGGPO DESTINATION "../Unity/Assets/UnityGGPO/Plugins/Windows/x86_64")
+install(TARGETS UnityGGPO DESTINATION "../Unity/Packages/UnityGGPO/Plugins/Windows/x86_64")
