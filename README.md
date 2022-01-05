@@ -13,7 +13,7 @@ This is home of UnityGGPO an interop DLL of the ggpo library that works with Uni
 - A submodule of https://github.com/pond3r/ggpo for building the UnityGGPO.dll
 
 ## Packages
-### UnityGGPO.Plugin
+### Plugin
 This is the bare bones wrapper with special Session abstraction layer to make it easier to use then direct DLL calls. Included is only the windows DLLs built from the CMake project found at /UnityGGPO/UnityGGPO
 
 Two ways to use:
@@ -23,7 +23,7 @@ Two ways to use:
 Add to your project in the Package Manager using "Add package from git URL..." with this URL:
 https://github.com/nykwil/UnityGGPO.git?path=/Unity/Packages/UnityGGPO
 
-### UnityGGPO.Share Game Library
+### Share Game Library
 This is some boiler plate game layer so that you can create local and multiplayer enabled games with just some simple interfaces implementations. Includes very basic UI and Dialogs for the game. Also has an implementation of the Performance Dialog which you need in some capapcity to run. See the EcsWar of VectorWar examples at https://github.com/nykwil/UnityGGPO. For more information. 
 
 Add to your project in the Package Manager using "Add package from git URL..." with this URL:
@@ -42,9 +42,9 @@ How to play
 ### EcsWar
 An example made with DOTS using the Shared Game Library. This is a work in progress. Rollback eventually fails if you are using SharedComponents. Found at /Unity/Assets/EcsWar
 
-## UnityGGPO DLL Project
+## DLL CMake Project
 
-This is the CMake Project found at /UnityGGPO
+This is the CMake Project found at /UnityGGPO. Windows version only.
 
 Build:
 - run build_windows.cmd to build the solution.
