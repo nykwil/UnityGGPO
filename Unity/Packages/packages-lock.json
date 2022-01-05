@@ -264,7 +264,7 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "unityggpo.plugin": "1.0.0"
+        "unityggpo.plugin": "1.0.1"
       }
     },
     "com.unity.modules.ai": {
