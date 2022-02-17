@@ -23,8 +23,8 @@ namespace SharedGame {
 
         public static event Action<string> OnPluginLog;
 
-        public Stopwatch frameWatch = new Stopwatch();
-        public Stopwatch idleWatch = new Stopwatch();
+        private Stopwatch frameWatch = new Stopwatch();
+        private Stopwatch idleWatch = new Stopwatch();
 
         /*
          * The begin game callback.  We don't need to do anything special here,
@@ -425,11 +425,13 @@ namespace SharedGame {
             }
         }
 
-        public string GetStatus(Stopwatch updateWatch) {
-            var idlePerc = (float)idleWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
-            var updatePerc = (float)frameWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
-            var otherPerc = 1f - (idlePerc + updatePerc);
-            return string.Format("idle:{0:.00} update{1:.00} other{2:.00}", idlePerc, updatePerc, otherPerc);
+        public StatusInfo GetStatus(Stopwatch updateWatch) {
+            var status = new StatusInfo();
+            status.idlePerc = (float)idleWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
+            status.updatePerc = (float)frameWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
+            status.periodic = GameInfo.periodic;
+            status.now = GameInfo.now;
+            return status;
         }
 
         public void Shutdown() {

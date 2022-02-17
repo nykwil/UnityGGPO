@@ -21,9 +21,7 @@ namespace SharedGame {
 
         private float next;
 
-        public event Action<string> OnStatus;
-
-        public event Action<string> OnChecksum;
+        public event Action<StatusInfo> OnStatus;
 
         public event Action<bool> OnRunningChanged;
 
@@ -71,24 +69,18 @@ namespace SharedGame {
                 var now = Time.time;
                 var extraMs = Mathf.Max(0, (int)((next - now) * 1000f) - 1);
                 Runner.Idle(extraMs);
-                Thread.Sleep(extraMs);
+                now = Time.time;
 
                 if (now >= next) {
                     OnPreRunFrame();
                     Runner.RunFrame();
-                    next = now + 1f / 60f;
+                    next = next + 1f / 60f;
                     OnStateChanged?.Invoke();
                 }
                 updateWatch.Stop();
 
-                string status = Runner.GetStatus(updateWatch);
-                OnStatus?.Invoke(status);
-                OnChecksum?.Invoke(RenderChecksum(Runner.GameInfo.periodic) + RenderChecksum(Runner.GameInfo.now));
+                OnStatus?.Invoke(Runner.GetStatus(updateWatch));
             }
-        }
-
-        private string RenderChecksum(GameInfo.ChecksumInfo info) {
-            return string.Format("f:{0} c:{1}", info.framenumber, info.checksum); // %04d  %08x
         }
 
         public void StartGame(IGameRunner runner) {

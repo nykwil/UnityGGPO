@@ -26,6 +26,26 @@ namespace SharedGame {
         void FreeBytes(NativeArray<byte> data);
     }
 
+    public struct StatusInfo {
+        public float idlePerc;
+        public float updatePerc;
+        public ChecksumInfo now;
+        public ChecksumInfo periodic;
+
+        public string TimePercString() {
+            var otherPerc = 1f - (idlePerc + updatePerc);
+            return string.Format("idle:{0:.00} update{1:.00} other{2:.00}", idlePerc, updatePerc, otherPerc);
+        }
+
+        public string ChecksumString() {
+            return "periodic: " + RenderChecksum(periodic) + " now:" + RenderChecksum(now);
+        }
+
+        private string RenderChecksum(ChecksumInfo info) {
+            return string.Format("f:{0} c:{1}", info.framenumber, info.checksum); // %04d  %08x
+        }
+    }
+
     public interface IGameRunner {
         IGame Game { get; }
         GameInfo GameInfo { get; }
@@ -34,7 +54,7 @@ namespace SharedGame {
 
         void RunFrame();
 
-        string GetStatus(Stopwatch updateWatch);
+        StatusInfo GetStatus(Stopwatch updateWatch);
 
         void DisconnectPlayer(int player);
 

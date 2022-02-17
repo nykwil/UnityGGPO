@@ -20,17 +20,17 @@ namespace SharedGame {
         public int controllerId;
     };
 
+    public struct ChecksumInfo {
+        public int framenumber;
+        public int checksum;
+    };
+
     public class GameInfo {
         public PlayerConnectionInfo[] players;
         public string status;
 
         public ChecksumInfo now;
         public ChecksumInfo periodic;
-
-        public struct ChecksumInfo {
-            public int framenumber;
-            public int checksum;
-        };
 
         public void SetConnectState(int handle, PlayerConnectState state) {
             for (int i = 0; i < players.Length; i++) {

@@ -11,15 +11,23 @@ namespace SharedGame {
 
         public GameInfo GameInfo { get; private set; }
 
+        private Stopwatch frameWatch = new Stopwatch();
+        private Stopwatch idleWatch = new Stopwatch();
+
         public void Idle(int ms) {
+            idleWatch.Start();
+            Utils.Sleep(ms);
+            idleWatch.Stop();
         }
 
         public void RunFrame() {
+            frameWatch.Start();
             var inputs = new long[GameInfo.players.Length];
             for (int i = 0; i < inputs.Length; ++i) {
                 inputs[i] = Game.ReadInputs(GameInfo.players[i].controllerId);
             }
             Game.Update(inputs, 0);
+            frameWatch.Stop();
         }
 
         public void OnTestSave() {
@@ -57,8 +65,13 @@ namespace SharedGame {
             GameInfo.SetConnectState(handle, PlayerConnectState.Connecting);
         }
 
-        public string GetStatus(Stopwatch updateWatch) {
-            return string.Format("time{0:.00}", (float)updateWatch.ElapsedMilliseconds);
+        public StatusInfo GetStatus(Stopwatch updateWatch) {
+            var status = new StatusInfo();
+            status.idlePerc = (float)idleWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
+            status.updatePerc = (float)frameWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
+            status.periodic = GameInfo.periodic;
+            status.now = GameInfo.now;
+            return status;
         }
 
         public void DisconnectPlayer(int player) {

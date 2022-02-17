@@ -24,7 +24,6 @@ namespace SharedGame {
 
         private void Awake() {
             gameManager.OnStatus += OnStatus;
-            gameManager.OnChecksum += OnChecksum;
             GGPORunner.OnPluginLog += OnPluginLog;
             GGPORunner.OnGameLog += OnGameLog;
             gameManager.OnRunningChanged += OnRunningChanged;
@@ -44,7 +43,6 @@ namespace SharedGame {
 
         private void OnDestroy() {
             gameManager.OnStatus -= OnStatus;
-            gameManager.OnChecksum -= OnChecksum;
             GGPORunner.OnPluginLog -= OnPluginLog;
             GGPORunner.OnGameLog -= OnGameLog;
             gameManager.OnRunningChanged -= OnRunningChanged;
@@ -119,12 +117,9 @@ namespace SharedGame {
             }
         }
 
-        private void OnChecksum(string text) {
-            txtChecksum.text = text;
-        }
-
-        private void OnStatus(string text) {
-            txtStatus.text = text;
+        private void OnStatus(StatusInfo status) {
+            txtStatus.text = status.TimePercString();
+            txtChecksum.text = status.ChecksumString();
         }
     }
 }
