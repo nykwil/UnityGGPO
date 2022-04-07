@@ -42,7 +42,7 @@ namespace UnityGGPO {
         }
 
         public static int TimeGetTime() {
-            return (int)(UnityEngine.Time.time * 1000);
+            return (int)(UnityEngine.Time.realtimeSinceStartup * 1000);
         }
 
         public static void Sleep(int ms) {

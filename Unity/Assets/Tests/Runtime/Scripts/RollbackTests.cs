@@ -1,43 +1,17 @@
 using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Transforms;
 using UnityEngine;
 
 namespace Tests {
-
-    public class TickCounterSystem : SystemBase {
-        private int systemTick;
-
-        protected override void OnUpdate() {
-            systemTick += 1;
-            string s = "";
-            Entities
-                .ForEach((Entity entity, ref TickCounterData tickData) => {
-                    tickData.tickCount += 1;
-                    s += $"{entity} = {tickData.tickCount}\n";
-                }).WithoutBurst().Run();
-
-            Debug.Log($"-- System Tick = {systemTick} --\n" + s);
-        }
-    }
-
-    public class RotationSpeedSystem : SystemBase {
-
-        protected override void OnUpdate() {
-            Entities
-                .ForEach((ref Rotation rotation, in RotationSpeedData rotSpeed) => {
-                    rotation.Value = math.mul(math.normalize(rotation.Value), quaternion.AxisAngle(math.up(), rotSpeed.radiansPerTick));
-                }).ScheduleParallel();
-        }
-    }
 
     public class RollbackTests : MonoBehaviour {
         public bool pressedRollback;
         public bool pressedSnapshot;
 
+        public bool autoMode;
+
         private World simulationWorld;
 
-        public World activeWorld;
+        private World activeWorld;
 
         private void Awake() {
             activeWorld = World.DefaultGameObjectInjectionWorld;
@@ -47,22 +21,42 @@ namespace Tests {
             if (pressedRollback) {
                 Debug.Log("pressedRollback");
                 pressedRollback = false;
-                CreateSnapShot(activeWorld, simulationWorld);
+                RestoreSimulationWorld();
             }
             if (pressedSnapshot) {
                 Debug.Log("pressedSnapshot");
                 pressedSnapshot = false;
-                simulationWorld = SaveWorld();
+                SaveSimulationWorld();
+            }
+            if (autoMode) {
+                if (Time.frameCount % 10 == 0) {
+                    SaveSimulationWorld();
+                }
+                else if (Time.frameCount % 7 == 0) {
+                    RestoreSimulationWorld();
+                }
             }
         }
 
-        public void CreateSnapShot(World snapShotWorld, World world) {
+        private void SaveSimulationWorld() {
+            simulationWorld = BackupWorld();
+        }
+
+        private void RestoreSimulationWorld() {
+            if (simulationWorld != null) {
+                CopyWorld(activeWorld, simulationWorld);
+                simulationWorld.Dispose();
+                simulationWorld = null;
+            }
+        }
+
+        public void CopyWorld(World snapShotWorld, World world) {
             snapShotWorld.EntityManager.DestroyAndResetAllEntities();
             snapShotWorld.EntityManager.CopyAndReplaceEntitiesFrom(world.EntityManager);
             snapShotWorld.SetTime(new Unity.Core.TimeData(world.Time.ElapsedTime, world.Time.DeltaTime));
         }
 
-        public World SaveWorld() {
+        public World BackupWorld() {
             var world = new World("lockStepWorld", WorldFlags.Simulation);
             world.EntityManager.CopyAndReplaceEntitiesFrom(activeWorld.EntityManager);
             world.SetTime(new Unity.Core.TimeData(activeWorld.Time.ElapsedTime, activeWorld.Time.DeltaTime));

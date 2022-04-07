@@ -4,7 +4,7 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public class PlayerMoveSystem : SystemBase {
+    public partial class PlayerMoveSystem : SystemBase {
 
         protected override void OnUpdate() {
             Entities

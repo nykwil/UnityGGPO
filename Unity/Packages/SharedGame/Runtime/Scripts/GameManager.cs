@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
 using UnityEngine;
 using UnityGGPO;
 
@@ -9,6 +8,7 @@ namespace SharedGame {
 
     public abstract class GameManager : MonoBehaviour {
         private static GameManager _instance;
+        public bool useNewUpdate;
 
         public static GameManager Instance {
             get {
@@ -18,8 +18,6 @@ namespace SharedGame {
                 return _instance;
             }
         }
-
-        private float next;
 
         public event Action<StatusInfo> OnStatus;
 
@@ -34,6 +32,9 @@ namespace SharedGame {
         public bool IsRunning { get; private set; }
 
         public IGameRunner Runner { get; private set; }
+
+        private int start;
+        private int next;
 
         public void DisconnectPlayer(int player) {
             if (Runner != null) {
@@ -56,31 +57,60 @@ namespace SharedGame {
         protected virtual void OnPreRunFrame() {
         }
 
+        private void Start() {
+            var t = Time.realtimeSinceStartup;
+            var t2 = t + 1f / 60f;
+            System.Threading.Thread.Sleep(SToMs(t2 - t));
+            UnityEngine.Debug.Log($"{t} {t2} {Time.realtimeSinceStartup}");
+        }
+
+        private int SToMs(float time) {
+            return (int)(time * 1000f);
+        }
+
         private void Update() {
             if (IsRunning != (Runner != null)) {
                 IsRunning = Runner != null;
                 OnRunningChanged?.Invoke(IsRunning);
                 if (IsRunning) {
                     OnInit?.Invoke();
-                }
+                    start = next = Utils.TimeGetTime();
+                } 
             }
-            if (Runner != null) {
+            if (IsRunning) {
                 updateWatch.Start();
-                var now = Time.time;
-                var extraMs = Mathf.Max(0, (int)((next - now) * 1000f) - 1);
-                Runner.Idle(extraMs);
-                now = Time.time;
-
-                if (now >= next) {
-                    OnPreRunFrame();
-                    Runner.RunFrame();
-                    next = next + 1f / 60f;
-                    OnStateChanged?.Invoke();
+                if (useNewUpdate) {
+                    NewUpdate();
+                }
+                else {
+                    OriginalUpdate();
                 }
                 updateWatch.Stop();
 
                 OnStatus?.Invoke(Runner.GetStatus(updateWatch));
             }
+        }
+
+        private void OriginalUpdate() {
+            var now = Utils.TimeGetTime();
+            var extraMs = Mathf.Max(0, next - now - 1);
+            Runner.Idle(extraMs);
+            if (now >= next) {
+                OnPreRunFrame();
+                Runner.RunFrame();
+                next = now + (int)(1000f / 60f);
+                OnStateChanged?.Invoke();
+            }
+        }
+
+        private void NewUpdate() {
+            var now = Utils.TimeGetTime();
+            var extraMs = Mathf.Max(0, next - now - 1);
+            Runner.Idle(extraMs);
+            OnPreRunFrame();
+            Runner.RunFrame();
+            next = next + (int)(1000f / 60f);
+            OnStateChanged?.Invoke();
         }
 
         public void StartGame(IGameRunner runner) {

@@ -4,7 +4,7 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public class BoltEmitSystem : SystemBase {
+    public partial class BoltEmitSystem : SystemBase {
 
         protected override void OnUpdate() {
             Entities

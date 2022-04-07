@@ -6,7 +6,7 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public class PlayerHitProcessingSystem : SystemBase {
+    public partial class PlayerHitProcessingSystem : SystemBase {
 
         protected override void OnUpdate() {
             Entities
@@ -27,7 +27,7 @@ namespace EcsWar {
         public Entity hitEntity;
     }
 
-    public class BoltHitSystem : SystemBase {
+    public partial class BoltHitSystem : SystemBase {
         private EntityQuery playerQuery;
 
         protected override void OnCreate() {

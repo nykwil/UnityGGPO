@@ -2,6 +2,7 @@ using System.Text;
 using Unity.Collections;
 using UnityEngine;
 using UnityGGPO;
+using Unity.Burst;
 
 namespace Tests {
 
