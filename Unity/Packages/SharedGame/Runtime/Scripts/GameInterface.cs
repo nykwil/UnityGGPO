@@ -6,10 +6,12 @@ namespace SharedGame {
 
     public class GameInterface : MonoBehaviour {
         public int maxLogLines = 20;
-        public Text txtStatus;
-        public Text txtChecksum;
         public Text txtGameLog;
         public Text txtPluginLog;
+        public Text txtIdlePerc;
+        public Text txtUpdatePerc;
+        public Text txtNowChecksum;
+        public Text txtPeriodicChecksum;
         public Button btnPlayer1;
         public Button btnPlayer2;
         public Button btnConnect;
@@ -118,8 +120,10 @@ namespace SharedGame {
         }
 
         private void OnStatus(StatusInfo status) {
-            txtStatus.text = status.TimePercString();
-            txtChecksum.text = status.ChecksumString();
+            txtIdlePerc.text = status.idlePerc.ToString();
+            txtUpdatePerc.text = status.updatePerc.ToString();
+            txtNowChecksum.text = status.now.ToString();
+            txtPeriodicChecksum.text = status.periodic.ToString();
         }
     }
 }

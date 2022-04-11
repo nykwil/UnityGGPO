@@ -23,6 +23,8 @@ namespace SharedGame {
     public struct ChecksumInfo {
         public int framenumber;
         public int checksum;
+
+        public override string ToString() => framenumber.ToString() + " " + checksum.ToString("X2");
     };
 
     public class GameInfo {
