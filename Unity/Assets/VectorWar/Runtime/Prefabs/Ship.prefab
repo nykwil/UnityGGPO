@@ -416,6 +416,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Executioner
       objectReference: {fileID: 0}
+    - target: {fileID: 1303263355452402415, guid: 3a8630e44f2106c45a48df9a00fb0503,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1303263355452402415, guid: 3a8630e44f2106c45a48df9a00fb0503,
+        type: 3}
+      propertyPath: m_DynamicOccludee
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3a8630e44f2106c45a48df9a00fb0503, type: 3}
 --- !u!4 &2776768385547979286 stripped

@@ -8,7 +8,7 @@ namespace SharedGame {
 
     public abstract class GameManager : MonoBehaviour {
         private static GameManager _instance;
-        public bool useNewUpdate;
+        public bool useNewUpdate = true;
 
         public static GameManager Instance {
             get {
@@ -75,7 +75,7 @@ namespace SharedGame {
                 if (IsRunning) {
                     OnInit?.Invoke();
                     start = next = Utils.TimeGetTime();
-                } 
+                }
             }
             if (IsRunning) {
                 updateWatch.Start();

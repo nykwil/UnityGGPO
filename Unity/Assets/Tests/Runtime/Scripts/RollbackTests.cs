@@ -51,7 +51,7 @@ namespace Tests {
         }
 
         public void CopyWorld(World snapShotWorld, World world) {
-            snapShotWorld.EntityManager.DestroyAndResetAllEntities();
+            //snapShotWorld.EntityManager.DestroyAndResetAllEntities();
             snapShotWorld.EntityManager.CopyAndReplaceEntitiesFrom(world.EntityManager);
             snapShotWorld.SetTime(new Unity.Core.TimeData(world.Time.ElapsedTime, world.Time.DeltaTime));
         }
@@ -61,13 +61,6 @@ namespace Tests {
             world.EntityManager.CopyAndReplaceEntitiesFrom(activeWorld.EntityManager);
             world.SetTime(new Unity.Core.TimeData(activeWorld.Time.ElapsedTime, activeWorld.Time.DeltaTime));
             return world;
-        }
-
-        private void SimulateTicks(int tickNumber) {
-            Debug.Log("Simulating the next " + tickNumber + " ticks");
-            for (int i = 0; i < tickNumber; i++) {
-                simulationWorld.Update();
-            }
         }
     }
 }
