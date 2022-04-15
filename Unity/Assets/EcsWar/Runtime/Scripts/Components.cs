@@ -14,28 +14,23 @@ namespace EcsWar {
         public bool Shoot;
     }
 
-    public struct LifeData : IComponentData {
-        public int Life;
-    }
-
     [System.Serializable]
     public struct Player : IComponentData {
 
         // Constants
         public float RotationSpeed;
+
         public float MoveSpeed;
         public int FireRate;
         public float FireSpeed;
         public int MaxLife;
         public float Radius;
         public float Friction;
+        public int PlayerIndex;
 
         // Data
         [UnityEngine.HideInInspector]
         public int ElapsedTime;
-
-        [UnityEngine.HideInInspector]
-        public int PlayerIndex;
 
         [UnityEngine.HideInInspector]
         public Entity BoltPrefabEntity;

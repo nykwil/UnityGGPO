@@ -12,13 +12,16 @@ namespace EcsWar {
             var p = player;
             p.BoltPrefabEntity = BoltPrefab != null ? conversionSystem.GetPrimaryEntity(BoltPrefab) : Entity.Null;
             dstManager.AddComponentData(entity, p);
-
+            dstManager.AddComponentData(entity, new MoveData());
+            dstManager.AddComponentData(entity, new LifeData() {
+                Life = p.MaxLife
+            });
             dstManager.AddComponentData(entity, new ActiveInput {
                 Reverse = false,
                 Accelerate = false,
-                Left = false,
+                Left = true,
                 Right = false,
-                Shoot = false
+                Shoot = true
             });
             dstManager.AddBuffer<HitBuffer>(entity);
         }

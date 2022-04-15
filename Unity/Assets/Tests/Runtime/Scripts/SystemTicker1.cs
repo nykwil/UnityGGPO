@@ -9,7 +9,7 @@ namespace Tests {
         public World world;
         public bool isSimulating = false;
 
-        private void Start() {
+        private void Awake() {
             world = World.DefaultGameObjectInjectionWorld;
             var simGroup = world.GetExistingSystem<SimulationSystemGroup>();
             simSystems = simGroup.Systems;

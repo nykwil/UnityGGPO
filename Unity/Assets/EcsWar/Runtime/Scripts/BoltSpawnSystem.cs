@@ -18,7 +18,6 @@ namespace EcsWar {
                             var data = EntityManager.GetComponentData<Bolt>(boltEnt);
                             data.PlayerIndex = player.PlayerIndex;
                             EntityManager.SetComponentData(boltEnt, data);
-
                             EntityManager.SetComponentData(boltEnt, new MoveData() {
                                 Linear = math.mul(playerRot.Value, new float3(0, 0, player.FireSpeed))
                             });

@@ -11,9 +11,8 @@ GameObject:
   - component: {fileID: 6440327274587822750}
   - component: {fileID: 2978154378910161842}
   - component: {fileID: 3848229103262249760}
-  - component: {fileID: 513652590463712338}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Mesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -82,20 +81,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &513652590463712338
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 326562511155637614}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: dadded9bfb22228429232dc44a21d0a1, type: 2}
 --- !u!1 &7931053775660704244
 GameObject:
   m_ObjectHideFlags: 0
@@ -108,6 +93,8 @@ GameObject:
   - component: {fileID: 1598639876228664226}
   - component: {fileID: 4179179599510531677}
   - component: {fileID: 6457657687383193869}
+  - component: {fileID: 4670736472333482661}
+  - component: {fileID: 877304733945041402}
   m_Layer: 0
   m_Name: Bolt
   m_TagString: Untagged
@@ -177,3 +164,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ConversionMode: 0
+--- !u!114 &4670736472333482661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7931053775660704244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4324adbd30ea6df459a2b82a40862761, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Life: 100
+--- !u!114 &877304733945041402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7931053775660704244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 795b979a4918a9f408adbe93df76d8ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Life: 1

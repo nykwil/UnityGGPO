@@ -11,14 +11,41 @@ namespace EcsWar {
         protected override void OnUpdate() {
             Entities
                 .WithoutBurst()
-                .ForEach((Entity entity, ref LifeData player) => {
-                    var lookup = GetBufferFromEntity<HitBuffer>();
-                    var buffer = lookup[entity];
+                .ForEach((Entity entity, ref LifeData lifeData, ref DynamicBuffer<HitBuffer> buffer) => {
                     for (int i = 0; i < buffer.Length; ++i) {
-                        player.Life -= buffer[i].Damage;
+                        lifeData.Life -= buffer[i].Damage;
                     }
                     buffer.Clear();
                 }).Run();
+        }
+    }
+
+    public partial class LifDataLifeSystem : SystemBase {
+        private EntityCommandBufferSystem _entityCommandBufferSystem;
+
+        protected override void OnCreate() {
+            _entityCommandBufferSystem = World.GetExistingSystem<EndSimulationEntityCommandBufferSystem>();
+        }
+
+        protected override void OnUpdate() {
+            var ecb = _entityCommandBufferSystem.CreateCommandBuffer();
+            Entities
+                .ForEach((Entity entity, ref LifeData lifeData) => {
+                    if (lifeData.Life <= 0) {
+                        ecb.DestroyEntity(entity);
+                    }
+                }).Schedule();
+            _entityCommandBufferSystem.AddJobHandleForProducer(Dependency);
+        }
+    }
+
+    public partial class LifDataDecaySystem : SystemBase {
+
+        protected override void OnUpdate() {
+            Entities
+                .ForEach((Entity entity, ref LifeData lifeData, ref LifeDecayData decay) => {
+                    lifeData.Life -= decay.Life;
+                }).Schedule();
         }
     }
 
@@ -27,6 +54,7 @@ namespace EcsWar {
         public Entity hitEntity;
     }
 
+    // @TODO burstify this
     public partial class BoltHitSystem : SystemBase {
         private EntityQuery playerQuery;
 
@@ -73,6 +101,7 @@ namespace EcsWar {
                     }
                 }
             }
+
             queue.Dispose();
             plEntityList.Dispose();
             plPlayerList.Dispose();

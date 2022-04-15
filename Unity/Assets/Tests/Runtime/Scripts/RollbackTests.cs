@@ -4,30 +4,16 @@ using UnityEngine;
 namespace Tests {
 
     public class RollbackTests : MonoBehaviour {
-        public bool pressedRollback;
-        public bool pressedSnapshot;
-
-        public bool autoMode;
-
-        private World simulationWorld;
-
+        private bool autoMode;
+        private World lockStepWorld;
         private World activeWorld;
 
         private void Awake() {
             activeWorld = World.DefaultGameObjectInjectionWorld;
+            lockStepWorld = new World("lockStepWorld", WorldFlags.Simulation);
         }
 
         private void Update() {
-            if (pressedRollback) {
-                Debug.Log("pressedRollback");
-                pressedRollback = false;
-                RestoreSimulationWorld();
-            }
-            if (pressedSnapshot) {
-                Debug.Log("pressedSnapshot");
-                pressedSnapshot = false;
-                SaveSimulationWorld();
-            }
             if (autoMode) {
                 if (Time.frameCount % 10 == 0) {
                     SaveSimulationWorld();
@@ -38,22 +24,26 @@ namespace Tests {
             }
         }
 
+        [InspectorButton]
+        private void EnableAutoMode() {
+            SaveSimulationWorld();
+            autoMode = true;
+        }
+
+        [InspectorButton]
         private void SaveSimulationWorld() {
-            simulationWorld = BackupWorld();
+            CopyWorld(lockStepWorld, activeWorld);
         }
 
+        [InspectorButton]
         private void RestoreSimulationWorld() {
-            if (simulationWorld != null) {
-                CopyWorld(activeWorld, simulationWorld);
-                simulationWorld.Dispose();
-                simulationWorld = null;
-            }
+            CopyWorld(activeWorld, lockStepWorld);
         }
 
-        public void CopyWorld(World snapShotWorld, World world) {
+        public void CopyWorld(World toWorld, World fromWorld) {
             //snapShotWorld.EntityManager.DestroyAndResetAllEntities();
-            snapShotWorld.EntityManager.CopyAndReplaceEntitiesFrom(world.EntityManager);
-            snapShotWorld.SetTime(new Unity.Core.TimeData(world.Time.ElapsedTime, world.Time.DeltaTime));
+            toWorld.EntityManager.CopyAndReplaceEntitiesFrom(fromWorld.EntityManager);
+            toWorld.SetTime(new Unity.Core.TimeData(fromWorld.Time.ElapsedTime, fromWorld.Time.DeltaTime));
         }
 
         public World BackupWorld() {

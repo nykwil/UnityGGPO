@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 2748704813554987566}
   - component: {fileID: 2748704813554987565}
   - component: {fileID: 2748704813554987561}
-  - component: {fileID: 4932951480658677150}
   m_Layer: 0
   m_Name: Ship
   m_TagString: Untagged
@@ -67,30 +66,10 @@ MonoBehaviour:
     MaxLife: 100
     Radius: 0.3
     Friction: 0.5
-    ElapsedTime: 0
     PlayerIndex: 0
+    ElapsedTime: 0
   BoltPrefab: {fileID: 7931053775660704244, guid: 681cd90ae15df5a46a96139a2c6a467e,
     type: 3}
---- !u!114 &4932951480658677150
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2748704813554987563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7edde8fb08293c4c8939af937cf599d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Angular:
-    x: 0
-    y: 0
-    z: 0
-  Linear:
-    x: 0
-    y: 0
-    z: 0
 --- !u!1001 &4966573218377076983
 PrefabInstance:
   m_ObjectHideFlags: 0
