@@ -8,3 +8,4 @@ namespace EcsWar {
         public float Radius;
     }
 }
+

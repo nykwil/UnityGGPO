@@ -40,7 +40,7 @@ namespace Tests {
             CopyWorld(activeWorld, lockStepWorld);
         }
 
-        public void CopyWorld(World toWorld, World fromWorld) {
+        public static void CopyWorld(World toWorld, World fromWorld) {
             //snapShotWorld.EntityManager.DestroyAndResetAllEntities();
             toWorld.EntityManager.CopyAndReplaceEntitiesFrom(fromWorld.EntityManager);
             toWorld.SetTime(new Unity.Core.TimeData(fromWorld.Time.ElapsedTime, fromWorld.Time.DeltaTime));

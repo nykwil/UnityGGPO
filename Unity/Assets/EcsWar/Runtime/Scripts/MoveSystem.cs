@@ -5,7 +5,7 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public partial class ForwardMoveSystem : SystemBase {
+    public partial class MoveSystem : SystemBase {
 
         protected override void OnUpdate() {
             Entities
