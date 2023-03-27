@@ -43,7 +43,9 @@ namespace VectorWar {
         private void UpdateBullets(Bullet[] bullets, Transform[] bulletList) {
             for (int j = 0; j < bulletList.Length; ++j) {
                 bulletList[j].position = bullets[j].position;
-                bulletList[j].rotation = Quaternion.LookRotation(bullets[j].velocity, Vector3.up);
+                if (bullets[j].velocity.sqrMagnitude > Mathf.Epsilon) {
+                    bulletList[j].rotation = Quaternion.LookRotation(bullets[j].velocity, Vector3.up);
+                }
                 bulletList[j].gameObject.SetActive(bullets[j].active);
             }
         }
