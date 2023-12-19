@@ -111,7 +111,7 @@ namespace VectorWar {
     }
 
     [Serializable]
-    public struct VwGame : IGame {
+    public class VwGame : IGame {
         public int Framenumber { get; private set; }
 
         public int Checksum => GetHashCode();

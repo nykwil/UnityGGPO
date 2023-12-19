@@ -26,6 +26,8 @@ namespace SharedGame {
         private Stopwatch frameWatch = new Stopwatch();
         private Stopwatch idleWatch = new Stopwatch();
 
+        private int framesAhead;
+
         /*
          * The begin game callback.  We don't need to do anything special here,
          * so just return true.
@@ -81,7 +83,7 @@ namespace SharedGame {
         }
 
         public bool OnEventEventcodeTimesyncDelegate(int timesync_frames_ahead) {
-            Utils.Sleep(1000 * timesync_frames_ahead / 60);
+            framesAhead = timesync_frames_ahead;
             return true;
         }
 
@@ -366,6 +368,12 @@ namespace SharedGame {
         */
 
         public void RunFrame() {
+            if (framesAhead > 0) {
+                // Need to capture inputs we don't use on this frame and make them available for the next frame we don't skip
+                framesAhead--;
+                return;
+            }
+            
             var result = GGPO.OK;
 
             for (int i = 0; i < GameInfo.players.Length; ++i) {

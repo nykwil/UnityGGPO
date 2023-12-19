@@ -21,7 +21,7 @@ namespace SharedGame {
 
         public void Idle(int ms) {
             idleWatch.Start();
-            Utils.Sleep(ms);
+            // We don't need to sleep here anymore as we are running idle before RunFrame every fixed update
             idleWatch.Stop();
         }
 

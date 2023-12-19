@@ -8,8 +8,6 @@ namespace SharedGame {
 
     public abstract class GameManager : MonoBehaviour {
         private static GameManager _instance;
-        public bool useNewUpdate = true;
-
         public static GameManager Instance {
             get {
                 if (_instance == null) {
@@ -32,9 +30,6 @@ namespace SharedGame {
         public bool IsRunning { get; private set; }
 
         public IGameRunner Runner { get; private set; }
-
-        private int start;
-        private int next;
 
         public void DisconnectPlayer(int player) {
             if (Runner != null) {
@@ -68,49 +63,26 @@ namespace SharedGame {
             return (int)(time * 1000f);
         }
 
-        private void Update() {
+        // Inputs need to be polled in Update (or you can use something like Rewired's FixedUpdate setting) so we don't miss inputs
+        private void FixedUpdate() {
             if (IsRunning != (Runner != null)) {
                 IsRunning = Runner != null;
                 OnRunningChanged?.Invoke(IsRunning);
                 if (IsRunning) {
                     OnInit?.Invoke();
-                    start = next = Utils.TimeGetTime();
                 }
             }
             if (IsRunning) {
                 updateWatch.Start();
-                if (useNewUpdate) {
-                    NewUpdate();
-                }
-                else {
-                    OriginalUpdate();
-                }
-                updateWatch.Stop();
-
-                OnStatus?.Invoke(Runner.GetStatus(updateWatch));
-            }
-        }
-
-        private void OriginalUpdate() {
-            var now = Utils.TimeGetTime();
-            var extraMs = Mathf.Max(0, next - now - 1);
-            Runner.Idle(extraMs);
-            if (now >= next) {
+                
+                Runner.Idle(0);
                 OnPreRunFrame();
                 Runner.RunFrame();
-                next = now + (int)(1000f / 60f);
                 OnStateChanged?.Invoke();
-            }
-        }
 
-        private void NewUpdate() {
-            var now = Utils.TimeGetTime();
-            var extraMs = Mathf.Max(0, next - now - 1);
-            Runner.Idle(extraMs);
-            OnPreRunFrame();
-            Runner.RunFrame();
-            next = next + (int)(1000f / 60f);
-            OnStateChanged?.Invoke();
+                updateWatch.Stop();
+                OnStatus?.Invoke(Runner.GetStatus(updateWatch));
+            }
         }
 
         public void StartGame(IGameRunner runner) {
