@@ -70,7 +70,7 @@ namespace SharedGame {
 
         private void OnTogglePluginLog(bool value) {
             if (tglPluginLog.isOn) {
-                txtPluginLog.text = string.Join("\n", gameLogs);
+                txtPluginLog.text = string.Join("\n", pluginLogs);
             }
             txtPluginLog.gameObject.SetActive(tglPluginLog.isOn);
         }

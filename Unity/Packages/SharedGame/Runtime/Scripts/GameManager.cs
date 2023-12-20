@@ -107,7 +107,7 @@ namespace SharedGame {
             var now = Utils.TimeGetTime();
             var extraMs = Mathf.Max(0, next - now - 1);
             Runner.Idle(extraMs);
-            if (now >= next) {
+            while (now >= next) {
                 OnPreRunFrame();
                 Runner.RunFrame();
                 next += (int)(1000f / 60f);
