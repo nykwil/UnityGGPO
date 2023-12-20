@@ -7,8 +7,16 @@ using UnityGGPO;
 namespace SharedGame {
 
     public abstract class GameManager : MonoBehaviour {
+
+        public enum UpdateType {
+            VectorWar,
+            Always,
+            Fixed
+        }
+
+        public UpdateType updateType = UpdateType.Fixed;
+
         private static GameManager _instance;
-        public bool useNewUpdate = true;
 
         public static GameManager Instance {
             get {
@@ -33,7 +41,6 @@ namespace SharedGame {
 
         public IGameRunner Runner { get; private set; }
 
-        private int start;
         private int next;
 
         public void DisconnectPlayer(int player) {
@@ -57,34 +64,27 @@ namespace SharedGame {
         protected virtual void OnPreRunFrame() {
         }
 
-        private void Start() {
-            var t = Time.realtimeSinceStartup;
-            var t2 = t + 1f / 60f;
-            System.Threading.Thread.Sleep(SToMs(t2 - t));
-            UnityEngine.Debug.Log($"{t} {t2} {Time.realtimeSinceStartup}");
-        }
-
-        private int SToMs(float time) {
-            return (int)(time * 1000f);
-        }
-
         private void Update() {
             if (IsRunning != (Runner != null)) {
                 IsRunning = Runner != null;
                 OnRunningChanged?.Invoke(IsRunning);
                 if (IsRunning) {
                     OnInit?.Invoke();
-                    start = next = Utils.TimeGetTime();
+                    next = Utils.TimeGetTime() + (int)(1000f / 60f);
                 }
             }
             if (IsRunning) {
                 updateWatch.Start();
-                if (useNewUpdate) {
-                    NewUpdate();
-                }
-                else {
+                if (updateType == UpdateType.VectorWar) {
                     OriginalUpdate();
                 }
+                else if (updateType == UpdateType.Always) {
+                    AlwaysUpdate();
+                }
+                else {
+                    NewUpdate();
+                }
+
                 updateWatch.Stop();
 
                 OnStatus?.Invoke(Runner.GetStatus(updateWatch));
@@ -107,10 +107,24 @@ namespace SharedGame {
             var now = Utils.TimeGetTime();
             var extraMs = Mathf.Max(0, next - now - 1);
             Runner.Idle(extraMs);
-            OnPreRunFrame();
-            Runner.RunFrame();
-            next = next + (int)(1000f / 60f);
-            OnStateChanged?.Invoke();
+            if (now >= next) {
+                OnPreRunFrame();
+                Runner.RunFrame();
+                next += (int)(1000f / 60f);
+                OnStateChanged?.Invoke();
+            }
+        }
+
+        private void AlwaysUpdate() {
+            var now = Utils.TimeGetTime();
+            var extraMs = Mathf.Max(0, next - now - 1);
+            Runner.Idle(extraMs);
+            if (now >= next) {
+                OnPreRunFrame();
+                Runner.RunFrame();
+                next += (int)(1000f / 60f);
+                OnStateChanged?.Invoke();
+            }
         }
 
         public void StartGame(IGameRunner runner) {
