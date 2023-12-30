@@ -7,8 +7,9 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <windows.h>
 
-constexpr auto PLUGIN_VERSION = "1.0.0.0";
+constexpr auto PLUGIN_VERSION = "1.0.0.1";
 constexpr auto PLUGIN_BUILD_NUMBER = 1;
 int logLevel = 1; // 0 == nothing // 1 == important things // 2 == verbose // 3 == everything
 
@@ -45,6 +46,16 @@ PLUGINEX(const char*) UggPluginVersion()
 PLUGINEX(int) UggPluginBuildNumber()
 {
     return PLUGIN_BUILD_NUMBER;
+}
+
+PLUGINEX(void) UggSleep(int ms)
+{
+    Sleep(ms);
+}
+
+PLUGINEX(int) UggTimeGetTime()
+{
+    return timeGetTime();
 }
 
 PLUGINEX(void) UggSetLogDelegate(LogDelegate callback)

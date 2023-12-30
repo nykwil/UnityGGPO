@@ -42,11 +42,11 @@ namespace UnityGGPO {
         }
 
         public static int TimeGetTime() {
-            return (int)(UnityEngine.Time.realtimeSinceStartup * 1000f);
+            return UnityGGPO.GGPO.UggTimeGetTime();
         }
 
         public static void Sleep(int ms) {
-            Thread.Sleep(ms);
+            UnityGGPO.GGPO.UggSleep(ms);
         }
     }
 }

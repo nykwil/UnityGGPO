@@ -11,10 +11,11 @@ namespace SharedGame {
         public enum UpdateType {
             VectorWar,
             Always,
-            Fixed
+            FixedSkip,
+            FixedFastForward
         }
 
-        public UpdateType updateType = UpdateType.Fixed;
+        public UpdateType updateType = UpdateType.FixedSkip;
 
         private static GameManager _instance;
 
@@ -76,13 +77,16 @@ namespace SharedGame {
             if (IsRunning) {
                 updateWatch.Start();
                 if (updateType == UpdateType.VectorWar) {
-                    OriginalUpdate();
+                    UpdateVectorwar();
                 }
                 else if (updateType == UpdateType.Always) {
-                    AlwaysUpdate();
+                    UpdateAlways();
                 }
-                else {
-                    NewUpdate();
+                else if (updateType == UpdateType.FixedSkip) {
+                    UpdateFixedSkip();
+                }
+                else if (updateType == UpdateType.FixedFastForward) {
+                    UpdateFixedFastForward();
                 }
 
                 updateWatch.Stop();
@@ -91,7 +95,7 @@ namespace SharedGame {
             }
         }
 
-        private void OriginalUpdate() {
+        private void UpdateVectorwar() {
             var now = Utils.TimeGetTime();
             var extraMs = Mathf.Max(0, next - now - 1);
             Runner.Idle(extraMs);
@@ -103,7 +107,7 @@ namespace SharedGame {
             }
         }
 
-        private void NewUpdate() {
+        private void UpdateFixedSkip() {
             var now = Utils.TimeGetTime();
             var extraMs = Mathf.Max(0, next - now - 1);
             Runner.Idle(extraMs);
@@ -115,7 +119,19 @@ namespace SharedGame {
             }
         }
 
-        private void AlwaysUpdate() {
+        private void UpdateFixedFastForward() {
+            var now = Utils.TimeGetTime();
+            var extraMs = Mathf.Max(0, next - now - 1);
+            Runner.Idle(extraMs);
+            if (now >= next) {
+                OnPreRunFrame();
+                Runner.RunFrame();
+                next += (int)(1000f / 60f);
+                OnStateChanged?.Invoke();
+            }
+        }
+
+        private void UpdateAlways() {
             var now = Utils.TimeGetTime();
             var extraMs = Mathf.Max(0, next - now - 1);
             Runner.Idle(extraMs);

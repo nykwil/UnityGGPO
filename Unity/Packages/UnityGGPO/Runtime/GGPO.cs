@@ -148,6 +148,12 @@ namespace UnityGGPO {
         private static extern int UggPluginBuildNumber();
 
         [DllImport(libraryName)]
+        public  static extern int UggSleep(int ms);
+
+        [DllImport(libraryName)]
+        public static extern int UggTimeGetTime();
+
+        [DllImport(libraryName)]
         private static extern void UggSetLogDelegate(IntPtr callback);
 
         [DllImport(libraryName)]
