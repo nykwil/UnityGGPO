@@ -5,18 +5,19 @@ namespace Tests {
 
     public class SystemTicker2 : MonoBehaviour {
         public World world;
-        public ComponentSystemGroup simGroup;
+        public SystemHandle simGroup;
         public bool isSimulating;
 
         private void Awake() {
             world = World.DefaultGameObjectInjectionWorld;
             simGroup = world.GetExistingSystem<SimulationSystemGroup>();
-            simGroup.Enabled = false;
+            var simState = world.Unmanaged.GetExistingSystemState<SimulationSystemGroup>();
+            simState.Enabled = false;
         }
 
         private void FixedUpdate() {
             if (isSimulating) {
-                simGroup.Update();
+                simGroup.Update(world.Unmanaged);
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Unity.Entities;
-using Unity.Transforms;
+using Unity.Entities.Serialization;
+using Unity.Scenes;
 using UnityEngine;
 
 namespace EcsWar {
@@ -8,22 +9,15 @@ namespace EcsWar {
     public class EcsSceneInfo : ScriptableObject {
         public GameObject playerPrefab;
         public Vector3[] startingPoints;
+        public EntitySceneReference SceneReference;
+        public UnityEditor.SceneAsset Scene;
+        private EntitySceneReference reference;
 
         public void CreateScene(World activeWorld) {
+            reference = new EntitySceneReference(Scene);
+
             activeWorld.EntityManager.DestroyAndResetAllEntities();
-            var settings = GameObjectConversionSettings.FromWorld(activeWorld, null);
-            var playerPrefabEntity = GameObjectConversionUtility.ConvertGameObjectHierarchy(playerPrefab, settings);
-            for (int i = 0; i < startingPoints.Length; ++i) {
-                var ent = activeWorld.EntityManager.Instantiate(playerPrefabEntity);
-                var playerData = activeWorld.EntityManager.GetComponentData<PlayerData>(ent);
-                var posData = activeWorld.EntityManager.GetComponentData<Translation>(ent);
-
-                posData.Value = startingPoints[i];
-                playerData.PlayerIndex = i;
-
-                activeWorld.EntityManager.SetComponentData(ent, playerData);
-                activeWorld.EntityManager.SetComponentData(ent, posData);
-            }
+            SceneSystem.LoadSceneAsync(activeWorld.Unmanaged, reference);
         }
     }
 }

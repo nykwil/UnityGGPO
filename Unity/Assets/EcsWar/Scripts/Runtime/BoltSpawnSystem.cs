@@ -4,12 +4,12 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public class BoltEmitSystem : SystemBase {
+    public partial class BoltEmitSystem : SystemBase {
 
         protected override void OnUpdate() {
             Entities
                 .WithStructuralChanges()
-                .ForEach((Entity playerEntity, ref PlayerData playerData, in ActiveInput activeInput, in Translation playerTr, in Rotation playerRot, in PlayerInfo playerInfo) => {
+                .ForEach((Entity playerEntity, ref PlayerData playerData, in ActiveInput activeInput, in LocalTransform playerLts, in PlayerInfo playerInfo) => {
                     playerData.ElapsedTime += 1;
                     if (activeInput.Shoot) {
                         if (playerData.ElapsedTime > playerInfo.FireRate) {
@@ -20,10 +20,9 @@ namespace EcsWar {
                             EntityManager.SetComponentData(boltEnt, data);
 
                             EntityManager.SetComponentData(boltEnt, new MoveData() {
-                                Linear = math.mul(playerRot.Value, new float3(0, 0, playerInfo.FireSpeed))
+                                Linear = math.mul(playerLts.Rotation, new float3(0, 0, playerInfo.FireSpeed))
                             });
-                            EntityManager.SetComponentData(boltEnt, playerRot);
-                            EntityManager.SetComponentData(boltEnt, playerTr);
+                            EntityManager.SetComponentData(boltEnt, playerLts);
                             playerData.ElapsedTime = 0;
                         }
                     }

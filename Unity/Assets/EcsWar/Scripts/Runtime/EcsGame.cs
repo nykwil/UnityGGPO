@@ -33,8 +33,9 @@ namespace EcsWar {
 
             activeWorld = World.DefaultGameObjectInjectionWorld;
             var simGroup = activeWorld.GetExistingSystem<SimulationSystemGroup>();
-            simGroup.Enabled = false;
-            simSystems = simGroup.Systems;
+            //simGroup.Enabled = false;
+            //simSystems = simGroup.Systems;
+            //@TODO
             sceneInfo.CreateScene(activeWorld);
         }
 

@@ -1,35 +1,8 @@
 using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Transforms;
 using UnityEngine;
+using Unity.Burst;
 
 namespace Tests {
-
-    public class TickCounterSystem : SystemBase {
-        private int systemTick;
-
-        protected override void OnUpdate() {
-            systemTick += 1;
-            string s = "";
-            Entities
-                .ForEach((Entity entity, ref TickCounterData tickData) => {
-                    tickData.tickCount += 1;
-                    s += $"{entity} = {tickData.tickCount}\n";
-                }).WithoutBurst().Run();
-
-            Debug.Log($"-- System Tick = {systemTick} --\n" + s);
-        }
-    }
-
-    public class RotationSpeedSystem : SystemBase {
-
-        protected override void OnUpdate() {
-            Entities
-                .ForEach((ref Rotation rotation, in RotationSpeedData rotSpeed) => {
-                    rotation.Value = math.mul(math.normalize(rotation.Value), quaternion.AxisAngle(math.up(), rotSpeed.radiansPerTick));
-                }).ScheduleParallel();
-        }
-    }
 
     public class RollbackTests : MonoBehaviour {
         public bool pressedRollback;

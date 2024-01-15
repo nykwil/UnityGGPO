@@ -4,11 +4,11 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public class PlayerMoveSystem : SystemBase {
+    public partial class PlayerMoveSystem : SystemBase {
 
         protected override void OnUpdate() {
             Entities
-                .ForEach((ref MoveData pv, in PlayerInfo player, in Rotation rot, in ActiveInput activeInput) => {
+                .ForEach((ref MoveData pv, in PlayerInfo player, in LocalTransform lts, in ActiveInput activeInput) => {
                     // move player
                     if (activeInput.Left) {
                         pv.Angular = new float3(0, -player.RotationSpeed, 0);
@@ -29,7 +29,7 @@ namespace EcsWar {
                         pos.z = -player.MoveSpeed;
                     }
 
-                    pv.Linear = math.mul(rot.Value, pos);
+                    pv.Linear = math.mul(lts.Rotation, pos);
                 }).WithoutBurst().Run();
         }
     }

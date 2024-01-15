@@ -6,11 +6,11 @@
         "Unity.Transforms",
         "Unity.Mathematics",
         "Unity.Collections",
-        "Unity.Jobs",
         "Unity.Burst",
         "UnityGGPO-Plugin",
         "UnityGGPO-SharedGame",
-        "Unity.Entities.Hybrid"
+        "Unity.Entities.Hybrid",
+        "Unity.Scenes"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

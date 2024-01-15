@@ -1,8 +1,9 @@
 ﻿using Unity.Entities;
+using UnityEngine;
+using Unity.Transforms;
 
 namespace Tests {
 
-    [GenerateAuthoringComponent]
     public struct RotationSpeedData : IComponentData {
         public float radiansPerTick;
     }

@@ -1,26 +1,13 @@
 {
   "dependencies": {
-<<<<<<< Updated upstream
-    "com.unity.coding": "0.1.0-preview.20",
-    "com.unity.dataflowgraph": "0.19.0-preview.7",
-    "com.unity.dots.editor": "0.12.0-preview.6",
-    "com.unity.entities": "0.17.0-preview.42",
-    "com.unity.ide.visualstudio": "2.0.9",
-    "com.unity.ide.vscode": "1.2.3",
-    "com.unity.performance.profile-analyzer": "1.0.3",
-    "com.unity.rendering.hybrid": "0.11.0-preview.44",
-=======
-    "com.unity.ai.navigation": "1.1.1",
-    "com.unity.burst": "1.8.4",
-    "com.unity.collections": "1.2.4",
+    "com.unity.2d.sprite": "1.0.0",
+    "com.unity.2d.tilemap": "1.0.0",
     "com.unity.entities": "1.0.0-pre.65",
+    "com.unity.entities.graphics": "1.0.0-pre.65",
     "com.unity.ide.visualstudio": "2.0.17",
     "com.unity.ide.vscode": "1.2.5",
-    "com.unity.mathematics": "1.2.6",
     "com.unity.render-pipelines.universal": "14.0.6",
     "com.unity.test-framework": "1.1.33",
-    "com.unity.textmeshpro": "3.0.6",
->>>>>>> Stashed changes
     "com.unity.ugui": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",

@@ -18,7 +18,6 @@ namespace EcsWar {
         }
     }
 
-    [GenerateAuthoringComponent]
     public struct BoltData : IComponentData {
         public int PlayerIndex;
     }

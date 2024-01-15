@@ -5,13 +5,13 @@ using Unity.Transforms;
 
 namespace EcsWar {
 
-    public class ForwardMoveSystem : SystemBase {
+    public partial class ForwardMoveSystem : SystemBase {
 
         protected override void OnUpdate() {
             Entities
-                .ForEach((ref Translation tr, ref Rotation rot, in MoveData move) => {
-                    rot.Value = math.mul(rot.Value, quaternion.Euler(move.Angular));
-                    tr.Value = tr.Value + move.Linear;
+                .ForEach((ref LocalTransform lts, in MoveData move) => {
+                    lts.Rotation = math.mul(lts.Rotation, quaternion.Euler(move.Angular));
+                    lts.Position = lts.Position + move.Linear;
                 }).Schedule();
         }
     }

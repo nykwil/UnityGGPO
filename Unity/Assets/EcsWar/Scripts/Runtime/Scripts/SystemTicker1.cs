@@ -5,22 +5,20 @@ using UnityEngine;
 namespace Tests {
 
     public class SystemTicker1 : MonoBehaviour {
-        private IEnumerable<ComponentSystemBase> simSystems;
+        private SystemHandle simGroup;
         public World world;
         public bool isSimulating = false;
 
         private void Start() {
             world = World.DefaultGameObjectInjectionWorld;
-            var simGroup = world.GetExistingSystem<SimulationSystemGroup>();
-            simSystems = simGroup.Systems;
-            simGroup.Enabled = false;
+            var simState = world.Unmanaged.GetExistingSystemState<SimulationSystemGroup>();
+            simGroup = world.GetExistingSystem<SimulationSystemGroup>();
+            simState.Enabled = false;
         }
 
         private void FixedUpdate() {
             if (isSimulating) {
-                foreach (var sys in simSystems) {
-                    sys.Update();
-                }
+                simGroup.Update(world.Unmanaged);
             }
         }
     }
