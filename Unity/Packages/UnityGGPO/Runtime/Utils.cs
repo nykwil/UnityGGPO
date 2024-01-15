@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -24,13 +23,13 @@ namespace UnityGGPO {
             return ptrStr != IntPtr.Zero ? Marshal.PtrToStringAnsi(ptrStr) : "";
         }
 
-        unsafe public static void* ToPtr(NativeArray<byte> data) {
+        public static unsafe void* ToPtr(NativeArray<byte> data) {
             unsafe {
                 return NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(data);
             }
         }
 
-        unsafe public static NativeArray<byte> ToArray(void* dataPointer, int length) {
+        public static unsafe NativeArray<byte> ToArray(void* dataPointer, int length) {
             unsafe {
                 var array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPointer, length, Allocator.Persistent);
 
@@ -40,6 +39,17 @@ namespace UnityGGPO {
                 return array;
             }
         }
+
+        public static int nmod(int n, int by) {
+            while (n < 0) {
+                n += by;
+            }
+            while (n >= by) {
+                n -= by;
+            }
+            return n;
+        }
+
 
         public static int TimeGetTime() {
             return UnityGGPO.GGPO.UggTimeGetTime();

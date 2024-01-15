@@ -6,13 +6,24 @@ namespace SharedGame {
 
     [ExecuteInEditMode]
     public class GgpoPerformancePanel : MonoBehaviour, IPerfUpdate {
+        public bool show;
+
         public Rect fairnessRect;
         public Rect networkRect;
+        public Rect labelRect;
 
-        public bool toggle; // @todo
-        public bool random; // @todo
+        public bool drawGraphs;
+        public bool drawGraphBackground;
+
+        public bool resetTimers;
+        public bool stallHack;
+        public bool random;
+
         public int _num_players = 2;
         public int step = 1;
+        public int textUpdateMs = 500;
+        public int pointsToDraw = 500;
+        public int stallFrames = 3;
 
         private const int MAX_GRAPH_SIZE = 4096;
         private const int MAX_FAIRNESS = 20;
@@ -34,7 +45,10 @@ namespace SharedGame {
         private int[] _remote_queue_graph;
         private int[] _send_queue_graph;
 
-        private Color[] _fairness_pens = new Color[] { Color.blue, Color.grey, Color.red, Color.magenta };
+        private Color[] _player_colours = new Color[] { Color.red, Color.blue, Color.green, Color.magenta };
+        private Color[] _other_colours = new Color[] { Color.yellow, Color.cyan, Color.white, Color.grey };
+        private Color _background_colour = Color.gray;
+
         private List<Vector2> pt = new List<Vector2>();
 
         public void Setup() {
@@ -57,52 +71,49 @@ namespace SharedGame {
             pt.Clear();
 
             for (int i = 0; i < count; i += step) {
-                float y = Mathf.InverseLerp(min, max, graph[(_first_graph_index + i) % MAX_GRAPH_SIZE]);
+                float y = Mathf.InverseLerp(min, max, graph[Utils.nmod(_first_graph_index - i, MAX_GRAPH_SIZE)]);
 
                 pt.Add(new Vector2(Mathf.Lerp(di.xMin, di.xMax, (float)i / count),
                     Mathf.Lerp(di.yMin, di.yMax, y)));
             }
 
-            GuiHelper.DrawLine(pt.ToArray(), pen, 1);
+            GUIHelper.DrawLinesFast(pt.ToArray(), pen);
         }
 
         private void DrawGrid(Rect di) {
-            GuiHelper.DrawRect(di, Color.gray);
+            if (drawGraphBackground) {
+                GUIHelper.DrawRect(di, _background_colour);
+            }
         }
 
         private void draw_network_graph_control(Rect di) {
+            GUI.Label(new Rect(new Vector2(di.xMin, di.yMin - 20f), new Vector2(di.width, 50f)), "Network");
+
             DrawGrid(di);
             for (int i = 0; i < _num_players; i++) {
-                DrawGraph(di, Color.green, _ping_graph[i], _graph_size, 0, 500);
+                DrawGraph(di, _player_colours[i], _ping_graph[i], pointsToDraw, 0, 500);
             }
-            DrawGraph(di, Color.red, _remote_queue_graph, _graph_size, 0, 14);
-            DrawGraph(di, Color.blue, _send_queue_graph, _graph_size, 0, 14);
+            DrawGraph(di, _other_colours[0], _remote_queue_graph, pointsToDraw, 0, 14);
+            DrawGraph(di, _other_colours[1], _send_queue_graph, pointsToDraw, 0, 14);
         }
 
         private void draw_fairness_graph_control(Rect di) {
-            DrawGrid(di);
+            GUI.Label(new Rect(new Vector2(di.xMin, di.yMin - 20f), new Vector2(di.width, 50f)), "Fairness");
 
+            DrawGrid(di);
             for (int i = 0; i < _num_players; i++) {
-                DrawGraph(di, _fairness_pens[i], _remote_fairness_graph[i], _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
+                DrawGraph(di, _player_colours[i], _remote_fairness_graph[i], pointsToDraw, -MAX_FAIRNESS, MAX_FAIRNESS);
             }
-            DrawGraph(di, Color.yellow, _fairness_graph, _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
+            DrawGraph(di, _other_colours[0], _fairness_graph, pointsToDraw, -MAX_FAIRNESS, MAX_FAIRNESS);
         }
 
         public void ggpoutil_perfmon_update(GGPONetworkStats[] statss) {
             int num_players = statss.Length;
 
-            int i;
-
-            if (_graph_size < MAX_GRAPH_SIZE) {
-                i = _graph_size++;
-            }
-            else {
-                i = _first_graph_index;
-                _first_graph_index = (_first_graph_index + 1) % MAX_GRAPH_SIZE;
-            }
+            _first_graph_index = (_first_graph_index + 1) % MAX_GRAPH_SIZE;
 
             for (int j = 0; j < num_players; j++) {
-                UpdateStats(i, j, statss[j]);
+                UpdateStats(_first_graph_index, j, statss[j]);
             }
         }
 
@@ -145,12 +156,12 @@ namespace SharedGame {
             }
 
             int now = Utils.TimeGetTime();
-            if (now > _last_text_update_time + 500) {
-                networkLag = $"{stats.ping} ms";
-                frameLag = $"{((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames";
-                bandwidth = $"{stats.kbps_sent / 8f} kilobytes/sec";
-                localAhead = $"{stats.local_frames_behind} frames";
-                remoteAhead = $"{stats.remote_frames_behind} frames";
+            if (now > _last_text_update_time + textUpdateMs) {
+                networkLag = $"Network Lag: {stats.ping} ms";
+                frameLag = $"Frame Lag: {((stats.ping != 0) ? stats.ping * 60f / 1000f : 0f)} frames";
+                bandwidth = $"Bandwidth: {stats.kbps_sent / 8f} kilobytes/sec";
+                localAhead = $"Local Ahead: {stats.local_frames_behind} frames";
+                remoteAhead = $"Remote Ahead: {stats.remote_frames_behind} frames";
                 _last_text_update_time = now;
             }
         }
@@ -160,11 +171,19 @@ namespace SharedGame {
                 graph[i] = UnityEngine.Random.Range(min, max);
             }
         }
+        private void Update() {
+            if (stallHack) {
+                stallHack = false;
+                int ms = (int)(1000f * stallFrames / 60f);
+                Utils.Sleep(ms);
+            }
+            if (resetTimers) {
+                resetTimers = false;
+                GameManager.Instance.ResetTimers();
+            }
 
-        public void OnGUI() {
             if (random) {
                 random = false;
-                Debug.Log("RANDOM!!!");
                 Setup();
 
                 _graph_size = MAX_GRAPH_SIZE;
@@ -180,15 +199,32 @@ namespace SharedGame {
                 RandomGraph(_fairness_graph, _graph_size, -MAX_FAIRNESS, MAX_FAIRNESS);
             }
 
-            if (toggle && _remote_queue_graph != null && _remote_queue_graph.Length == MAX_GRAPH_SIZE) {
+        }
+
+        public void OnGUI() {
+            var matrix = GUI.matrix;
+
+            if (Screen.width > 0 && Screen.height > 0) {
+                var ratio = Screen.width / 800f;
+                GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(ratio, ratio, 1.0f));
+            }
+
+            if (show && _remote_queue_graph != null && _remote_queue_graph.Length == MAX_GRAPH_SIZE) {
+                GUILayout.BeginArea(labelRect);
                 GUILayout.Label(networkLag);
                 GUILayout.Label(frameLag);
                 GUILayout.Label(bandwidth);
                 GUILayout.Label(localAhead);
                 GUILayout.Label(remoteAhead);
-                draw_fairness_graph_control(fairnessRect);
-                draw_network_graph_control(networkRect);
+                GUILayout.EndArea();
+
+                if (drawGraphs) {
+                    draw_fairness_graph_control(fairnessRect);
+                    draw_network_graph_control(networkRect);
+                }
             }
+
+            GUI.matrix = matrix;
         }
     }
 }

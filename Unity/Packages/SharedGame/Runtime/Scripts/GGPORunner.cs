@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Unity.Collections;
 using UnityGGPO;
+using Unity.Logging;
 
 namespace SharedGame {
 
     public class GGPORunner : IGameRunner {
-        private bool verbose;
-
         public int PlayerIndex { get; set; }
+        public int FramesAhead { get; set; }
 
         public const int MAX_PLAYERS = 2;
         private const int FRAME_DELAY = 2;
@@ -17,11 +17,7 @@ namespace SharedGame {
         public string Name { get; private set; }
         public IGame Game { get; private set; }
         public GameInfo GameInfo { get; private set; }
-        public IPerfUpdate perf { get; private set; }
-
-        public static event Action<string> OnGameLog;
-
-        public static event Action<string> OnPluginLog;
+        public IPerfUpdate Perf { get; private set; }
 
         private Stopwatch frameWatch = new Stopwatch();
         private Stopwatch idleWatch = new Stopwatch();
@@ -32,7 +28,7 @@ namespace SharedGame {
          */
 
         private bool OnBeginGameCallback(string name) {
-            LogGame($"OnBeginGameCallback");
+            Log.Debug("OnBeginGameCallback {0}", name);
             return true;
         }
 
@@ -42,46 +38,54 @@ namespace SharedGame {
          */
 
         private bool OnEventConnectedToPeerDelegate(int connected_player) {
+            Log.Debug("OnEventConnectedToPeerDelegate {0}", connected_player);
             GameInfo.SetConnectState(connected_player, PlayerConnectState.Synchronizing);
             return true;
         }
 
         public bool OnEventSynchronizingWithPeerDelegate(int synchronizing_player, int synchronizing_count, int synchronizing_total) {
+            Log.Debug("OnEventSynchronizingWithPeerDelegate {0}, {1}, {2}", synchronizing_player, synchronizing_count, synchronizing_total);
             var progress = 100 * synchronizing_count / synchronizing_total;
             GameInfo.UpdateConnectProgress(synchronizing_player, progress);
             return true;
         }
 
         public bool OnEventSynchronizedWithPeerDelegate(int synchronized_player) {
+            Log.Debug("OnEventSynchronizedWithPeerDelegate {0}", synchronized_player);
             GameInfo.UpdateConnectProgress(synchronized_player, 100);
             return true;
         }
 
         public bool OnEventRunningDelegate() {
+            Log.Debug("OnEventRunningDelegate");
             GameInfo.SetConnectState(PlayerConnectState.Running);
             SetStatusText("");
             return true;
         }
 
         public bool OnEventConnectionInterruptedDelegate(int connection_interrupted_player, int connection_interrupted_disconnect_timeout) {
+            Log.Debug("OnEventConnectionInterruptedDelegate {0}, {1}", connection_interrupted_player, connection_interrupted_disconnect_timeout);
             GameInfo.SetDisconnectTimeout(connection_interrupted_player,
-                                     Utils.TimeGetTime(),
-                                     connection_interrupted_disconnect_timeout);
+                Utils.TimeGetTime(),
+                connection_interrupted_disconnect_timeout);
             return true;
         }
 
         public bool OnEventConnectionResumedDelegate(int connection_resumed_player) {
+            Log.Debug("OnEventConnectionResumedDelegate {0}", connection_resumed_player);
             GameInfo.SetConnectState(connection_resumed_player, PlayerConnectState.Running);
             return true;
         }
 
         public bool OnEventDisconnectedFromPeerDelegate(int disconnected_player) {
+            Log.Debug("OnEventDisconnectedFromPeerDelegate {0}", disconnected_player);
             GameInfo.SetConnectState(disconnected_player, PlayerConnectState.Disconnected);
             return true;
         }
 
         public bool OnEventEventcodeTimesyncDelegate(int timesync_frames_ahead) {
-            Utils.Sleep(1000 * timesync_frames_ahead / 60);
+            Log.Debug("OnEventEventcodeTimesyncDelegate {0}", timesync_frames_ahead);
+            FramesAhead = timesync_frames_ahead;
             return true;
         }
 
@@ -91,7 +95,7 @@ namespace SharedGame {
          */
 
         private bool OnAdvanceFrameCallback(int flags) {
-            LogGame($"OnAdvanceFrameCallback {flags}");
+            Log.Debug("OnAdvanceFrameCallback {0}", flags);
 
             // Make sure we fetch new inputs from GGPO and use those to update the game state
             // instead of reading from the keyboard.
@@ -106,7 +110,7 @@ namespace SharedGame {
          */
 
         private bool OnLoadGameStateCallback(NativeArray<byte> data) {
-            LogGame($"OnLoadGameStateCallback {data.Length}");
+            Log.Debug("OnLoadGameStateCallback {0}", data.Length);
             Game.FromBytes(data);
             return true;
         }
@@ -117,9 +121,7 @@ namespace SharedGame {
          */
 
         private bool OnSaveGameStateCallback(out NativeArray<byte> data, out int checksum, int frame) {
-            if (verbose) {
-                LogGame($"OnSaveGameStateCallback {frame}");
-            }
+            Log.Verbose("OnSaveGameStateCallback {0}", frame);
             data = Game.ToBytes();
             checksum = Utils.CalcFletcher32(data);
             return true;
@@ -130,16 +132,14 @@ namespace SharedGame {
          */
 
         private bool OnLogGameState(string filename, NativeArray<byte> data) {
-            LogGame($"OnLogGameState {filename}");
-            LogGame($"--Error-- Pretty sure this feature doesn't work properly");
-
+            Log.Debug("OnLogGameState {0} Pretty sure this feature doesn't work properly", filename);
             Game.FromBytes(data);
             Game.LogInfo(filename);
             return true;
         }
 
         private void OnFreeBufferCallback(NativeArray<byte> data) {
-            LogGame($"OnFreeBufferCallback");
+            Log.Verbose("OnFreeBufferCallback");
             Game.FreeBytes(data);
         }
 
@@ -149,13 +149,12 @@ namespace SharedGame {
         /// <param name="callback"></param>
 
         public GGPORunner(string name, IGame game, IPerfUpdate perfPanel) {
-            LogGame("GGPOGame Created");
             Name = name;
-            GGPO.SetLogDelegate(LogPlugin);
             Game = game;
-            LogPlugin("GameState Set " + Game);
+            Perf = perfPanel;
+            GGPO.SetLogDelegate(LogPlugin);
+            Log.Debug("GGPORunner {0}", name);
             GameInfo = new GameInfo();
-            perf = perfPanel;
         }
 
         public void Init(IList<Connections> connections, int playerIndex) {
@@ -211,7 +210,11 @@ namespace SharedGame {
          */
 
         public void Init(int localport, int num_players, IList<GGPOPlayer> players, int num_spectators) {
-            LogGame($"Init {localport} {num_players} {string.Join("|", players)} {num_spectators}");
+            Log.Debug("Init {0}, {1}, {2}, {3}",
+                localport,
+                num_players,
+                string.Join("|", players),
+                num_spectators);
             // Initialize the game state
 
 #if SYNC_TEST
@@ -276,28 +279,28 @@ namespace SharedGame {
          */
 
         public void InitSpectator(int localport, int num_players, string host_ip, int host_port) {
-            LogGame($"InitSpectator {localport} {num_players} {host_ip} {host_port}");
+            Log.Debug("InitSpectator {0} {1} {2} {3}", localport, num_players, host_ip, host_port);
 
             // Initialize the game state
             GameInfo.players = Array.Empty<PlayerConnectionInfo>();
 
             // Fill in a ggpo callbacks structure to pass to start_session.
             var result = GGPO.Session.StartSpectating(
-                    OnBeginGameCallback,
-                    OnAdvanceFrameCallback,
-                    OnLoadGameStateCallback,
-                    OnLogGameState,
-                    OnSaveGameStateCallback,
-                    OnFreeBufferCallback,
-                    OnEventConnectedToPeerDelegate,
-                    OnEventSynchronizingWithPeerDelegate,
-                    OnEventSynchronizedWithPeerDelegate,
-                    OnEventRunningDelegate,
-                    OnEventConnectionInterruptedDelegate,
-                    OnEventConnectionResumedDelegate,
-                    OnEventDisconnectedFromPeerDelegate,
-                    OnEventEventcodeTimesyncDelegate,
-                    Name, num_players, localport, host_ip, host_port);
+                   OnBeginGameCallback,
+                   OnAdvanceFrameCallback,
+                   OnLoadGameStateCallback,
+                   OnLogGameState,
+                   OnSaveGameStateCallback,
+                   OnFreeBufferCallback,
+                   OnEventConnectedToPeerDelegate,
+                   OnEventSynchronizingWithPeerDelegate,
+                   OnEventSynchronizedWithPeerDelegate,
+                   OnEventRunningDelegate,
+                   OnEventConnectionInterruptedDelegate,
+                   OnEventConnectionResumedDelegate,
+                   OnEventDisconnectedFromPeerDelegate,
+                   OnEventEventcodeTimesyncDelegate,
+                   Name, num_players, localport, host_ip, host_port);
 
             CheckAndReport(result);
 
@@ -309,7 +312,7 @@ namespace SharedGame {
          */
 
         public void DisconnectPlayer(int playerIndex) {
-            LogGame($"DisconnectPlayer {playerIndex}");
+            Log.Debug("DisconnectPlayer {0}", playerIndex);
 
             if (playerIndex < GameInfo.players.Length) {
                 string logbuf;
@@ -331,7 +334,7 @@ namespace SharedGame {
 
         private void AdvanceFrame(long[] inputs, int disconnect_flags) {
             if (Game == null) {
-                LogPlugin("GameState is null what?");
+                Log.Debug("GameState is null what?");
             }
             Game.Update(inputs, disconnect_flags);
 
@@ -358,7 +361,7 @@ namespace SharedGame {
             for (int i = 0; i < count; ++i) {
                 CheckAndReport(GGPO.Session.GetNetworkStats(handles[i], out statss[i]));
             }
-            perf?.ggpoutil_perfmon_update(statss);
+            Perf?.ggpoutil_perfmon_update(statss);
         }
 
         /*
@@ -390,7 +393,7 @@ namespace SharedGame {
                     AdvanceFrame(inputs, disconnect_flags);
                 }
                 catch (Exception ex) {
-                    LogGame("Error " + ex);
+                    Log.Debug("Error {0}", ex);
                 }
                 frameWatch.Stop();
             }
@@ -408,7 +411,7 @@ namespace SharedGame {
         }
 
         public void Exit() {
-            LogGame($"Exit");
+            Log.Debug("Exit");
 
             if (GGPO.Session.IsStarted()) {
                 CheckAndReport(GGPO.Session.CloseSession());
@@ -421,7 +424,7 @@ namespace SharedGame {
 
         private void CheckAndReport(int result) {
             if (!GGPO.SUCCEEDED(result)) {
-                LogGame(GGPO.GetErrorCodeMessage(result));
+                Log.Debug(GGPO.GetErrorCodeMessage(result));
             }
         }
 
@@ -439,12 +442,13 @@ namespace SharedGame {
             GGPO.SetLogDelegate(null);
         }
 
-        public static void LogGame(string value) {
-            OnGameLog?.Invoke(value);
+        public static void LogPlugin(string value) {
+            Log.Verbose(value);
         }
 
-        public static void LogPlugin(string value) {
-            OnPluginLog?.Invoke(value);
+        public void ResetTimers() {
+            frameWatch.Reset();
+            idleWatch.Reset();
         }
     }
 }

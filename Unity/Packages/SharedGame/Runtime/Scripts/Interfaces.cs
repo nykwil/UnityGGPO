@@ -49,6 +49,7 @@ namespace SharedGame {
     public interface IGameRunner {
         IGame Game { get; }
         GameInfo GameInfo { get; }
+        int FramesAhead { get; set; }
 
         void Idle(int ms);
 
@@ -59,6 +60,8 @@ namespace SharedGame {
         void DisconnectPlayer(int player);
 
         void Shutdown();
+
+        void ResetTimers();
     }
 
     public interface IGameView {

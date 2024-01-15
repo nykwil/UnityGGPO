@@ -2,13 +2,38 @@
 
 namespace UnityGGPO {
 
-    public static class GuiHelper {
+    public static class GUIHelper {
 
         // The texture used by DrawLine(Color)
         private static Texture2D _coloredLineTexture;
 
         // The color used by DrawLine(Color)
         private static Color _coloredLineColor;
+
+        private static Material lineMaterial;
+
+        public static void DrawLinesFast(Vector2[] points, Color color) {
+            if (Event.current == null)
+                return;
+
+            if (Event.current.type != EventType.Repaint)
+                return;
+
+            if (!lineMaterial) {
+                lineMaterial = Resources.Load("LineMaterial") as Material;
+                lineMaterial.hideFlags = HideFlags.HideAndDontSave;
+                lineMaterial.shader.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            lineMaterial.SetPass(0);
+            GL.Begin(GL.LINES);
+            GL.Color(color);
+            for (int i = 0; i < points.Length - 2; ++i) {
+                GL.Vertex3(points[i].x, points[i].y, 0);
+                GL.Vertex3(points[i + 1].x, points[i + 1].y, 0);
+            }
+            GL.End();
+        }
 
         public static void DrawLine(Vector2[] points, Color color, int thickness) {
             for (int i = 0; i < points.Length - 1; ++i) {
