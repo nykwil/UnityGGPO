@@ -1,6 +1,6 @@
 using System;
 using System.Buffers.Binary;
-using SharedGame;
+using Nykwil.GekkoNet.Session;
 namespace VectorWar {
     public static class VWConstants {
         public const int MAX_BULLETS = 30;

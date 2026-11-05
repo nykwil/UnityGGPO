@@ -2,9 +2,9 @@ using System;
 using System.Runtime.InteropServices;
 using System.Net;
 using System.Net.Sockets;
-using SharedGame;
 using VectorWar;
 using Nykwil.GekkoNet;
+using Nykwil.GekkoNet.Session;
 public static class CoreChecks {
     public static void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
     static void Reject(Action action) {
@@ -93,6 +93,86 @@ public static class CoreChecks {
             }
             Require(Hash(expected) == Hash(game), "Stress final mismatch");
             Require(runner.Diagnostics.DesyncCount == 0, "Native stress desync");
+        }
+    }
+    /// <summary>Saves the frame plus a per-save counter, so a re-simulated frame never saves the same bytes twice.</summary>
+    sealed class NoisyGame : IGame, ISnapshotChecksum {
+        readonly bool customChecksum;
+        int saves;
+        public NoisyGame(bool customChecksum) { this.customChecksum = customChecksum; }
+        public int PlayerCount => 2;
+        public int FrameNumber { get; private set; }
+        public int SnapshotSize => 8;
+        public void SaveState(Span<byte> destination) {
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(destination, FrameNumber);
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4), ++saves);
+        }
+        public void LoadState(ReadOnlySpan<byte> source) => FrameNumber = System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(source);
+        public void AdvanceFrame(ReadOnlySpan<long> inputs) => FrameNumber++;
+        // The convention from ISnapshotChecksum: a real hash on interval frames, a constant on the rest.
+        public uint Checksum(int frame, ReadOnlySpan<byte> saved) =>
+            !customChecksum ? SnapshotChecksum.Compute(saved) : frame % 10 == 0 ? (uint)frame * 2654435761u : 0;
+    }
+    /// <summary>Desync reporting: throws by default, raises Desynced when not throwing, and honours a game-supplied checksum.</summary>
+    public static void Desync() {
+        var options = new SessionOptions { Mode = SessionMode.Stress };
+        Require(options.SavedStateDepth == options.StressDistance + 2, "Stress saved-state depth");
+        options.Mode = SessionMode.Peer;
+        Require(options.SavedStateDepth == options.PredictionLimit + 2, "Peer saved-state depth");
+        options.Mode = SessionMode.Stress;
+        bool threw = false;
+        using (var runner = new GekkoRunner(new NoisyGame(false), new SequenceInput(), options)) {
+            try { for (int i = 0; i < 200; i++) runner.Tick(); } catch (InvalidOperationException) { threw = true; }
+            Require(threw && runner.Diagnostics.DesyncCount == 1, "Desync did not throw by default");
+        }
+        options.ThrowOnDesync = false;
+        int raised = 0;
+        using (var runner = new GekkoRunner(new NoisyGame(false), new SequenceInput(), options)) {
+            runner.Desynced += report => {
+                raised++;
+                Require(report.PlayerIndex == -1 && report.Frame > 0 && report.LocalChecksum != report.RemoteChecksum, "Desync report contents");
+            };
+            for (int i = 0; i < 200; i++) runner.Tick();
+            Require(raised > 0 && raised == runner.Diagnostics.DesyncCount && runner.Game.FrameNumber == 200, "Desync event without throwing");
+            Require(runner.Diagnostics.LastDesync.LocalChecksum != runner.Diagnostics.LastDesync.RemoteChecksum, "LastDesync not recorded");
+        }
+        options.ThrowOnDesync = true;
+        using (var runner = new GekkoRunner(new NoisyGame(true), new SequenceInput(), options)) {
+            for (int i = 0; i < 200; i++) runner.Tick();
+            Require(runner.Diagnostics.DesyncCount == 0, "Game-supplied checksum was not used");
+        }
+    }
+    /// <summary>Counts SaveState calls and runner checksum requests; the runner asks for one checksum per native save.</summary>
+    sealed class CountingGame : IGame, ISnapshotChecksum {
+        public int Saves, Checksums;
+        public int PlayerCount => 2;
+        public int FrameNumber { get; private set; }
+        public int SnapshotSize => 4;
+        public void SaveState(Span<byte> destination) { Saves++; System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(destination, FrameNumber); }
+        public void LoadState(ReadOnlySpan<byte> source) => FrameNumber = System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(source);
+        public void AdvanceFrame(ReadOnlySpan<long> inputs) => FrameNumber++;
+        public uint Checksum(int frame, ReadOnlySpan<byte> saved) { Checksums++; return (uint)frame; }
+    }
+    /// <summary>SaveState runs exactly once per native save event, never from Poll, EndFrame or SampleDiagnostics.</summary>
+    public static void SaveDiscipline() {
+        // Baseline: Tick alone, where the runner calls SaveState only for native save events. The native session is
+        // deterministic, so the full Poll/Tick/EndFrame/SampleDiagnostics loop must produce exactly the same saves.
+        var baseline = new CountingGame();
+        using (var runner = new GekkoRunner(baseline, new SequenceInput(), new SessionOptions { Mode = SessionMode.Stress }))
+            for (int i = 0; i < 600; i++) runner.Tick();
+        var game = new CountingGame();
+        using (var runner = new GekkoRunner(game, new SequenceInput(), new SessionOptions { Mode = SessionMode.Stress })) {
+            runner.SampleDiagnostics();
+            Require(game.Saves == 0 && runner.Diagnostics.Current.Frame == -1 && runner.Diagnostics.Current.Checksum == 0, "Diagnostics before the first save");
+            for (int update = 0; update < 300; update++) {
+                runner.Poll();
+                runner.Tick(); runner.Tick();
+                runner.EndFrame();
+                runner.SampleDiagnostics();
+            }
+            Require(baseline.Saves > 600 && game.Saves == baseline.Saves, $"SaveState calls {game.Saves}, native saves {baseline.Saves}");
+            Require(game.Checksums == game.Saves, "One checksum per native save");
+            Require(runner.Diagnostics.Current.Frame > 0 && runner.Diagnostics.Current.Checksum == (uint)runner.Diagnostics.Current.Frame, "Diagnostics report the last save");
         }
     }
     sealed class EmptyTransport : IGekkoNetworkTransport {

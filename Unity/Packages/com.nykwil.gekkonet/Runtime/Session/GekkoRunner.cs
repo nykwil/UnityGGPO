@@ -2,8 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
-using Nykwil.GekkoNet;
-namespace SharedGame {
+namespace Nykwil.GekkoNet.Session {
     /// <summary>
     /// Runs a GekkoNet peer, spectator or stress session. Owns one native session; call and dispose it on its
     /// creating thread. Without a transport factory (or when it returns null) the built-in UDP adapter is used,
@@ -15,15 +14,22 @@ namespace SharedGame {
         readonly SessionOptions options;
         readonly ILocalInputSource source;
         readonly long[] inputs;
-        readonly byte[] snapshot;
         IntPtr session;
         bool ownsAdapter, disposed;
         int hostHandle = -1;
+        // Frame and checksum of the most recent native save, reported by SampleDiagnostics.
+        int lastSaveFrame = -1;
+        uint lastSaveChecksum;
         bool registerSpectators;
         IGekkoNetworkTransport transport;
         public IGame Game { get; }
         public GameInfo GameInfo { get; }
         public SessionDiagnostics Diagnostics { get; }
+        /// <summary>
+        /// Raised from Poll or Tick for each detected desync when <see cref="SessionOptions.ThrowOnDesync"/> is false.
+        /// To end the session, set a flag and dispose the runner after Poll or Tick returns.
+        /// </summary>
+        public event Action<DesyncReport> Desynced;
 
         public GekkoRunner(IGame game, ILocalInputSource source, SessionOptions options,
             Func<SessionOptions, IGekkoNetworkTransport> transportFactory = null) {
@@ -34,7 +40,6 @@ namespace SharedGame {
             if (options.Mode == SessionMode.Local) throw new ArgumentException("Use LocalRunner for local play.");
             this.options = options.Copy();
             inputs = new long[game.PlayerCount];
-            snapshot = new byte[game.SnapshotSize];
             GameInfo = new GameInfo(game.PlayerCount);
             Diagnostics = new SessionDiagnostics(game.PlayerCount) {
                 NativeMetricsAvailable = options.Mode != SessionMode.Stress,
@@ -136,7 +141,10 @@ namespace SharedGame {
                         var destination = new Span<byte>(save.State, Game.SnapshotSize);
                         Game.SaveState(destination);
                         *save.Length = (uint)Game.SnapshotSize;
-                        *save.Checksum = SnapshotChecksum.Compute(destination);
+                        uint checksum = SnapshotChecksum.Compute(Game, Game.FrameNumber, destination);
+                        *save.Checksum = checksum;
+                        lastSaveFrame = Game.FrameNumber;
+                        lastSaveChecksum = checksum;
                         break;
                     case Native.GameEventType.Load:
                         if (ev.Data.Load.Length != Game.SnapshotSize) throw new InvalidOperationException("Native snapshot size mismatch.");
@@ -188,10 +196,21 @@ namespace SharedGame {
                     case Native.SessionEventType.SpectatorPaused: GameInfo.Status = "Buffering spectator inputs"; break;
                     case Native.SessionEventType.SpectatorUnpaused: GameInfo.Status = "Spectating"; break;
                     case Native.SessionEventType.DesyncDetected:
+                        // Native frame f is saved after its advance, when the game's FrameNumber is f + 1.
+                        var report = new DesyncReport(ev.Data.Handle + 1, options.Mode == SessionMode.Stress ? -1 : PlayerIndexOf(ev.Data.RemoteHandle),
+                            ev.Data.LocalChecksum, ev.Data.RemoteChecksum);
                         Diagnostics.DesyncCount++;
-                        throw new InvalidOperationException($"Desync at native frame {ev.Data.Handle}, actor {ev.Data.RemoteHandle}: {ev.Data.LocalChecksum:X8} vs {ev.Data.RemoteChecksum:X8}.");
+                        Diagnostics.LastDesync = report;
+                        if (options.ThrowOnDesync) throw new InvalidOperationException(report.ToString());
+                        Desynced?.Invoke(report);
+                        if (disposed) return; // the handler ended the session; the native events are gone
+                        break;
                 }
             }
+        }
+        int PlayerIndexOf(int handle) {
+            for (int p = 0; p < GameInfo.Players.Length; p++) if (GameInfo.Players[p].Handle == handle) return p;
+            return -1;
         }
         void SetPlayerState(int handle, PlayerConnectState state, int progress) {
             for (int p = 0; p < GameInfo.Players.Length; p++) {
@@ -203,7 +222,9 @@ namespace SharedGame {
         }
         public void SampleDiagnostics() {
             CheckAlive();
-            Diagnostics.SampleState(Game, snapshot);
+            // Never saves: a game's SaveState runs only inside native save events.
+            Diagnostics.Current.Frame = lastSaveFrame;
+            Diagnostics.Current.Checksum = lastSaveChecksum;
             Diagnostics.Current.FramesAhead = FramesAhead;
             Diagnostics.Current.SpectatorBufferedFrames = Native.gekko_spectator_buffered_frames(session);
             Native.gekko_rollback_stats(session, out Diagnostics.Current.Rollback);

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using VectorWar;
+using Nykwil.GekkoNet.Session;
 public sealed class SessionTestManager : GameManager {
     sealed class Neutral : ILocalInputSource { public long ReadInput(int controllerId, int frame) => 0; }
     protected override IGame CreateGame(int count) => new VwGame(count);

@@ -1,1 +1,1 @@
-{"name":"Nykwil.SharedGame.UnityTransportSample","references":["Nykwil.SharedGame","Nykwil.GekkoNet","Nykwil.SharedGame.RollbackDuel","Unity.Networking.Transport","Unity.Collections"],"allowUnsafeCode":true}
+{"name":"Nykwil.SharedGame.UnityTransportSample","references":["Nykwil.SharedGame","Nykwil.GekkoNet.Session","Nykwil.GekkoNet","Nykwil.SharedGame.RollbackDuel","Unity.Networking.Transport","Unity.Collections"],"allowUnsafeCode":true}

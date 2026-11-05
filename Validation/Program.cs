@@ -2,8 +2,8 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
-using SharedGame;
 using VectorWar;
+using Nykwil.GekkoNet.Session;
 internal static class Program {
     sealed class ObservedGame : IGame {
         readonly VwGame game;
@@ -29,6 +29,8 @@ internal static class Program {
             Run("ABI and C booleans", CoreChecks.Layouts);
             Run("Snapshot round trip, rejection and byte coverage", CoreChecks.Snapshots);
             Run("Configuration validation", CoreChecks.Options);
+            Run("Desync reporting and game-supplied checksums", CoreChecks.Desync);
+            Run("SaveState only in native save events", CoreChecks.SaveDiscipline);
             Run("Socket failure, ownership and repeated cleanup", CoreChecks.Lifecycle);
             Run("100000 native stress updates", () => CoreChecks.Stress());
             Run("Zero managed allocation hot path", () => {

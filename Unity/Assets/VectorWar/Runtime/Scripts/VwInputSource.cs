@@ -1,5 +1,5 @@
-using SharedGame;
 using UnityEngine.InputSystem;
+using Nykwil.GekkoNet.Session;
 namespace VectorWar {
     public sealed class VwInputSource : ILocalInputSource {
         public long ReadInput(int controllerId, int frame) {

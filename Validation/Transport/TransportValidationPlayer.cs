@@ -4,6 +4,7 @@ using SharedGame;
 using SharedGame.Samples.UnityTransport;
 using SharedGame.Validation;
 using UnityEngine;
+using Nykwil.GekkoNet.Session;
 public sealed class TransportValidationPlayer : SessionValidationHarness {
     public UnityTransportDuel manager;
     [Serializable] public sealed class Config {

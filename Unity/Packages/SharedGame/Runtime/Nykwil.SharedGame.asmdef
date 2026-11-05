@@ -1,1 +1,1 @@
-{"name":"Nykwil.SharedGame","references":["Nykwil.GekkoNet"],"allowUnsafeCode":true,"autoReferenced":true}
+{"name":"Nykwil.SharedGame","references":["Nykwil.GekkoNet","Nykwil.GekkoNet.Session"],"allowUnsafeCode":true,"autoReferenced":true}

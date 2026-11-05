@@ -19,17 +19,12 @@ foreach ($folder in @('Assets','Packages','ProjectSettings')) {
 New-Item -ItemType Directory -Force -Path "$project/Assets","$project/Packages","$project/ProjectSettings" | Out-Null
 $version = Split-Path (Split-Path (Split-Path $Editor -Parent) -Parent) -Leaf
 "m_EditorVersion: $version" | Set-Content -LiteralPath "$project/ProjectSettings/ProjectVersion.txt"
-foreach ($package in @('com.nykwil.gekkonet','SharedGame')) {
+# -CoreOnly installs just the GekkoNet package (bindings plus session core), as a game without SharedGame would.
+$packageNames = if ($CoreOnly) { @('com.nykwil.gekkonet') } else { @('com.nykwil.gekkonet','SharedGame') }
+foreach ($package in $packageNames) {
     $destination = Join-Path $project "Packages/$package"
     New-Item -ItemType Directory -Force -Path $destination | Out-Null
     Copy-Item -Path "$root/Unity/Packages/$package/*" -Destination $destination -Recurse -Force
-}
-if ($CoreOnly) {
-    foreach ($folder in @('UI','Diagnostics')) {
-        $target = [IO.Path]::GetFullPath("$project/Packages/SharedGame/Runtime/$folder")
-        if (!$target.StartsWith([IO.Path]::GetFullPath($project) + [IO.Path]::DirectorySeparatorChar)) { throw 'Unsafe validation path.' }
-        if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
-    }
 }
 New-Item -ItemType Directory -Force -Path "$project/Assets/Tests","$project/Assets/Editor" | Out-Null
 Copy-Item -LiteralPath "$root/Validation/ConfigureTests.cs" -Destination "$project/Assets/Editor" -Force

@@ -3,6 +3,7 @@ using System.IO;
 using SharedGame;
 using SharedGame.Validation;
 using UnityEngine;
+using Nykwil.GekkoNet.Session;
 
 namespace VectorWar {
     // Command-line validation of the built example; inert during normal play.

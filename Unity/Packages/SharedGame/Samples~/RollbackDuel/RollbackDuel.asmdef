@@ -1,1 +1,1 @@
-{"name":"Nykwil.SharedGame.RollbackDuel","references":["Nykwil.SharedGame"],"autoReferenced":true}
+{"name":"Nykwil.SharedGame.RollbackDuel","references":["Nykwil.SharedGame","Nykwil.GekkoNet.Session"],"autoReferenced":true}

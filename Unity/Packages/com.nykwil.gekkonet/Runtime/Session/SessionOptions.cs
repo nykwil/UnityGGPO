@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-namespace SharedGame {
+namespace Nykwil.GekkoNet.Session {
     /// <summary>Local: all players on this machine. Peer: one local player over UDP. Spectator: watch a host. Stress: local rollback/desync stress test.</summary>
     public enum SessionMode { Local, Peer, Spectator, Stress }
     /// <summary>A numeric unicast IPv4 address and UDP port.</summary>
@@ -60,6 +60,16 @@ namespace SharedGame {
         public int StressDistance = 8;
         /// <summary>Frames a spectator buffers behind the host (0–120).</summary>
         public int SpectatorDelay = 8;
+        /// <summary>
+        /// Whether a detected desync throws from Poll or Tick (the default), which stops a managed session. When false the
+        /// runner records it in <see cref="SessionDiagnostics.LastDesync"/>, raises <see cref="GekkoRunner.Desynced"/> and keeps running.
+        /// </summary>
+        public bool ThrowOnDesync = true;
+        /// <summary>
+        /// How many of the most recent saves a load can restore: the native state ring holds PredictionLimit + 2 states
+        /// (StressDistance + 2 in stress mode). A game that keeps its own snapshot ring needs at least this many entries.
+        /// </summary>
+        public int SavedStateDepth => (Mode == SessionMode.Stress ? StressDistance : PredictionLimit) + 2;
         /// <summary>Throws ArgumentException describing the first invalid setting.</summary>
         public void Validate(int snapshotSize) {
             if (!Enum.IsDefined(typeof(SessionMode), Mode)) throw new ArgumentException("Unknown session mode.");
@@ -104,7 +114,8 @@ namespace SharedGame {
             if (HostsSpectators) foreach (var spectator in Spectators) actors.Add(new RemoteActor(spectator, -1));
             return actors.ToArray();
         }
-        internal SessionOptions Copy() {
+        /// <summary>Deep copy, including the endpoint arrays.</summary>
+        public SessionOptions Copy() {
             var copy = (SessionOptions)MemberwiseClone();
             copy.Players = new SessionEndpoint[Players.Length];
             for (int i = 0; i < Players.Length; i++) copy.Players[i] = Players[i]?.Copy();

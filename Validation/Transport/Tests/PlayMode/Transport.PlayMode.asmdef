@@ -1,1 +1,1 @@
-{"name":"Nykwil.Transport.PlayMode","references":["Nykwil.SharedGame","Nykwil.SharedGame.UI","Nykwil.SharedGame.RollbackDuel","Nykwil.SharedGame.UnityTransportSample"],"optionalUnityReferences":["TestAssemblies"]}
+{"name":"Nykwil.Transport.PlayMode","references":["Nykwil.SharedGame","Nykwil.GekkoNet.Session","Nykwil.SharedGame.UI","Nykwil.SharedGame.RollbackDuel","Nykwil.SharedGame.UnityTransportSample"],"optionalUnityReferences":["TestAssemblies"]}

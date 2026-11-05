@@ -3,6 +3,9 @@ All notable changes to this package are documented here. The format follows [Kee
 
 ## [0.3.0] - Unreleased
 ### Changed
+- The session core (`IGame` and the other contracts, `GekkoRunner`, `SessionOptions`, `GameInfo`, `SessionDiagnostics`, `SnapshotChecksum`, `SessionScheduler`) moved to `com.nykwil.gekkonet` as the `Nykwil.GekkoNet.Session` assembly and namespace. Add `using Nykwil.GekkoNet.Session;` and a `Nykwil.GekkoNet.Session` assembly reference where these types are used. `GameManager`, `LocalRunner` and the UI stay in `SharedGame`.
+- Diagnostics samples in network sessions show the latest native save's frame and checksum instead of saving the presented state; `SessionDiagnostics.SampleState` is removed.
+- `SessionOptions.Copy()` is public.
 - `ILocalInputSource.ReadInput(controllerId, frame)` receives the latest simulated frame.
 - `IGameRunner.DisconnectPlayer` returns whether the local session ended; `GameManager` stops the session when it does.
 - `GameManager.DisconnectPlayer` ignores players whose `CanDisconnect` is false, and `OnError` fires even when stopping a failed session throws.

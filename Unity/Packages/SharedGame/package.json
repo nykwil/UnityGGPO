@@ -2,7 +2,7 @@
   "name": "com.nykwil.sharedgame",
   "version": "0.3.0",
   "displayName": "SharedGame",
-  "description": "Game contracts, local and GekkoNet runners, session lifecycle and optional UI Toolkit panels.",
+  "description": "Unity session lifecycle, local runner and optional UI Toolkit panels on top of the GekkoNet session core.",
   "unity": "6000.5",
   "dependencies": {
     "com.nykwil.gekkonet": "0.1.0"

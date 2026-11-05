@@ -3,13 +3,13 @@ using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using NUnit.Framework;
-using SharedGame;
 using SharedGame.Samples.UnityTransport;
 using SharedGame.UI;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
+using Nykwil.GekkoNet.Session;
 public sealed class TransportLifecycleTests {
     [UnityTest] public IEnumerator SharedManagerStopAndDisableReleaseTransportAndSocket() {
         var go = new GameObject("Transport manager lifecycle"); go.SetActive(false);

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using Nykwil.GekkoNet.Session;
 namespace SharedGame.Validation {
     /// <summary>
     /// Command-line validation driver for built players. Inert unless <see cref="CommandLineFlag"/>

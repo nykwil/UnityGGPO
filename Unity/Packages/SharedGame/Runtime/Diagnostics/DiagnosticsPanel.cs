@@ -2,6 +2,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UIElements;
 using SharedGame.UI;
+using Nykwil.GekkoNet.Session;
 namespace SharedGame.Diagnostics {
     public sealed class DiagnosticsPanel : MonoBehaviour {
         public GameManager manager;
@@ -44,7 +45,7 @@ namespace SharedGame.Diagnostics {
             if (!controls.DiagnosticsVisible) return;
             var sample = data.Current;
             var builder = new StringBuilder(384);
-            builder.AppendLine($"Frame {sample.Frame} · checksum {sample.Checksum:X8} (presented)");
+            builder.AppendLine($"Frame {sample.Frame} · checksum {sample.Checksum:X8} (last save)");
             builder.AppendLine($"Simulation/network update CPU: {sample.SimulationMs:F3}/{sample.NetworkMs:F3} ms");
             if (data.NativeMetricsAvailable) {
                 builder.AppendLine($"Advantage {sample.FramesAhead:F1}f · spectator buffered {sample.SpectatorBufferedFrames}f");

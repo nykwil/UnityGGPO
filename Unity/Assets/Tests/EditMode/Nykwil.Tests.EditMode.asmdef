@@ -1,1 +1,1 @@
-{"name":"Nykwil.Tests.EditMode","references":["Nykwil.SharedGame","Nykwil.GekkoNet","Nykwil.VectorWar"],"includePlatforms":["Editor"],"allowUnsafeCode":true,"optionalUnityReferences":["TestAssemblies"]}
+{"name":"Nykwil.Tests.EditMode","references":["Nykwil.SharedGame","Nykwil.GekkoNet.Session","Nykwil.GekkoNet","Nykwil.VectorWar"],"includePlatforms":["Editor"],"allowUnsafeCode":true,"optionalUnityReferences":["TestAssemblies"]}

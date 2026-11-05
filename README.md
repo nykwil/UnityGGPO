@@ -4,8 +4,8 @@ Rollback netcode for Unity built on the pinned upstream [GekkoNet](https://githu
 
 | Package | Purpose | Dependencies |
 |---|---|---|
-| **GekkoNet for Unity** (`com.nykwil.gekkonet`) | Direct native bindings, statistics structures and the Windows x64 plugin | None |
-| **SharedGame** (`com.nykwil.sharedgame`) | Game/input contracts, local and GekkoNet runners, 60 Hz pacing, session lifecycle, diagnostics data; optional UI Toolkit session and diagnostics panels in separate assemblies | GekkoNet for Unity |
+| **GekkoNet for Unity** (`com.nykwil.gekkonet`) | Native bindings and the Windows x64 plugin, plus the engine-independent session core: game/input contracts, `GekkoRunner`, session options, 60 Hz pacing and diagnostics data | None |
+| **SharedGame** (`com.nykwil.sharedgame`) | Unity session lifecycle (`GameManager`), local runner, validation harness; optional UI Toolkit session and diagnostics panels in separate assemblies | GekkoNet for Unity |
 
 The repository also contains **VectorWar**, a fixed-point example game, and two importable SharedGame samples: **Rollback Duel** (minimal complete integration) and **Unity Transport** (a NetworkDriver-backed packet adapter).
 
@@ -33,7 +33,7 @@ Add both packages to your project's `Packages/manifest.json`. Git dependencies a
 
 Alternatively, in Package Manager choose **Install package from disk** for `Unity/Packages/com.nykwil.gekkonet/package.json`, then `Unity/Packages/SharedGame/package.json`.
 
-For a core-only install, omit SharedGame's `Runtime/UI` and `Runtime/Diagnostics` folders; the core assembly references neither. The diagnostics panel depends on the basic UI for its visibility toggle.
+A game that drives `GekkoRunner` itself can install only `com.nykwil.gekkonet`: its `Nykwil.GekkoNet.Session` assembly has no UnityEngine references. With SharedGame, the `Runtime/UI` and `Runtime/Diagnostics` folders are optional; the core assembly references neither. The diagnostics panel depends on the basic UI for its visibility toggle.
 
 ## Getting started
 

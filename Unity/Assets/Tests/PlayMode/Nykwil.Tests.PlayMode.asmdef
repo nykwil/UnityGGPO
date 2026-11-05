@@ -1,1 +1,1 @@
-{"name":"Nykwil.Tests.PlayMode","references":["Nykwil.SharedGame","Nykwil.GekkoNet","Nykwil.VectorWar"],"optionalUnityReferences":["TestAssemblies"]}
+{"name":"Nykwil.Tests.PlayMode","references":["Nykwil.SharedGame","Nykwil.GekkoNet.Session","Nykwil.GekkoNet","Nykwil.VectorWar"],"optionalUnityReferences":["TestAssemblies"]}

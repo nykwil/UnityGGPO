@@ -4,13 +4,13 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using NUnit.Framework;
 using Nykwil.GekkoNet;
-using SharedGame;
 using SharedGame.Samples.UnityTransport;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Utilities;
 using UnityEngine;
 using UnityEngine.TestTools;
 using System.Text.RegularExpressions;
+using Nykwil.GekkoNet.Session;
 
 public sealed unsafe class TransportTests {
     static SessionOptions Options(int port) => new SessionOptions {

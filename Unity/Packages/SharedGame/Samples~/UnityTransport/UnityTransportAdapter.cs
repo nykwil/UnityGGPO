@@ -7,6 +7,7 @@ using Nykwil.GekkoNet;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Utilities;
 using Unity.Collections.LowLevel.Unsafe;
+using Nykwil.GekkoNet.Session;
 
 namespace SharedGame.Samples.UnityTransport {
     /// <summary>Unreliable UTP packets carrying GekkoNet's own protocol, without an NGO layer.</summary>

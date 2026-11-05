@@ -3,10 +3,11 @@
 | Previous API | Replacement |
 | --- | --- |
 | GGPORunner / static GGPOSession | Instance-owned GekkoRunner |
+| Game contracts and runner in namespace SharedGame | Namespace Nykwil.GekkoNet.Session in com.nykwil.gekkonet (assembly Nykwil.GekkoNet.Session); GameManager, LocalRunner and the UI stay in SharedGame |
 | IGame.ToBytes / FromBytes / FreeBytes | SnapshotSize / SaveState(Span<byte>) / LoadState(ReadOnlySpan<byte>) |
 | IGame.Update(inputs, disconnectFlags) | AdvanceFrame(ReadOnlySpan<long>); native neutral inputs handle disconnects |
 | IGame.ReadInputs | Separate ILocalInputSource.ReadInput |
-| IGame.GetHashCode / Checksum | FNV-1a over the complete serialized snapshot |
+| IGame.GetHashCode / Checksum | FNV-1a over the complete serialized snapshot, or ISnapshotChecksum when saved bytes are not comparable between peers |
 | GameManager.StartLocalGame / StartGGPOGame | StartSession(SessionOptions) |
 | GameManager.Shutdown | StopSession |
 | Five UpdateType modes | One bounded SessionScheduler |
@@ -20,7 +21,7 @@ Supply game and input factories in a GameManager subclass. Use the same ordered 
 
 Subscribe views to OnStateChanged for the corrected final simulation state. Subscribe to OnRunningChanged(false) for cleanup. Restart creates a new game and runner. Disable/destroy/application exit stop automatically. Sessions and their native pointers are instance owned and thread confined.
 
-SharedGame's core references only the GekkoNet assembly. Optional UI and diagnostics can be omitted. VectorWar alone references the Input System.
+The session core (Nykwil.GekkoNet.Session) has no UnityEngine references and can be used without SharedGame. SharedGame's core references only the GekkoNet assemblies. Optional UI and diagnostics can be omitted. VectorWar alone references the Input System.
 
 Legacy source, prefabs and binaries have been removed after the editor asset migration and reference audit. The replacement packages run independently of the old plugin. Native disconnects are terminal for that session; restart to reconnect a player. Disconnecting the local network player stops and disposes its session.
 

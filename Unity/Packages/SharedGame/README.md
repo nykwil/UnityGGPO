@@ -26,6 +26,7 @@ Use a fixed-size, versioned little-endian snapshot containing every simulation v
 ```csharp
 using System;
 using System.Buffers.Binary;
+using Nykwil.GekkoNet.Session;
 using SharedGame;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -109,6 +110,7 @@ Every peer must produce bit-identical state from the same inputs:
 - Put every value that affects future frames in the snapshot, and nothing presentation-only. `SessionDiagnostics` checksums and native desync detection catch omissions.
 - Read inputs only from `ILocalInputSource`, never from devices inside `AdvanceFrame`.
 - Run the rollback stress mode (`SessionMode.Stress`) during development; it re-simulates frames and reports desyncs.
+- If saved bytes are not comparable between peers, implement `ISnapshotChecksum`; set `SessionOptions.ThrowOnDesync = false` to handle desyncs through `GekkoRunner.Desynced` instead of an exception. See the GekkoNet package README.
 
 ### Events
 
@@ -132,7 +134,7 @@ The session menu can be hidden during play. The Menu/Hide menu button stays on s
 
 Controllers register versioned UI reload callbacks in OnEnable and unregister them in OnDisable. Reloading a UXML tree detaches old controls and binds the new tree; disabling/re-enabling retained content does not duplicate handlers. Diagnostics and projected player labels rebuild their UI while the simulation continues. The old Unity 6.0/UIDocument path is not retained.
 
-The core can be installed with both optional folders omitted. Diagnostics data is collected every 100 ms regardless of panel visibility. The history ring has 300 entries (30 seconds). The panel displays ping, jitter, bandwidth, frame advantage, rollback count/depth, stalls, buffering, checksums and update CPU time, with a simulation-time graph. Unavailable native metrics are labelled unavailable. Presented checksums can describe predicted frames; native desync detection compares confirmed state.
+The core can be installed with both optional folders omitted. Diagnostics data is collected every 100 ms regardless of panel visibility. The history ring has 300 entries (30 seconds). The panel displays ping, jitter, bandwidth, frame advantage, rollback count/depth, stalls, buffering, checksums and update CPU time, with a simulation-time graph. Unavailable native metrics are labelled unavailable. In network sessions the panel's frame and checksum are those of the latest native save, which can be a predicted frame; native desync detection compares confirmed state. Sampling diagnostics never calls `SaveState`.
 
 UI strings/layout and view spawning allocate separately from the allocation-free simulation/input/snapshot path. Measure them separately.
 

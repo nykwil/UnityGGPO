@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using SharedGame;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Nykwil.GekkoNet.Session;
 namespace SharedGame.Samples {
     public class RollbackDuel : GameManager, ILocalInputSource {
         public PanelRenderer gameDocument;

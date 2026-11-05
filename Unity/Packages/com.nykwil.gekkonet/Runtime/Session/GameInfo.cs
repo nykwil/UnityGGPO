@@ -1,4 +1,4 @@
-namespace SharedGame {
+namespace Nykwil.GekkoNet.Session {
     /// <summary>Connection state of one roster player. Unavailable means the local session cannot observe it (e.g. non-host players seen by a spectator).</summary>
     public enum PlayerConnectState { Connecting, Synchronizing, Running, Disconnected, Unavailable }
     public struct PlayerConnectionInfo {

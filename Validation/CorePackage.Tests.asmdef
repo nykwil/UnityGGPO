@@ -1,1 +1,1 @@
-{"name":"Nykwil.SharedGame.CorePackage.Tests","references":["Nykwil.SharedGame"],"includePlatforms":["Editor"],"optionalUnityReferences":["TestAssemblies"]}
+{"name":"Nykwil.GekkoNet.CorePackage.Tests","references":["Nykwil.GekkoNet","Nykwil.GekkoNet.Session"],"includePlatforms":["Editor"],"optionalUnityReferences":["TestAssemblies"]}

@@ -1,6 +1,16 @@
 # GekkoNet for Unity
 
-Direct P/Invoke bindings to the pinned upstream GekkoNet C API, native statistics types and a Windows x64 DLL. This package has no UI, gameplay or Unity package dependencies. SharedGame provides session ownership, runners and optional UI; its importable Rollback Duel sample demonstrates integration.
+Direct P/Invoke bindings to the pinned upstream GekkoNet C API, native statistics types and a Windows x64 DLL, plus an engine-independent session core. This package has no UI, gameplay or Unity package dependencies. SharedGame adds a Unity session lifecycle (`GameManager`), a local runner and optional UI; its importable Rollback Duel sample demonstrates integration.
+
+## Session core
+
+The `Nykwil.GekkoNet.Session` assembly and namespace have no UnityEngine references. It contains the game and input contracts (`IGame`, `ILocalInputSource`, `ISnapshotChecksum`, `IGameRunner`, `IGekkoNetworkTransport`), `GekkoRunner`, `SessionOptions` and `SessionEndpoint`, `GameInfo`, `SessionDiagnostics`, `SnapshotChecksum` and `SessionScheduler`. Drive a runner with `Poll`, then `Tick` zero or more times, then `EndFrame`, once per presentation update on the creating thread; `SessionScheduler` is optional pacing.
+
+- **Checksums.** Each save's checksum is a hash of the saved bytes unless the game implements `ISnapshotChecksum`. Implement it when the saved bytes differ between peers (for example a frame number or a handle into the game's own snapshot store). Peers compare roughly every confirmed frame, so an expensive canonical hash can run every Nth frame with a constant returned on the others.
+- **Desyncs.** By default a desync throws from `Poll` or `Tick`. With `SessionOptions.ThrowOnDesync = false` the runner records `SessionDiagnostics.LastDesync`, raises `GekkoRunner.Desynced` with the frame and both checksums, and keeps running; dispose the runner after `Poll` or `Tick` returns to stop.
+- **Load depth.** A load restores one of the most recent `SessionOptions.SavedStateDepth` saves (prediction limit + 2, or stress distance + 2). A game that keeps its own snapshot ring needs at least that many entries.
+- **Diagnostics** never call `SaveState`: `SampleDiagnostics` reports the frame and checksum of the latest native save (frame -1, checksum 0 before the first save).
+- **Late spectators** receive the host's portable save, so a game whose saves are only handles cannot serve spectators that join after the start.
 
 ## Ownership and ABI
 

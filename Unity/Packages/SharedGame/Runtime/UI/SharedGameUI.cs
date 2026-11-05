@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Nykwil.GekkoNet.Session;
 namespace SharedGame.UI {
     [RequireComponent(typeof(PanelRenderer))]
     public sealed class SharedGameUI : MonoBehaviour {

@@ -6,10 +6,10 @@ Every check below runs on Windows x64, the only platform with a shipped native b
 
 | Suite | Where | What it guards |
 | --- | --- | --- |
-| Core harness | `Validation/Program.cs` (.NET 10) | P/Invoke struct layouts and C booleans, snapshot round trip and malformed-data rejection, option validation, socket release after failed and repeated sessions, 100,000 rollback-stress updates matching a straight simulation, zero allocations on the warmed hot path |
+| Core harness | `Validation/Program.cs` (.NET 10) | P/Invoke struct layouts and C booleans, snapshot round trip and malformed-data rejection, option validation, socket release after failed and repeated sessions, desync reporting (throwing, event and game-supplied checksums), 100,000 rollback-stress updates matching a straight simulation, zero allocations on the warmed hot path |
 | Core tests in Unity | `Unity/Assets/Tests/EditMode/CoreTests.cs` | The same `CoreChecks`, run on Unity's Mono runtime |
 | Session lifecycle | `Unity/Assets/Tests/PlayMode/SessionLifecycleTests.cs` | `GameManager` restart, disable and scene unload release the native session and its port |
-| Core-only install | `Validation/CorePackageTests.cs` | SharedGame runs without VectorWar, the optional UI or the Input System |
+| Core-only install | `Validation/CorePackageTests.cs` | The GekkoNet package's session core runs with no SharedGame, VectorWar, UI or Input System |
 | Native ABI | `Validation/native_abi.cpp` | Compile-time layout checks of the native structs against `gekkonet.h` |
 | Unity Transport sample | `Validation/Transport/Tests` | Adapter datagram exchange (including fragmented payloads), sender address, socket ownership and cleanup, callback error containment |
 

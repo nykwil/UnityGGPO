@@ -1,1 +1,1 @@
-{"name":"Nykwil.Transport.Validation","references":["Nykwil.SharedGame","Nykwil.SharedGame.RollbackDuel","Nykwil.SharedGame.UnityTransportSample"]}
+{"name":"Nykwil.Transport.Validation","references":["Nykwil.SharedGame","Nykwil.GekkoNet.Session","Nykwil.SharedGame.RollbackDuel","Nykwil.SharedGame.UnityTransportSample"]}

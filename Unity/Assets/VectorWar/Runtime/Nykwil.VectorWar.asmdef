@@ -1,1 +1,1 @@
-{"name":"Nykwil.VectorWar","references":["Nykwil.SharedGame","Unity.InputSystem"],"autoReferenced":true}
+{"name":"Nykwil.VectorWar","references":["Nykwil.SharedGame","Nykwil.GekkoNet.Session","Unity.InputSystem"],"autoReferenced":true}

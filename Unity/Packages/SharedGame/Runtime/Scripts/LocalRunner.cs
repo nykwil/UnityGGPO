@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Nykwil.GekkoNet.Session;
 namespace SharedGame {
     /// <summary>Runs every player on this machine without GekkoNet; controller i drives player i.</summary>
     public sealed class LocalRunner : IGameRunner {
@@ -32,7 +33,9 @@ namespace SharedGame {
             Diagnostics.Current.SimulationMs += SessionDiagnostics.Elapsed(start);
         }
         public void SampleDiagnostics() {
-            Diagnostics.SampleState(Game, snapshot);
+            // No native saves in local play, so sample the current state directly.
+            Diagnostics.Current.Frame = Game.FrameNumber;
+            Diagnostics.Current.Checksum = SnapshotChecksum.Compute(Game, snapshot);
             Diagnostics.Record();
         }
         public bool DisconnectPlayer(int index) {

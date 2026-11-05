@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Nykwil.GekkoNet.Session;
 namespace SharedGame {
     /// <summary>
     /// Owns one session at a time and drives it from Unity's Update at a fixed 60 Hz.

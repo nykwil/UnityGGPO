@@ -1,5 +1,5 @@
 using System;
-namespace SharedGame {
+namespace Nykwil.GekkoNet.Session {
     /// <summary>Nonblocking 60 Hz pacing with a bounded backlog and at most four ticks per presentation update.</summary>
     public sealed class SessionScheduler {
         const double Interval = 1.0 / 60;

@@ -1,7 +1,8 @@
 using System;
 using System.Buffers.Binary;
 using NUnit.Framework;
-using SharedGame;
+using Nykwil.GekkoNet.Session;
+/// <summary>Runs in a project with only com.nykwil.gekkonet installed: no SharedGame, VectorWar, UI or Input System.</summary>
 public sealed class CorePackageTests {
     sealed class CounterGame : IGame {
         public int PlayerCount => 2;
@@ -12,14 +13,13 @@ public sealed class CorePackageTests {
         public void AdvanceFrame(ReadOnlySpan<long> inputs) => FrameNumber++;
     }
     sealed class Neutral : ILocalInputSource { public long ReadInput(int controller, int frame) => 0; }
-    [Test] public void CoreRunsWithoutExampleOrUI() {
-        using (var local = new LocalRunner(new CounterGame(), new Neutral())) {
-            for (int i = 0; i < 1000; i++) local.Tick();
-            Assert.That(local.Game.FrameNumber, Is.EqualTo(1000));
-        }
-        using (var stress = new GekkoRunner(new CounterGame(), new Neutral(), new SessionOptions { Mode = SessionMode.Stress })) {
+    [Test] public void SessionCoreRunsWithoutSharedGame() {
+        var options = new SessionOptions { Mode = SessionMode.Stress };
+        using (var stress = new GekkoRunner(new CounterGame(), new Neutral(), options)) {
             for (int i = 0; i < 1000; i++) stress.Tick();
             Assert.That(stress.Game.FrameNumber, Is.EqualTo(1000));
+            Assert.That(stress.Diagnostics.DesyncCount, Is.Zero);
         }
+        Assert.That(options.SavedStateDepth, Is.EqualTo(options.StressDistance + 2));
     }
 }

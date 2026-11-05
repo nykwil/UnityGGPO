@@ -1,3 +1,4 @@
+using Nykwil.GekkoNet.Session;
 namespace SharedGame.Samples.UnityTransport {
     public sealed class UnityTransportDuel : RollbackDuel {
         protected override void OnEnable() {
