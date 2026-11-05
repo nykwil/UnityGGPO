@@ -1,0 +1,22 @@
+{
+  "name": "com.nykwil.gekkonet",
+  "version": "0.1.0",
+  "displayName": "GekkoNet for Unity",
+  "description": "Direct C API bindings and native statistics types for the pinned GekkoNet Windows x64 library.",
+  "unity": "6000.5",
+  "keywords": [
+    "rollback",
+    "netcode",
+    "gekkonet",
+    "ggpo",
+    "multiplayer"
+  ],
+  "author": {
+    "name": "nykwil",
+    "url": "https://github.com/nykwil"
+  },
+  "license": "MIT",
+  "documentationUrl": "https://github.com/nykwil/UnityGGPO/tree/master/Unity/Packages/com.nykwil.gekkonet#readme",
+  "changelogUrl": "https://github.com/nykwil/UnityGGPO/blob/master/Unity/Packages/com.nykwil.gekkonet/CHANGELOG.md",
+  "licensesUrl": "https://github.com/nykwil/UnityGGPO/blob/master/Unity/Packages/com.nykwil.gekkonet/LICENSE.md"
+}

@@ -1,64 +1,66 @@
-# UnityGGPO
+# GekkoNet for Unity and SharedGame
 
-This is home of UnityGGPO an interop DLL of the ggpo library that works with Unity 3D. This repository is and an amalgam of a few things if you are looking for just the Plugin or the Shared Game Library see Packages section below UPM git url is https://github.com/nykwil/UnityGGPO.git?path=/Unity/Packages/UnityGGPO
+Rollback netcode for Unity built on the pinned upstream [GekkoNet](https://github.com/HeatXD/GekkoNet) C API. Write a deterministic game against a small contract; SharedGame runs it locally, peer-to-peer, as a spectator or under a rollback stress test. The integration is **game → runner → manager → view**.
 
-## Contents
-- A Unity project (/Unity) containing.
-  - Package of the plugin wrapper (/Unity/Packages/UnityGGPO)
-  - Package for a Shared Game Library (/Unity/Packages/SharedGame)
-  - Tests (/Unity/Assets/Tests)
-  - VectorWar example with a view like implementation using the Shared Game Library (/Unity/Assets/VectorWar)
-  - EcsWar example made with DOTS using the Shared Game Library (/Unity/Assets/EcsWar)
-- The CMake project to build the UnityGGPO DLL (/UnityGGPO)
-- A submodule of https://github.com/pond3r/ggpo for building the UnityGGPO.dll
+| Package | Purpose | Dependencies |
+|---|---|---|
+| **GekkoNet for Unity** (`com.nykwil.gekkonet`) | Direct native bindings, statistics structures and the Windows x64 plugin | None |
+| **SharedGame** (`com.nykwil.sharedgame`) | Game/input contracts, local and GekkoNet runners, 60 Hz pacing, session lifecycle, diagnostics data; optional UI Toolkit session and diagnostics panels in separate assemblies | GekkoNet for Unity |
 
-## Packages
-### Plugin
-This is the bare bones wrapper with special Session abstraction layer to make it easier to use then direct DLL calls. Included is only the windows DLLs built from the CMake project found at /UnityGGPO/UnityGGPO
+The repository also contains **VectorWar**, a fixed-point example game, and two importable SharedGame samples: **Rollback Duel** (minimal complete integration) and **Unity Transport** (a NetworkDriver-backed packet adapter).
 
-Two ways to use:
-- Direct access to the ggpo library using the GGPO class requires unsafe calls and IntPtr function pointers.
-- Use the GGPO.Session helper class to have safe access using Unity's native collections library and delegates.
+## Requirements and platform support
 
-Add to your project in the Package Manager using "Add package from git URL..." with this URL:
-https://github.com/nykwil/UnityGGPO.git?path=/Unity/Packages/UnityGGPO
+| | Supported |
+|---|---|
+| Unity | 6.5 (6000.5) or newer; the example project is pinned to 6000.6.0f1 |
+| Native plugin | Windows x64 only (requires the Microsoft Visual C++ x64 runtime) |
+| Scripting backends | Mono and IL2CPP (validated on Windows) |
+| Networking | Direct, reachable numeric IPv4 UDP endpoints; 2–4 players, up to 16 spectators |
 
-### Share Game Library
-This is some boiler plate game layer so that you can create local and multiplayer enabled games with just some simple interfaces implementations. Includes very basic UI and Dialogs for the game. Also has an implementation of the Performance Dialog which you need in some capapcity to run. See the EcsWar of VectorWar examples at https://github.com/nykwil/UnityGGPO. For more information. 
+Matchmaking, relay, NAT traversal, replays, runahead controls and other platform binaries are not provided. Tests and validation runs are described in [validation](docs/VALIDATION.md).
 
-Add to your project in the Package Manager using "Add package from git URL..." with this URL:
-https://github.com/nykwil/UnityGGPO.git?path=/Unity/Packages/SharedGame
+## Installation
 
-## Examples and Tests
-### VectorWar
+Add both packages to your project's `Packages/manifest.json`. Git dependencies are not resolved transitively, so list GekkoNet explicitly; append `#<tag-or-commit>` to pin a version:
 
-VectorWar example using a view like implementation. Found at /Unity/Assets/VectorWar
+```json
+"dependencies": {
+  "com.nykwil.gekkonet": "https://github.com/nykwil/UnityGGPO.git?path=/Unity/Packages/com.nykwil.gekkonet",
+  "com.nykwil.sharedgame": "https://github.com/nykwil/UnityGGPO.git?path=/Unity/Packages/SharedGame"
+}
+```
 
-How to play
-- Run the VectorWar.scene.
-- Left UI panel is your player index and the connection list.
-- Click Start Session
+Alternatively, in Package Manager choose **Install package from disk** for `Unity/Packages/com.nykwil.gekkonet/package.json`, then `Unity/Packages/SharedGame/package.json`.
 
-### EcsWar
-An example made with DOTS using the Shared Game Library. This is a work in progress. Rollback eventually fails if you are using SharedComponents. Found at /Unity/Assets/EcsWar
+For a core-only install, omit SharedGame's `Runtime/UI` and `Runtime/Diagnostics` folders; the core assembly references neither. The diagnostics panel depends on the basic UI for its visibility toggle.
 
-## DLL CMake Project
+## Getting started
 
-This is the CMake Project found at /UnityGGPO. Windows version only.
+1. Import the **Rollback Duel** sample from SharedGame's Samples tab and choose **GekkoNet → Create SharedGame Rollback Duel Scene** for a working scene.
+2. Implement `IGame` and `ILocalInputSource` for your game and subclass `GameManager`. The [SharedGame guide](Unity/Packages/SharedGame/README.md) walks through a complete minimal game, determinism rules, session options, lifecycle and the optional UI.
+3. Start a session from the optional session UI or from code with `GameManager.StartSession(new SessionOptions { ... })`.
 
-Build:
-- run build_windows.cmd to build the solution.
-- build and run the INSTALL project to copy the built DLL into the Unity Plugin folder for the UnityGGPO package.
+Upgrading from the original UnityGGPO packages? See the [migration guide](docs/API-MIGRATION.md).
 
+## Sessions
 
+Choose local, peer, spectator or stress mode. Every peer must use the same ordered 2–4-player roster; array order defines stable simulation indices. Choose the local player index and local controller separately. Player 0 is the default spectator host. Enter spectator endpoints separately from the roster and give each spectator its own listening port. The host registers spectators after player startup, so absent viewers cannot block the game.
 
+Defaults are two input-delay frames, eight prediction frames and a five-second disconnect timeout. Disconnects use native synchronized zero inputs; reconnecting a player starts a fresh session. Spectators use native snapshot synchronization, including late joins.
 
+## VectorWar example
 
+Open the `Unity` directory with Unity 6000.6.0f1 and play the VectorWar scene. Controller 0 uses arrows, Right Ctrl (fire) and Right Shift (bomb); controller 1 uses WASD, F (fire) and G (bomb). The bomb bit is kept from the original mappings but has no gameplay effect. Controllers 2/3 or missing keyboards supply neutral input; remote peers normally select controller 0. **GekkoNet → Validate VectorWar Assets** audits the scene's references.
 
+## Building the native library
 
-Feedback always welcome.
+Initialize the pinned submodule, then run `./build_gekkonet.ps1`. The script selects Visual Studio's bundled CMake when needed, applies the checked-in [disconnect fix](gekkonet-disconnect.patch) to an isolated source copy and records source, patch, toolchain and binary provenance. The upstream checkout stays clean, and two builds produced identical DLL bytes. Third-party licenses ship beside the native package.
 
-TODO
--Shared Game Library needs better documentation.
--Better tests, unit tests, and a way to run sync test.
--ECS rollback needs to be fixed so that it works with SharedComponents
+## Validation
+
+Run `dotnet run --project Validation/SharedGame.Validation.csproj -c Release` with .NET 10 for interop, snapshot, rollback-stress, lifecycle and allocation checks, and `./scripts/check-packages.ps1` for package hygiene (committed `.meta` files, native binary provenance, submodule pin and version consistency). The [Validate workflow](.github/workflows/validate.yml) runs both on Windows, plus the native ABI layout check and four-player, spectator, player-leave and impaired-network sessions. Unity test scripts and further network/proxy commands are listed in [validation](docs/VALIDATION.md).
+
+## License
+
+MIT; see [LICENSE](LICENSE). The bundled GekkoNet library, Asio and zpp_bits are distributed under their own licenses in the GekkoNet package.

@@ -1,9 +1,37 @@
 {
-  "name": "unityggpo.sharedgame",
-  "version": "1.0.1",
-  "displayName": "UnityGGPO Shared Game Library",
-  "description": "UnityGGPO Shared Game Library",
+  "name": "com.nykwil.sharedgame",
+  "version": "0.3.0",
+  "displayName": "SharedGame",
+  "description": "Game contracts, local and GekkoNet runners, session lifecycle and optional UI Toolkit panels.",
+  "unity": "6000.5",
   "dependencies": {
-    "unityggpo.plugin": "1.0.1"
-  }
+    "com.nykwil.gekkonet": "0.1.0"
+  },
+  "samples": [
+    {
+      "displayName": "Rollback Duel",
+      "description": "Self-contained SharedGame quick start using the shared runner and UI.",
+      "path": "Samples~/RollbackDuel"
+    },
+    {
+      "displayName": "Unity Transport",
+      "description": "Optional Unity Transport adapter and Rollback Duel integration. Import Rollback Duel and install Unity Transport first.",
+      "path": "Samples~/UnityTransport"
+    }
+  ],
+  "keywords": [
+    "rollback",
+    "netcode",
+    "gekkonet",
+    "deterministic",
+    "multiplayer"
+  ],
+  "author": {
+    "name": "nykwil",
+    "url": "https://github.com/nykwil"
+  },
+  "license": "MIT",
+  "documentationUrl": "https://github.com/nykwil/UnityGGPO/tree/master/Unity/Packages/SharedGame#readme",
+  "changelogUrl": "https://github.com/nykwil/UnityGGPO/blob/master/Unity/Packages/SharedGame/CHANGELOG.md",
+  "licensesUrl": "https://github.com/nykwil/UnityGGPO/blob/master/Unity/Packages/SharedGame/LICENSE.md"
 }

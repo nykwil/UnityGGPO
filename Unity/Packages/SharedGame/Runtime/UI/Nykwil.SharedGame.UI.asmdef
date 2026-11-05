@@ -1,0 +1,1 @@
+{"name":"Nykwil.SharedGame.UI","references":["Nykwil.SharedGame","Unity.InputSystem"],"autoReferenced":true,"versionDefines":[{"name":"com.unity.inputsystem","expression":"1.0.0","define":"SHAREDGAME_INPUT_SYSTEM"}]}

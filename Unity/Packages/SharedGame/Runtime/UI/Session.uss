@@ -1,0 +1,22 @@
+.screen { flex-grow: 1; align-items: flex-start; padding-left: 16px; padding-top: 16px; }
+.card { width: 380px; max-width: 95%; max-height: 95%; background-color: rgba(10, 16, 26, 0.95); color: rgb(232, 240, 255); padding-left: 16px; padding-right: 16px; padding-top: 12px; padding-bottom: 12px; }
+.title { font-size: 22px; -unity-font-style: bold; margin-bottom: 8px; }
+.message { white-space: normal; margin-bottom: 8px; }
+.endpoint { margin-bottom: 8px; }
+.player { margin-bottom: 8px; }
+Button { min-height: 30px; margin-top: 4px; }
+.error { color: rgb(255, 150, 150); }
+.hidden { display: none; }
+.menu-toggle { min-height: 26px; margin-top: 0; margin-bottom: 6px; padding-left: 10px; padding-right: 10px; }
+.unity-base-field { flex-direction: column; align-items: stretch; margin-bottom: 6px; }
+.unity-base-field__label { min-width: 0; white-space: normal; margin-bottom: 3px; }
+.unity-base-field__input { background-color: rgb(30, 43, 62); color: rgb(240, 245, 255); min-height: 24px; }
+.unity-base-text-field__input { background-color: rgb(30, 43, 62); color: rgb(240, 245, 255); }
+Button { color: rgb(240, 245, 255); background-color: rgb(36, 54, 78); }
+.session-card { width: 280px; }
+.player { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.player > Label { flex-grow: 1; min-width: 110px; }
+.player > Button { width: 100px; min-height: 26px; }
+.player > ProgressBar { width: 100%; height: 18px; margin-top: 4px; }
+.unity-progress-bar__background { background-color: rgb(18, 28, 42); }
+.unity-progress-bar__progress { background-color: rgb(52, 100, 140); }

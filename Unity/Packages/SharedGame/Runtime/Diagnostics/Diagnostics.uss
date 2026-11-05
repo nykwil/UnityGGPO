@@ -1,0 +1,6 @@
+.screen { flex-grow: 1; align-items: flex-end; padding-right: 16px; padding-top: 16px; }
+.panel { width: 440px; max-width: 95%; background-color: rgba(10, 16, 26, 0.95); color: rgb(232, 240, 255); padding-left: 12px; padding-right: 12px; padding-top: 12px; padding-bottom: 12px; }
+.title { font-size: 18px; -unity-font-style: bold; }
+.metrics { white-space: normal; }
+.graph { height: 100px; background-color: rgb(6, 10, 18); margin-top: 8px; }
+.hidden { display: none; }

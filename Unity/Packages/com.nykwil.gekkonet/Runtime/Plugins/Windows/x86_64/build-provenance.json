@@ -1,0 +1,13 @@
+{
+  "source": "https://github.com/HeatXD/GekkoNet",
+  "revision": "45dac7e50fd3ac2d5c94be1fafa6f0d3214a9cea",
+  "patch": "gekkonet-disconnect.patch",
+  "patchSha256": "FC418B8182D70E0852699ECD645EFA7F2BC13DDADE59A0237795B06C7F9A4087",
+  "platform": "Windows x64",
+  "configuration": "Release",
+  "generator": "Visual Studio 18 2026",
+  "reproducibleFlags": "/Brepro (compiler and linker)",
+  "cmakeVersion": "cmake version 4.3.1-msvc1",
+  "headerSha256": "D4FFDE72C3883A22918CB2C8789CEC4A5B0FA220FC796D18DC679262A042103F",
+  "binarySha256": "CF17F71F0BCEB8F65B589D4FFC6E4BB5A464F94E6D0B29D609554C0E02ACA86D"
+}

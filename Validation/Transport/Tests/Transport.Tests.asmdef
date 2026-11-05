@@ -1,0 +1,1 @@
+{"name":"Nykwil.Transport.Tests","references":["Nykwil.SharedGame","Nykwil.GekkoNet","Nykwil.SharedGame.UnityTransportSample","Unity.Networking.Transport","Unity.Collections"],"includePlatforms":["Editor"],"allowUnsafeCode":true,"optionalUnityReferences":["TestAssemblies"]}

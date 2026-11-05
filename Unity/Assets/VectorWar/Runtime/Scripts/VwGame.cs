@@ -1,429 +1,144 @@
-using SharedGame;
 using System;
-using System.IO;
-using Unity.Collections;
-using UnityEngine;
-using Unity.Logging;
-
+using System.Buffers.Binary;
+using SharedGame;
 namespace VectorWar {
-
-    using static VWConstants;
-
     public static class VWConstants {
-        public const int MAX_SHIPS = 4;
-        public const int MAX_PLAYERS = 64;
-
-        public const int INPUT_THRUST = (1 << 0);
-        public const int INPUT_BREAK = (1 << 1);
-        public const int INPUT_ROTATE_LEFT = (1 << 2);
-        public const int INPUT_ROTATE_RIGHT = (1 << 3);
-        public const int INPUT_FIRE = (1 << 4);
-        public const int INPUT_BOMB = (1 << 5);
         public const int MAX_BULLETS = 30;
-
-        public const float PI = 3.1415926f;
-        public const int STARTING_HEALTH = 100;
-        public const float ROTATE_INCREMENT = 3f;
-        public const float SHIP_RADIUS = 15f;
-        public const float SHIP_THRUST = 0.06f;
-        public const float SHIP_MAX_THRUST = 4.0f;
-        public const float SHIP_BREAK_SPEED = 0.6f;
-        public const float BULLET_SPEED = 5f;
-        public const int BULLET_COOLDOWN = 8;
-        public const int BULLET_DAMAGE = 10;
+        public const int INPUT_THRUST = 1, INPUT_BREAK = 2, INPUT_ROTATE_LEFT = 4, INPUT_ROTATE_RIGHT = 8, INPUT_FIRE = 16, INPUT_BOMB = 32;
+        public const int STARTING_HEALTH = 100, ROTATE_INCREMENT = 3, SHIP_RADIUS = 15 * FixedMath.One;
+        public const int SHIP_THRUST = 3932, SHIP_MAX_THRUST = 4 * FixedMath.One, BULLET_SPEED = 5 * FixedMath.One;
+        public const int BULLET_COOLDOWN = 8, BULLET_DAMAGE = 10;
     }
-
-    [Serializable]
     public struct Bullet {
         public bool active;
-        public Vector2 position;
-        public Vector2 velocity;
-
-        public void Serialize(BinaryWriter bw) {
-            bw.Write(active);
-            bw.Write(position.x);
-            bw.Write(position.y);
-            bw.Write(velocity.x);
-            bw.Write(velocity.y);
-        }
-
-        public void Deserialize(BinaryReader br) {
-            active = br.ReadBoolean();
-            position.x = br.ReadSingle();
-            position.y = br.ReadSingle();
-            velocity.x = br.ReadSingle();
-            velocity.y = br.ReadSingle();
-        }
-    };
-
-    [Serializable]
-    public class Ship {
-        public Vector2 position;
-        public Vector2 velocity;
-        public float radius;
-        public float heading;
-        public int health;
-        public int cooldown;
-        public int score;
-        public Bullet[] bullets = new Bullet[MAX_BULLETS];
-
-        public void Serialize(BinaryWriter bw) {
-            bw.Write(position.x);
-            bw.Write(position.y);
-            bw.Write(velocity.x);
-            bw.Write(velocity.y);
-            bw.Write(radius);
-            bw.Write(heading);
-            bw.Write(health);
-            bw.Write(cooldown);
-            bw.Write(score);
-            for (int i = 0; i < MAX_BULLETS; ++i) {
-                bullets[i].Serialize(bw);
-            }
-        }
-
-        public void Deserialize(BinaryReader br) {
-            position.x = br.ReadSingle();
-            position.y = br.ReadSingle();
-            velocity.x = br.ReadSingle();
-            velocity.y = br.ReadSingle();
-            radius = br.ReadSingle();
-            heading = br.ReadSingle();
-            health = br.ReadInt32();
-            cooldown = br.ReadInt32();
-            score = br.ReadInt32();
-            for (int i = 0; i < MAX_BULLETS; ++i) {
-                bullets[i].Deserialize(br);
-            }
-        }
-
-        // @LOOK Not hashing bullets.
-        public override int GetHashCode() {
-            int hashCode = 1858597544;
-            hashCode = hashCode * -1521134295 + position.GetHashCode();
-            hashCode = hashCode * -1521134295 + velocity.GetHashCode();
-            hashCode = hashCode * -1521134295 + radius.GetHashCode();
-            hashCode = hashCode * -1521134295 + heading.GetHashCode();
-            hashCode = hashCode * -1521134295 + health.GetHashCode();
-            hashCode = hashCode * -1521134295 + cooldown.GetHashCode();
-            hashCode = hashCode * -1521134295 + score.GetHashCode();
-            return hashCode;
-        }
+        public FixedVector position, velocity;
     }
-
-    [Serializable]
-    public struct VwGame : IGame {
-        public static bool verbose;
-
-        public int Framenumber { get; private set; }
-
-        public int Checksum => GetHashCode();
-
-        public Ship[] _ships;
-
-        public static Rect _bounds = new Rect(0, 0, 640, 480);
-
-        public void Serialize(BinaryWriter bw) {
-            bw.Write(Framenumber);
-            bw.Write(_ships.Length);
-            for (int i = 0; i < _ships.Length; ++i) {
-                _ships[i].Serialize(bw);
+    public sealed class Ship {
+        public FixedVector position, velocity;
+        public int heading, health, cooldown, score;
+        public readonly Bullet[] bullets = new Bullet[VWConstants.MAX_BULLETS];
+    }
+    public sealed class VwGame : IGame {
+        public const int SnapshotVersion = 1;
+        const int Magic = 0x31575756, HeaderBytes = 16, ShipFieldBytes = 32, BulletBytes = 17;
+        const int ShipBytes = ShipFieldBytes + VWConstants.MAX_BULLETS * BulletBytes;
+        const int Width = 640 * FixedMath.One, Height = 480 * FixedMath.One;
+        public readonly Ship[] Ships;
+        public int PlayerCount => Ships.Length;
+        public int FrameNumber { get; private set; }
+        public int SnapshotSize => HeaderBytes + PlayerCount * ShipBytes;
+        public VwGame(int playerCount) {
+            if (playerCount < 2 || playerCount > 4) throw new ArgumentOutOfRangeException(nameof(playerCount));
+            Ships = new Ship[playerCount];
+            for (int i = 0; i < playerCount; i++) {
+                int angle = i * 360 / playerCount;
+                Ships[i] = new Ship {
+                    position = new FixedVector(Width / 2 + 120 * TrigTable.Cos(angle), Height / 2 + 120 * TrigTable.Sin(angle)),
+                    heading = (angle + 180) % 360, health = VWConstants.STARTING_HEALTH
+                };
             }
         }
-
-        public void Deserialize(BinaryReader br) {
-            Framenumber = br.ReadInt32();
-            int length = br.ReadInt32();
-            if (length != _ships.Length) {
-                _ships = new Ship[length];
-            }
-            for (int i = 0; i < _ships.Length; ++i) {
-                _ships[i].Deserialize(br);
-            }
-        }
-
-        public NativeArray<byte> ToBytes() {
-            using (var memoryStream = new MemoryStream()) {
-                using (var writer = new BinaryWriter(memoryStream)) {
-                    Serialize(writer);
-                }
-                return new NativeArray<byte>(memoryStream.ToArray(), Allocator.Persistent);
-            }
-        }
-
-        public void FromBytes(NativeArray<byte> bytes) {
-            using (var memoryStream = new MemoryStream(bytes.ToArray())) {
-                using (var reader = new BinaryReader(memoryStream)) {
-                    Deserialize(reader);
-                }
-            }
-        }
-
-        private static float DegToRad(float deg) {
-            return PI * deg / 180;
-        }
-
-        private static float Distance(Vector2 lhs, Vector2 rhs) {
-            float x = rhs.x - lhs.x;
-            float y = rhs.y - lhs.y;
-            return Mathf.Sqrt(x * x + y * y);
-        }
-
-        /*
-         * InitGameState --
-         *
-         * Initialize our game state.
-         */
-
-        public VwGame(int num_players) {
-            var w = _bounds.xMax - _bounds.xMin;
-            var h = _bounds.yMax - _bounds.yMin;
-            var r = h / 4;
-            Framenumber = 0;
-            _ships = new Ship[num_players];
-            for (int i = 0; i < _ships.Length; i++) {
-                _ships[i] = new Ship();
-                int heading = i * 360 / num_players;
-                float cost, sint, theta;
-
-                theta = (float)heading * PI / 180;
-                cost = Mathf.Cos(theta);
-                sint = Mathf.Sin(theta);
-
-                _ships[i].position.x = (w / 2) + r * cost;
-                _ships[i].position.y = (h / 2) + r * sint;
-                _ships[i].heading = (heading + 180) % 360;
-                _ships[i].health = STARTING_HEALTH;
-                _ships[i].radius = SHIP_RADIUS;
-            }
-        }
-
-        public void GetShipAI(int i, out float heading, out float thrust, out int fire) {
-            heading = (_ships[i].heading + 5) % 360;
-            thrust = 0;
-            fire = 0;
-        }
-
-        public void ParseShipInputs(long inputs, int i, out float heading, out float thrust, out int fire) {
-            var ship = _ships[i];
-            if (verbose) {
-                Log.Verbose("parsing ship {0} inputs: {1}.", i, inputs);
-            }
-
-            if ((inputs & INPUT_ROTATE_RIGHT) != 0) {
-                heading = (ship.heading - ROTATE_INCREMENT) % 360;
-            }
-            else if ((inputs & INPUT_ROTATE_LEFT) != 0) {
-                heading = (ship.heading + ROTATE_INCREMENT + 360) % 360;
-            }
-            else {
-                heading = ship.heading;
-            }
-
-            if ((inputs & INPUT_THRUST) != 0) {
-                thrust = SHIP_THRUST;
-            }
-            else if ((inputs & INPUT_BREAK) != 0) {
-                thrust = -SHIP_THRUST;
-            }
-            else {
-                thrust = 0;
-            }
-            fire = (int)(inputs & INPUT_FIRE);
-        }
-
-        public void MoveShip(int index, float heading, float thrust, int fire) {
-            var ship = _ships[index];
-
-            if (verbose) {
-                Log.Verbose("calculation of new ship coordinates: (thrust:{0} heading:{1}).", thrust, heading);
-            }
-
-            ship.heading = heading;
-
-            if (ship.cooldown == 0) {
-                if (fire != 0) {
-                    if (verbose) {
-                        Log.Verbose("firing bullet.");
+        public void AdvanceFrame(ReadOnlySpan<long> inputs) {
+            if (inputs.Length != PlayerCount) throw new ArgumentException("Input count must match players.");
+            FrameNumber++;
+            for (int i = 0; i < Ships.Length; i++) {
+                var ship = Ships[i];
+                long input = inputs[i];
+                if ((input & VWConstants.INPUT_ROTATE_RIGHT) != 0) ship.heading = (ship.heading + 360 - VWConstants.ROTATE_INCREMENT) % 360;
+                else if ((input & VWConstants.INPUT_ROTATE_LEFT) != 0) ship.heading = (ship.heading + VWConstants.ROTATE_INCREMENT) % 360;
+                int dx = TrigTable.Cos(ship.heading), dy = TrigTable.Sin(ship.heading);
+                if (ship.cooldown == 0 && (input & VWConstants.INPUT_FIRE) != 0) {
+                    for (int b = 0; b < ship.bullets.Length; b++) {
+                        if (ship.bullets[b].active) continue;
+                        ship.bullets[b] = new Bullet { active = true,
+                            position = new FixedVector(ship.position.x + FixedMath.Mul(VWConstants.SHIP_RADIUS, dx), ship.position.y + FixedMath.Mul(VWConstants.SHIP_RADIUS, dy)),
+                            velocity = new FixedVector(ship.velocity.x + FixedMath.Mul(VWConstants.BULLET_SPEED, dx), ship.velocity.y + FixedMath.Mul(VWConstants.BULLET_SPEED, dy)) };
+                        ship.cooldown = VWConstants.BULLET_COOLDOWN; break;
                     }
-                    for (int i = 0; i < ship.bullets.Length; i++) {
-                        float dx = Mathf.Cos(DegToRad(ship.heading));
-                        float dy = Mathf.Sin(DegToRad(ship.heading));
-                        if (!ship.bullets[i].active) {
-                            ship.bullets[i].active = true;
-                            ship.bullets[i].position.x = ship.position.x + (ship.radius * dx);
-                            ship.bullets[i].position.y = ship.position.y + (ship.radius * dy);
-                            ship.bullets[i].velocity.x = ship.velocity.x + (BULLET_SPEED * dx);
-                            ship.bullets[i].velocity.y = ship.velocity.y + (BULLET_SPEED * dy);
-                            ship.cooldown = BULLET_COOLDOWN;
-                            break;
+                }
+                int thrust = (input & VWConstants.INPUT_THRUST) != 0 ? VWConstants.SHIP_THRUST :
+                    (input & VWConstants.INPUT_BREAK) != 0 ? -VWConstants.SHIP_THRUST : 0;
+                if (thrust != 0) {
+                    ship.velocity.x += FixedMath.Mul(thrust, dx); ship.velocity.y += FixedMath.Mul(thrust, dy);
+                    long magnitude = FixedMath.Sqrt(ship.velocity.SqrMagnitude);
+                    if (magnitude > VWConstants.SHIP_MAX_THRUST) {
+                        ship.velocity.x = (int)((long)ship.velocity.x * VWConstants.SHIP_MAX_THRUST / magnitude);
+                        ship.velocity.y = (int)((long)ship.velocity.y * VWConstants.SHIP_MAX_THRUST / magnitude);
+                    }
+                }
+                ship.position.x += ship.velocity.x; ship.position.y += ship.velocity.y;
+                if (ship.position.x < VWConstants.SHIP_RADIUS || ship.position.x > Width - VWConstants.SHIP_RADIUS) {
+                    ship.velocity.x = -ship.velocity.x; ship.position.x += ship.velocity.x * 2;
+                }
+                if (ship.position.y < VWConstants.SHIP_RADIUS || ship.position.y > Height - VWConstants.SHIP_RADIUS) {
+                    ship.velocity.y = -ship.velocity.y; ship.position.y += ship.velocity.y * 2;
+                }
+                for (int b = 0; b < ship.bullets.Length; b++) {
+                    ref var bullet = ref ship.bullets[b];
+                    if (!bullet.active) continue;
+                    bullet.position.x += bullet.velocity.x; bullet.position.y += bullet.velocity.y;
+                    if (bullet.position.x < 0 || bullet.position.x > Width || bullet.position.y < 0 || bullet.position.y > Height) bullet.active = false;
+                    else for (int j = 0; j < Ships.Length; j++) {
+                        if (FixedVector.SqrDistance(bullet.position, Ships[j].position) < (long)VWConstants.SHIP_RADIUS * VWConstants.SHIP_RADIUS) {
+                            ship.score++; Ships[j].health -= VWConstants.BULLET_DAMAGE; bullet.active = false; break;
                         }
                     }
                 }
+                if (ship.cooldown > 0) ship.cooldown--;
             }
-
-            if (thrust != 0) {
-                float dx = thrust * Mathf.Cos(DegToRad(heading));
-                float dy = thrust * Mathf.Sin(DegToRad(heading));
-
-                ship.velocity.x += dx;
-                ship.velocity.y += dy;
-                float mag = Mathf.Sqrt(ship.velocity.x * ship.velocity.x +
-                                 ship.velocity.y * ship.velocity.y);
-                if (mag > SHIP_MAX_THRUST) {
-                    ship.velocity.x = (ship.velocity.x * SHIP_MAX_THRUST) / mag;
-                    ship.velocity.y = (ship.velocity.y * SHIP_MAX_THRUST) / mag;
-                }
-            }
-            if (verbose) {
-                Log.Verbose("new ship velocity: (dx:{0} dy:{1}).", ship.velocity.x, ship.velocity.y);
-            }
-
-            ship.position.x += ship.velocity.x;
-            ship.position.y += ship.velocity.y;
-
-            if (verbose) {
-                Log.Verbose("new ship position: (dx:{0} dy:{1}).", ship.position.x, ship.position.y);
-            }
-
-            if (ship.position.x - ship.radius < _bounds.xMin ||
-                ship.position.x + ship.radius > _bounds.xMax) {
-                ship.velocity.x *= -1;
-                ship.position.x += (ship.velocity.x * 2);
-            }
-            if (ship.position.y - ship.radius < _bounds.yMin ||
-                ship.position.y + ship.radius > _bounds.yMax) {
-                ship.velocity.y *= -1;
-                ship.position.y += (ship.velocity.y * 2);
-            }
-            for (int i = 0; i < ship.bullets.Length; i++) {
-                if (ship.bullets[i].active) {
-                    ship.bullets[i].position.x += ship.bullets[i].velocity.x;
-                    ship.bullets[i].position.y += ship.bullets[i].velocity.y;
-                    if (ship.bullets[i].position.x < _bounds.xMin ||
-                        ship.bullets[i].position.y < _bounds.yMin ||
-                        ship.bullets[i].position.x > _bounds.xMax ||
-                        ship.bullets[i].position.y > _bounds.yMax) {
-                        ship.bullets[i].active = false;
-                    }
-                    else {
-                        for (int j = 0; j < _ships.Length; j++) {
-                            var other = _ships[j];
-                            if (Distance(ship.bullets[i].position, other.position) < other.radius) {
-                                ship.score++;
-                                other.health -= BULLET_DAMAGE;
-                                ship.bullets[i].active = false;
-                                break;
-                            }
-                        }
-                    }
+        }
+        static void Put(Span<byte> bytes, ref int offset, int value) {
+            BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(offset, 4), value); offset += 4;
+        }
+        static int Get(ReadOnlySpan<byte> bytes, ref int offset) {
+            int value = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(offset, 4)); offset += 4; return value;
+        }
+        public void SaveState(Span<byte> destination) {
+            if (destination.Length != SnapshotSize) throw new ArgumentException("Snapshot length mismatch.");
+            int offset = 0;
+            Put(destination, ref offset, Magic); Put(destination, ref offset, SnapshotVersion);
+            Put(destination, ref offset, PlayerCount); Put(destination, ref offset, FrameNumber);
+            foreach (var ship in Ships) {
+                Put(destination, ref offset, ship.position.x); Put(destination, ref offset, ship.position.y);
+                Put(destination, ref offset, ship.velocity.x); Put(destination, ref offset, ship.velocity.y);
+                Put(destination, ref offset, ship.heading); Put(destination, ref offset, ship.health);
+                Put(destination, ref offset, ship.cooldown); Put(destination, ref offset, ship.score);
+                foreach (var bullet in ship.bullets) {
+                    destination[offset++] = bullet.active ? (byte)1 : (byte)0;
+                    Put(destination, ref offset, bullet.position.x); Put(destination, ref offset, bullet.position.y);
+                    Put(destination, ref offset, bullet.velocity.x); Put(destination, ref offset, bullet.velocity.y);
                 }
             }
         }
-
-        public void LogInfo(string filename) {
-            string fp = "";
-            fp += "GameState object.\n";
-            fp += string.Format("  bounds: {0},{1} x {2},{3}.\n", _bounds.xMin, _bounds.yMin, _bounds.xMax, _bounds.yMax);
-            fp += string.Format("  num_ships: {0}.\n", _ships.Length);
-            for (int i = 0; i < _ships.Length; i++) {
-                var ship = _ships[i];
-                fp += string.Format("  ship {0} position:  %.4f, %.4f\n", i, ship.position.x, ship.position.y);
-                fp += string.Format("  ship {0} velocity:  %.4f, %.4f\n", i, ship.velocity.x, ship.velocity.y);
-                fp += string.Format("  ship {0} radius:    %d.\n", i, ship.radius);
-                fp += string.Format("  ship {0} heading:   %d.\n", i, ship.heading);
-                fp += string.Format("  ship {0} health:    %d.\n", i, ship.health);
-                fp += string.Format("  ship {0} cooldown:  %d.\n", i, ship.cooldown);
-                fp += string.Format("  ship {0} score:     {1}.\n", i, ship.score);
-                for (int j = 0; j < ship.bullets.Length; j++) {
-                    fp += string.Format("  ship {0} bullet {1}: {2} {3} -> {4} {5}.\n", i, j,
-                            ship.bullets[j].position.x, ship.bullets[j].position.y,
-                            ship.bullets[j].velocity.x, ship.bullets[j].velocity.y);
+        public void LoadState(ReadOnlySpan<byte> source) {
+            if (source.Length != SnapshotSize) throw new ArgumentException("Snapshot length mismatch.");
+            int offset = 0;
+            if (Get(source, ref offset) != Magic || Get(source, ref offset) != SnapshotVersion || Get(source, ref offset) != PlayerCount)
+                throw new ArgumentException("Incompatible VectorWar snapshot.");
+            int frame = Get(source, ref offset);
+            // Walk the same field order as SaveState, checking headings, cooldowns and
+            // canonical booleans before changing any state.
+            for (int i = 0, check = offset; i < PlayerCount; i++) {
+                Get(source, ref check); Get(source, ref check); Get(source, ref check); Get(source, ref check); // position, velocity
+                int heading = Get(source, ref check); Get(source, ref check); // health
+                int cooldown = Get(source, ref check); Get(source, ref check); // score
+                if (heading < 0 || heading >= 360 || cooldown < 0 || cooldown >= VWConstants.BULLET_COOLDOWN)
+                    throw new ArgumentException("Malformed ship state.");
+                for (int b = 0; b < VWConstants.MAX_BULLETS; b++, check += BulletBytes)
+                    if (source[check] > 1) throw new ArgumentException("Malformed bullet state.");
+            }
+            FrameNumber = frame;
+            foreach (var ship in Ships) {
+                ship.position = new FixedVector(Get(source, ref offset), Get(source, ref offset));
+                ship.velocity = new FixedVector(Get(source, ref offset), Get(source, ref offset));
+                ship.heading = Get(source, ref offset); ship.health = Get(source, ref offset);
+                ship.cooldown = Get(source, ref offset); ship.score = Get(source, ref offset);
+                for (int b = 0; b < ship.bullets.Length; b++) {
+                    ship.bullets[b].active = source[offset++] != 0;
+                    ship.bullets[b].position = new FixedVector(Get(source, ref offset), Get(source, ref offset));
+                    ship.bullets[b].velocity = new FixedVector(Get(source, ref offset), Get(source, ref offset));
                 }
             }
-            File.WriteAllText(filename, fp);
-        }
-
-        public void Update(long[] inputs, int disconnect_flags) {
-            Framenumber++;
-            for (int i = 0; i < _ships.Length; i++) {
-                float thrust, heading;
-                int fire;
-
-                if ((disconnect_flags & (1 << i)) != 0) {
-                    GetShipAI(i, out heading, out thrust, out fire);
-                }
-                else {
-                    ParseShipInputs(inputs[i], i, out heading, out thrust, out fire);
-                }
-                MoveShip(i, heading, thrust, fire);
-
-                if (_ships[i].cooldown != 0) {
-                    _ships[i].cooldown--;
-                }
-            }
-        }
-
-        public long ReadInputs(int id) {
-            long input = 0;
-
-            if (id == 0) {
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.UpArrow)) {
-                    input |= INPUT_THRUST;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.DownArrow)) {
-                    input |= INPUT_BREAK;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.LeftArrow)) {
-                    input |= INPUT_ROTATE_LEFT;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightArrow)) {
-                    input |= INPUT_ROTATE_RIGHT;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightControl)) {
-                    input |= INPUT_FIRE;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.RightShift)) {
-                    input |= INPUT_BOMB;
-                }
-            }
-            else if (id == 1) {
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.W)) {
-                    input |= INPUT_THRUST;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.S)) {
-                    input |= INPUT_BREAK;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.A)) {
-                    input |= INPUT_ROTATE_LEFT;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.D)) {
-                    input |= INPUT_ROTATE_RIGHT;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.F)) {
-                    input |= INPUT_FIRE;
-                }
-                if (UnityEngine.Input.GetKey(UnityEngine.KeyCode.G)) {
-                    input |= INPUT_BOMB;
-                }
-            }
-
-            return input;
-        }
-
-        public void FreeBytes(NativeArray<byte> data) {
-            if (data.IsCreated) {
-                data.Dispose();
-            }
-        }
-
-        public override int GetHashCode() {
-            int hashCode = -1214587014;
-            hashCode = hashCode * -1521134295 + Framenumber.GetHashCode();
-            foreach (var ship in _ships) {
-                hashCode = hashCode * -1521134295 + ship.GetHashCode();
-            }
-            return hashCode;
         }
     }
 }

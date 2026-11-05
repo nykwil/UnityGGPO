@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="PlayerOverlay.uss" />
+  <ui:VisualElement name="playerLabels" class="overlay" picking-mode="Ignore" />
+</ui:UXML>

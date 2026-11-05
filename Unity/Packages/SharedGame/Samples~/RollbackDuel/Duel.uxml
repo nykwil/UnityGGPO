@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="Duel.uss" />
+  <ui:VisualElement class="arena">
+    <ui:Label text="ROLLBACK DUEL" class="title" />
+    <ui:Label name="positions" text="Start a session using the shared connection screen." />
+    <ui:Button name="left" text="Hold to move left" /><ui:Button name="right" text="Hold to move right" />
+  </ui:VisualElement>
+</ui:UXML>

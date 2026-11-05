@@ -1,0 +1,60 @@
+name: Validate
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: Core, interop and network (Windows x64)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Package hygiene (metas, native provenance, versions)
+        run: ./scripts/check-packages.ps1
+
+      - name: Native C ABI layout (compile-time asserts)
+        run: |
+          cmake -S Validation -B build/abi -A x64
+          cmake --build build/abi --config Release
+          ./build/abi/Release/GekkoAbi.exe
+
+      - name: Core validation (ABI, snapshots, rollback stress, lifecycle, allocations)
+        run: dotnet run --project Validation/SharedGame.Validation.csproj -c Release
+
+      - name: Network - 4 players with late-joining spectator
+        run: ./scripts/run-network-validation.ps1 -Players 4 -Spectator -LateJoin -BasePort 30100
+
+      - name: Network - player leaves mid-session
+        run: ./scripts/run-network-validation.ps1 -Players 4 -LeavePlayer 3 -BasePort 31100
+
+      - name: Network - impaired link (latency, jitter, loss)
+        run: ./scripts/run-network-validation.ps1 -Players 2 -Impaired -BasePort 32100
+
+      - name: Upload network logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-logs
+          path: build/network-*
+          if-no-files-found: ignore

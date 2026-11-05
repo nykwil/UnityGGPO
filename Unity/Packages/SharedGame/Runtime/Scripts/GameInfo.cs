@@ -1,73 +1,22 @@
-using UnityGGPO;
-
 namespace SharedGame {
-
-    public enum PlayerConnectState {
-        Connecting = 0,
-        Synchronizing,
-        Running,
-        Disconnected,
-        Disconnecting,
-    };
-
+    /// <summary>Connection state of one roster player. Unavailable means the local session cannot observe it (e.g. non-host players seen by a spectator).</summary>
+    public enum PlayerConnectState { Connecting, Synchronizing, Running, Disconnected, Unavailable }
     public struct PlayerConnectionInfo {
-        public GGPOPlayerType type;
-        public int handle;
-        public PlayerConnectState state;
-        public int connect_progress;
-        public int disconnect_timeout;
-        public int disconnect_start;
-        public int controllerId;
-    };
-
-    public struct ChecksumInfo {
-        public int framenumber;
-        public int checksum;
-
-        public override string ToString() => framenumber.ToString() + " " + checksum.ToString("X2");
-    };
-
-    public class GameInfo {
-        public PlayerConnectionInfo[] players;
-        public string status;
-
-        public ChecksumInfo now;
-        public ChecksumInfo periodic;
-
-        public void SetConnectState(int handle, PlayerConnectState state) {
-            for (int i = 0; i < players.Length; i++) {
-                if (players[i].handle == handle) {
-                    players[i].connect_progress = 0;
-                    players[i].state = state;
-                    break;
-                }
-            }
-        }
-
-        public void SetDisconnectTimeout(int handle, int now, int timeout) {
-            for (int i = 0; i < players.Length; i++) {
-                if (players[i].handle == handle) {
-                    players[i].disconnect_start = now;
-                    players[i].disconnect_timeout = timeout;
-                    players[i].state = PlayerConnectState.Disconnecting;
-                    break;
-                }
-            }
-        }
-
-        public void SetConnectState(PlayerConnectState state) {
-            for (int i = 0; i < players.Length; i++) {
-                players[i].state = state;
-            }
-        }
-
-        public void UpdateConnectProgress(int handle, int progress) {
-            for (int i = 0; i < players.Length; i++) {
-                if (players[i].handle == handle) {
-                    players[i].connect_progress = progress;
-                    break;
-                }
-            }
-        }
+        /// <summary>Native actor handle, or -1 when not registered.</summary>
+        public int Handle;
+        /// <summary>True when this player's input is produced on this machine.</summary>
+        public bool Local;
+        public PlayerConnectState State;
+        /// <summary>Synchronization progress, 0–100.</summary>
+        public int Progress;
+        /// <summary>Set by the runner: whether DisconnectPlayer is currently allowed for this player.</summary>
+        public bool CanDisconnect;
+    }
+    /// <summary>Runner-owned, read-only view of session status for UI. Indexed by roster player.</summary>
+    public sealed class GameInfo {
+        public readonly PlayerConnectionInfo[] Players;
+        /// <summary>Human-readable session status, e.g. "Running" or "Buffering spectator inputs".</summary>
+        public string Status = "Connecting";
+        public GameInfo(int count) { Players = new PlayerConnectionInfo[count]; }
     }
 }

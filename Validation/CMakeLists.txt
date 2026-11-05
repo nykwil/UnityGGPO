@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.15)
+project(GekkoAbi LANGUAGES CXX)
+add_executable(GekkoAbi native_abi.cpp)
+target_compile_features(GekkoAbi PRIVATE cxx_std_17)
+target_include_directories(GekkoAbi PRIVATE ../GekkoNet/GekkoLib/include)
+target_compile_definitions(GekkoAbi PRIVATE GEKKONET_STATIC)

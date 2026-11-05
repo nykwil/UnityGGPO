@@ -1,219 +1,114 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using Unity.Logging;
+using System;
 using UnityEngine;
-using UnityGGPO;
-
 namespace SharedGame {
-
+    /// <summary>
+    /// Owns one session at a time and drives it from Unity's Update at a fixed 60 Hz.
+    /// Subclass it to supply your game and input source, then call <see cref="StartSession"/>.
+    /// </summary>
     public abstract class GameManager : MonoBehaviour {
-
-        public enum UpdateType {
-            VectorWar,
-            Always,
-            FixedSkip,
-            FixedFastForward,
-            Smoothed
-        }
-
-        public UpdateType updateType = UpdateType.FixedSkip;
-
-        private static GameManager _instance;
-
-        public static GameManager Instance {
-            get {
-                if (_instance == null) {
-                    _instance = FindObjectOfType<GameManager>();
-                }
-                return _instance;
-            }
-        }
-
-        public event Action<StatusInfo> OnStatus;
-
-        public event Action<bool> OnRunningChanged;
-
+        /// <summary>Raised when a new game has been created for a session.</summary>
         public event Action OnInit;
-
+        /// <summary>Raised after an update that simulated at least one frame, including rollback correction. Read <see cref="Runner"/>.Game to present.</summary>
         public event Action OnStateChanged;
-
-        public Stopwatch updateWatch = new Stopwatch();
-
-        public bool IsRunning { get; private set; }
-
+        /// <summary>Raised with true when a session starts and false when it stops. Clear presentation on false.</summary>
+        public event Action<bool> OnRunningChanged;
+        /// <summary>Raised every 100 ms after a diagnostics sample is recorded.</summary>
+        public event Action<SessionDiagnostics> OnDiagnostics;
+        /// <summary>Raised with the message when a session fails to start or fails while running; the session is stopped first.</summary>
+        public event Action<string> OnError;
+        /// <summary>The active session runner, or null when stopped.</summary>
         public IGameRunner Runner { get; private set; }
-
-        private double start;
-        private double next;
-        private int currentFrame;
-
-        private double MsToFrame(double time) {
-            return time / 1000.0 * 60.0;
-        }
-
-        private double FrameToMs(double ms) {
-            return ms * 1000.0 / 60.0;
-        }
-
-        public void DisconnectPlayer(int player) {
-            if (Runner != null) {
-                Runner.DisconnectPlayer(player);
+        public bool IsRunning => Runner != null;
+        /// <summary>Mode of the active session, or null when stopped.</summary>
+        public SessionMode? Mode => IsRunning ? lastOptions?.Mode : null;
+        /// <summary>Message of the last start or runtime failure; cleared when a session starts.</summary>
+        public string LastError { get; private set; }
+        SessionOptions lastOptions;
+        double nextSample;
+        readonly SessionScheduler scheduler = new SessionScheduler();
+        /// <summary>Creates a fresh game (frame 0) for <paramref name="playerCount"/> players.</summary>
+        protected abstract IGame CreateGame(int playerCount);
+        /// <summary>Creates the local input source for a new session.</summary>
+        protected abstract ILocalInputSource CreateInputSource();
+        /// <summary>Custom network transport for peer and spectator sessions; null uses the built-in UDP adapter.</summary>
+        protected virtual IGekkoNetworkTransport CreateTransport(SessionOptions options) => null;
+        /// <summary>Chooses the runner: <see cref="LocalRunner"/> for local play, otherwise <see cref="GekkoRunner"/> with <see cref="CreateTransport"/>.</summary>
+        protected virtual IGameRunner CreateRunner(IGame game, ILocalInputSource source, SessionOptions options) =>
+            options.Mode == SessionMode.Local ? (IGameRunner)new LocalRunner(game, source) : new GekkoRunner(game, source, options, CreateTransport);
+        /// <summary>Replaces CreateInputSource for subsequent sessions, e.g. a scripted validation driver.</summary>
+        public ILocalInputSource InputOverride { private get; set; }
+        /// <summary>
+        /// Validates <paramref name="options"/>, stops any running session and starts a new one with a fresh game.
+        /// Throws (and raises <see cref="OnError"/>) on invalid options or startup failure; a running session is
+        /// left untouched when validation fails.
+        /// </summary>
+        public void StartSession(SessionOptions options) {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            // Validate before stopping a healthy session or opening a socket.
+            options.Validate(1);
+            var game = CreateGame(options.Players.Length);
+            options.ValidateFor(game);
+            var source = InputOverride ?? CreateInputSource();
+            StopSession();
+            try {
+                Runner = CreateRunner(game, source, options);
+                lastOptions = options.Copy();
+                LastError = null;
+                nextSample = Time.realtimeSinceStartupAsDouble;
+                scheduler.Reset(nextSample);
+                OnInit?.Invoke();
+                OnRunningChanged?.Invoke(true);
+                OnStateChanged?.Invoke();
+            } catch (Exception error) {
+                LastError = error.Message;
+                StopSession();
+                OnError?.Invoke(LastError);
+                throw;
             }
         }
-
-        public void Shutdown() {
-            if (Runner != null) {
-                Runner.Shutdown();
-                Runner = null;
-            }
+        /// <summary>Starts a fresh session with a copy of the last options.</summary>
+        public void RestartSession() {
+            if (lastOptions == null) throw new InvalidOperationException("No previous session.");
+            StartSession(lastOptions);
         }
-
-        private void OnDestroy() {
-            Shutdown();
-            _instance = null;
+        /// <summary>Disposes the active session, if any. Safe to call repeatedly.</summary>
+        public void StopSession() {
+            var previous = Runner;
+            Runner = null;
+            try { previous?.Dispose(); }
+            finally { if (previous != null) OnRunningChanged?.Invoke(false); }
         }
-
-        protected virtual void OnPreRunFrame() {
+        /// <summary>Disconnects player <paramref name="index"/>; stops the session when that ends it locally (e.g. the local peer leaves).
+        /// Does nothing when no session is running or the player cannot currently be disconnected.</summary>
+        public void DisconnectPlayer(int index) {
+            if (Runner == null) return;
+            if ((uint)index >= Runner.GameInfo.Players.Length) throw new ArgumentOutOfRangeException(nameof(index));
+            if (!Runner.GameInfo.Players[index].CanDisconnect) return;
+            if (Runner.DisconnectPlayer(index)) StopSession();
         }
-
-        private void Update() {
-            if (IsRunning != (Runner != null)) {
-                IsRunning = Runner != null;
-                OnRunningChanged?.Invoke(IsRunning);
-                if (IsRunning) {
-                    InitGame();
+        void Update() {
+            if (Runner == null) return;
+            try {
+                Runner.Poll();
+                double now = Time.realtimeSinceStartupAsDouble;
+                int ticks = scheduler.TicksDue(now, Runner.FramesAhead);
+                for (int i = 0; i < ticks; i++) Runner.Tick();
+                Runner.EndFrame();
+                if (now >= nextSample) {
+                    Runner.SampleDiagnostics();
+                    nextSample = now + .1;
+                    OnDiagnostics?.Invoke(Runner.Diagnostics);
                 }
-            }
-            if (IsRunning) {
-                updateWatch.Start();
-
-                if (updateType == UpdateType.VectorWar) {
-                    UpdateVectorwar();
-                }
-                else if (updateType == UpdateType.Always) {
-                    UpdateAlways();
-                }
-                else if (updateType == UpdateType.FixedSkip) {
-                    UpdateFixedSkip();
-                }
-                else if (updateType == UpdateType.FixedFastForward) {
-                    UpdateFixedFastForward();
-                }
-                else if (updateType == UpdateType.Smoothed) {
-                    UpdateSmoothed();
-                }
-
-                updateWatch.Stop();
-
-                var statusInfo = Runner.GetStatus(updateWatch);
-
-                OnStatus?.Invoke(statusInfo);
+                if (ticks > 0) OnStateChanged?.Invoke();
+            } catch (Exception error) {
+                LastError = error.Message;
+                if (Debug.isDebugBuild) Debug.LogException(error, this);
+                try { StopSession(); }
+                finally { OnError?.Invoke(LastError); }
             }
         }
-
-        private void InitGame() {
-            OnInit?.Invoke();
-            start = (double)Utils.TimeGetTime();
-            next = start;
-            currentFrame = 0;
-        }
-
-        private void Tick() {
-            OnPreRunFrame();
-            Runner.RunFrame();
-            currentFrame++;
-            OnStateChanged?.Invoke();
-        }
-
-        private void UpdateVectorwar() {
-            var now = (double)Utils.TimeGetTime();
-            if (Runner.FramesAhead > 0) {
-                Utils.Sleep((int)FrameToMs(Runner.FramesAhead));
-                Runner.FramesAhead = 0;
-            }
-            var extraMs = Mathf.Max(0, (int)(next - now - 1));
-            Runner.Idle(extraMs);
-            if (now >= next) {
-                Tick();
-                next = now + FrameToMs(1);
-            }
-        }
-
-        private void UpdateFixedSkip() {
-            var now = Utils.TimeGetTime();
-            if (Runner.FramesAhead > 0) {
-                next += FrameToMs(Runner.FramesAhead);
-                Runner.FramesAhead = 0;
-            }
-            var extraMs = Mathf.Max(0, (int)(next - now - 1));
-            Runner.Idle(extraMs);
-            while (now >= next) {
-                Tick();
-                next += FrameToMs(1);
-            }
-        }
-
-        private void UpdateSmoothed() {
-            var now = (double)Utils.TimeGetTime();
-            var extraMs = Mathf.Max(0, (int)(next - now - 1));
-            Runner.Idle(extraMs);
-            if (now >= next) {
-                if (Runner.FramesAhead > 0) {
-                    start += FrameToMs(Runner.FramesAhead - 1);
-                    Runner.FramesAhead = 0;
-                }
-                var targetFrame = MsToFrame(now - start);
-                int nearestTarget = Mathf.RoundToInt((float)targetFrame);
-                double d = 1.0;
-                if (currentFrame != nearestTarget) {
-                    d = 1 - ((targetFrame - currentFrame) / 50f);
-                    Log.Verbose("Smooth Step adjusted: s:{0} t:{1} c:{2}", d, targetFrame, currentFrame);
-                }
-
-                next += FrameToMs(d);
-
-                Tick();
-            }
-        }
-
-        private void UpdateFixedFastForward() {
-            var now = Utils.TimeGetTime();
-            var extraMs = Mathf.Max(0, (int)(next - now - 1));
-            Runner.Idle(extraMs);
-            if (now >= next) {
-                Tick();
-                next += FrameToMs(1);
-                if (Runner.FramesAhead > 0) {
-                    next += FrameToMs(1);
-                    --Runner.FramesAhead;
-                }
-            }
-        }
-
-        private void UpdateAlways() {
-            if (Runner.FramesAhead > 0) {
-                Utils.Sleep((int)FrameToMs(Runner.FramesAhead));
-                Runner.FramesAhead = 0;
-            }
-            var now = Utils.TimeGetTime();
-            var extraMs = Mathf.Max(0, (int)(next - now - 1));
-            Runner.Idle(extraMs);
-            Tick();
-            next += FrameToMs(1);
-        }
-
-        public void StartGame(IGameRunner runner) {
-            Runner = runner;
-        }
-
-        public abstract void StartLocalGame();
-
-        public abstract void StartGGPOGame(IPerfUpdate perfPanel, IList<Connections> connections, int playerIndex);
-
-        public void ResetTimers() {
-            updateWatch.Reset();
-            Runner.ResetTimers();
-        }
+        protected virtual void OnDisable() => StopSession();
+        protected virtual void OnDestroy() => StopSession();
+        void OnApplicationQuit() => StopSession();
     }
 }

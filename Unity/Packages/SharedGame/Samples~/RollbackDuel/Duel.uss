@@ -1,0 +1,3 @@
+.arena { align-self: flex-end; margin-top: 32px; margin-right: 32px; width: 440px; max-width: 90%; padding-left: 16px; padding-right: 16px; padding-top: 16px; padding-bottom: 16px; background-color: rgb(20, 32, 48); color: white; }
+.title { font-size: 24px; }
+Button { min-height: 48px; margin-top: 12px; }

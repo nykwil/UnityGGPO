@@ -1,0 +1,1 @@
+{"name":"Nykwil.Transport.Validation.Editor","references":["Nykwil.SharedGame","Nykwil.Transport.Validation","Nykwil.SharedGame.RollbackDuel","Nykwil.SharedGame.UnityTransportSample","Nykwil.SharedGame.UnityTransportSample.Editor"],"includePlatforms":["Editor"]}

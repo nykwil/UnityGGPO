@@ -7,7 +7,7 @@ Mesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Icosphere_drop 1
-  serializedVersion: 10
+  serializedVersion: 12
   m_SubMeshes:
   - serializedVersion: 2
     firstByte: 0
@@ -31,11 +31,11 @@ Mesh:
   m_VariableBoneCountWeights:
     m_Data: 
   m_MeshCompression: 0
-  m_IsReadable: 1
-  m_KeepVertices: 1
-  m_KeepIndices: 1
+  m_IsReadable: 0
+  m_KeepVertices: 0
+  m_KeepIndices: 0
   m_IndexFormat: 0
-  m_IndexBuffer: 0000010002000300040005000300050006000700080009000a000b000c000d000e000f001000110012000c000b00130009001400150016001700180019001a001b001c001d001e001c001e001f00200021001800220023002400250026002700280029002a002b002c00090018002d002e00240023002f00
+  m_IndexBuffer: 0000010002000300040005000300050006000700080009000a000b000c000d000e000f001000110012000c000b00130009001400150016001700180019001a001b001c001d001e001c001e001f00200021001800220023002400250026002700280029002a002b002c00090018002d002e00240023002f00y
   m_VertexData:
     serializedVersion: 3
     m_VertexCount: 48
@@ -153,14 +153,29 @@ Mesh:
   m_LocalAABB:
     m_Center: {x: 0, y: 0, z: -0.4563297}
     m_Extent: {x: 0.8506508, y: 0.8506508, z: 1.3421651}
-  m_MeshUsageFlags: 0
+  m_CookingOptions: 30
+  m_PreBakeConvexCollisionMesh: 0
+  m_PreBakeTriangleCollisionMesh: 0
   m_BakedConvexCollisionMesh: 
   m_BakedTriangleCollisionMesh: 
-  m_MeshMetrics[0]: 1
-  m_MeshMetrics[1]: 1
+  'm_MeshMetrics[0]': 1
+  'm_MeshMetrics[1]': 1
   m_MeshOptimizationFlags: 1
   m_StreamData:
     serializedVersion: 2
     offset: 0
     size: 0
     path: 
+  m_MeshLodInfo:
+    serializedVersion: 2
+    m_LodSelectionCurve:
+      serializedVersion: 1
+      m_LodSlope: 0
+      m_LodBias: 0
+    m_NumLevels: 1
+    m_SubMeshes:
+    - serializedVersion: 2
+      m_Levels:
+      - serializedVersion: 1
+        m_IndexStart: 0
+        m_IndexCount: 0

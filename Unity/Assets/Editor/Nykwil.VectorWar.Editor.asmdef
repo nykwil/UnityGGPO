@@ -1,0 +1,1 @@
+{"name":"Nykwil.VectorWar.Editor","references":["Nykwil.SharedGame","Nykwil.SharedGame.UI","Nykwil.SharedGame.Diagnostics","Nykwil.VectorWar"],"includePlatforms":["Editor"]}

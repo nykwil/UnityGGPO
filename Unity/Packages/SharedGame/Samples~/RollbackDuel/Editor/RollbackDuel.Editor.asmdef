@@ -1,0 +1,1 @@
+{"name":"Nykwil.SharedGame.RollbackDuel.Editor","references":["Nykwil.SharedGame","Nykwil.SharedGame.UI","Nykwil.SharedGame.RollbackDuel"],"includePlatforms":["Editor"]}

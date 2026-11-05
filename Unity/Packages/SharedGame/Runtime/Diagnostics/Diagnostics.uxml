@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="Diagnostics.uss" />
+  <ui:VisualElement class="screen" picking-mode="Ignore">
+    <ui:VisualElement name="diagnostics" class="panel hidden">
+      <ui:Label text="SESSION DIAGNOSTICS" class="title" />
+      <ui:Label name="metrics" class="metrics" />
+      <ui:Label text="Simulation update CPU · 0–16.67 ms · last 30 seconds" />
+      <ui:VisualElement name="graphHost" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

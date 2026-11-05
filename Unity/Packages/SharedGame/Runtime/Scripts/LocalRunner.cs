@@ -1,92 +1,46 @@
-﻿using System.Diagnostics;
-using Unity.Collections;
-using UnityGGPO;
-
+using System;
+using System.Diagnostics;
 namespace SharedGame {
-
-    public class LocalRunner : IGameRunner {
-        private NativeArray<byte> buffer;
-
-        public IGame Game { get; private set; }
-
-        public GameInfo GameInfo { get; private set; }
-        public int FramesAhead { get; set; }
-
-        private Stopwatch frameWatch = new Stopwatch();
-        private Stopwatch idleWatch = new Stopwatch();
-
-        public void Idle(int ms) {
-            idleWatch.Start();
-            Utils.Sleep(ms);
-            idleWatch.Stop();
-        }
-
-        public void RunFrame() {
-            frameWatch.Start();
-            var inputs = new long[GameInfo.players.Length];
-            for (int i = 0; i < inputs.Length; ++i) {
-                inputs[i] = Game.ReadInputs(GameInfo.players[i].controllerId);
-            }
-            Game.Update(inputs, 0);
-            frameWatch.Stop();
-        }
-
-        public void OnTestSave() {
-            if (buffer.IsCreated) {
-                buffer.Dispose();
-            }
-            buffer = Game.ToBytes();
-        }
-
-        public void OnTestLoad() {
-            Game.FromBytes(buffer);
-        }
-
-        public LocalRunner(IGame game) {
-            Game = game;
-            GameInfo = new GameInfo();
-            int handle = 1;
-            int controllerId = 0;
-            GameInfo.players = new PlayerConnectionInfo[2];
-            GameInfo.players[0] = new PlayerConnectionInfo {
-                handle = handle,
-                type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
-                connect_progress = 100,
-                controllerId = controllerId
+    /// <summary>Runs every player on this machine without GekkoNet; controller i drives player i.</summary>
+    public sealed class LocalRunner : IGameRunner {
+        public IGame Game { get; }
+        public GameInfo GameInfo { get; }
+        public SessionDiagnostics Diagnostics { get; }
+        readonly ILocalInputSource source;
+        readonly long[] inputs;
+        readonly byte[] snapshot;
+        bool disposed;
+        public LocalRunner(IGame game, ILocalInputSource source) {
+            Game = game ?? throw new ArgumentNullException(nameof(game));
+            this.source = source ?? throw new ArgumentNullException(nameof(source));
+            inputs = new long[game.PlayerCount];
+            snapshot = new byte[game.SnapshotSize];
+            GameInfo = new GameInfo(game.PlayerCount) { Status = "Local session" };
+            Diagnostics = new SessionDiagnostics(game.PlayerCount);
+            for (int i = 0; i < inputs.Length; i++) GameInfo.Players[i] = new PlayerConnectionInfo {
+                Handle = i, Local = true, State = PlayerConnectState.Running, Progress = 100, CanDisconnect = true
             };
-            GameInfo.SetConnectState(handle, PlayerConnectState.Connecting);
-            ++handle;
-            ++controllerId;
-            GameInfo.players[1] = new PlayerConnectionInfo {
-                handle = handle,
-                type = GGPOPlayerType.GGPO_PLAYERTYPE_LOCAL,
-                connect_progress = 100,
-                controllerId = controllerId++
-            };
-            GameInfo.SetConnectState(handle, PlayerConnectState.Connecting);
         }
-
-        public StatusInfo GetStatus(Stopwatch updateWatch) {
-            var status = new StatusInfo();
-            status.idlePerc = (float)idleWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
-            status.updatePerc = (float)frameWatch.ElapsedMilliseconds / (float)updateWatch.ElapsedMilliseconds;
-            status.periodic = GameInfo.periodic;
-            status.now = GameInfo.now;
-            return status;
+        public float FramesAhead => 0;
+        public void Poll() => Diagnostics.BeginUpdate();
+        public void EndFrame() { }
+        public void Tick() {
+            if (disposed) throw new ObjectDisposedException(nameof(LocalRunner));
+            long start = Stopwatch.GetTimestamp();
+            for (int i = 0; i < inputs.Length; i++) inputs[i] = GameInfo.Players[i].State == PlayerConnectState.Disconnected ? 0 : source.ReadInput(i, Game.FrameNumber);
+            Game.AdvanceFrame(inputs);
+            Diagnostics.Current.SimulationMs += SessionDiagnostics.Elapsed(start);
         }
-
-        public void DisconnectPlayer(int player) {
+        public void SampleDiagnostics() {
+            Diagnostics.SampleState(Game, snapshot);
+            Diagnostics.Record();
         }
-
-        public void Shutdown() {
-            if (buffer.IsCreated) {
-                buffer.Dispose();
-            }
+        public bool DisconnectPlayer(int index) {
+            if ((uint)index >= inputs.Length) throw new ArgumentOutOfRangeException(nameof(index));
+            GameInfo.Players[index].State = PlayerConnectState.Disconnected;
+            GameInfo.Players[index].CanDisconnect = false;
+            return false;
         }
-
-        public void ResetTimers() {
-            frameWatch.Reset();
-            idleWatch.Reset();
-        }
+        public void Dispose() { disposed = true; }
     }
 }

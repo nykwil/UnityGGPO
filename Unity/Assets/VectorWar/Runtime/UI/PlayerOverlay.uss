@@ -1,0 +1,2 @@
+.overlay { flex-grow: 1; }
+.player-label { position: absolute; left: 0; top: 0; color: rgb(220, 245, 255); background-color: rgba(5, 10, 20, 0.75); padding-left: 4px; padding-right: 4px; font-size: 12px; }
