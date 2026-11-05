@@ -13,6 +13,7 @@ namespace Nykwil.GekkoNet.Session {
         public uint Checksum;
         /// <summary>CPU milliseconds spent simulating and in network work during the update.</summary>
         public double SimulationMs, NetworkMs;
+        /// <summary>Whole local-minus-remote frame gap at the sample; see <see cref="IGameRunner.FramesAhead"/>.</summary>
         public float FramesAhead;
         public int SpectatorBufferedFrames;
         /// <summary>Cumulative rollback count, maximum depth and stalls (peer sessions only).</summary>

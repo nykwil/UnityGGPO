@@ -10,3 +10,4 @@ All notable changes to this package are documented here. The format follows [Kee
 - `SessionOptions.ThrowOnDesync`, `GekkoRunner.Desynced` and `SessionDiagnostics.LastDesync` for handling desyncs without an exception.
 - `SessionOptions.SavedStateDepth`, the number of recent saves a load can restore.
 - `GekkoRunner.SampleDiagnostics` reports the frame and checksum of the latest native save and never calls `SaveState` itself.
+- `IGameRunner.FramesAhead` documented as the whole local-minus-remote frame gap (the native "halved" comment notwithstanding), so pacing code does not halve it again.

@@ -48,7 +48,14 @@ namespace Nykwil.GekkoNet.Session {
         IGame Game { get; }
         GameInfo GameInfo { get; }
         SessionDiagnostics Diagnostics { get; }
-        /// <summary>Live frames-ahead estimate used for pacing; 0 when there is no remote peer.</summary>
+        /// <summary>
+        /// Live pacing estimate: how many frames this peer is ahead of the remote (negative when behind), averaged over
+        /// recent frames; 0 when there is no remote peer. This is the WHOLE local-minus-remote gap, not this peer's half
+        /// of it: each peer's measured advantage counts the gap from both ends, and GekkoNet halves their difference
+        /// (gekko_frames_ahead's native comment calls that "each peer corrects its share", but the result is the full
+        /// gap). A peer that corrects only itself should slow by this many frames; if both peers correct, each should
+        /// take half. Measured on loopback: a 9.3-frame offset read as 9.5.
+        /// </summary>
         float FramesAhead { get; }
         /// <summary>Receives network traffic and resets per-update timings.</summary>
         void Poll();
